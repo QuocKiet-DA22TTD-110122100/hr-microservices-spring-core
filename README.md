@@ -1,0 +1,1 @@
+# hr-microservices-spring-core
