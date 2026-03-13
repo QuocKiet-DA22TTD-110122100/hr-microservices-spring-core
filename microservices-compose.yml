@@ -1,0 +1,179 @@
+version: '3.8'
+
+services:
+  # Redis for API Gateway
+  redis:
+    image: redis:7-alpine
+    container_name: redis-server
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass redis123
+    volumes:
+      - redis-data:/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Eureka Server Peer 1
+  eureka-peer1:
+    build:
+      context: ./eureka-server
+      dockerfile: dockerfile
+    container_name: eureka-peer1
+    hostname: eureka-peer1
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=peer1
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    volumes:
+      - eureka1-data:/app/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://eureka:123456@localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Eureka Server Peer 2
+  eureka-peer2:
+    build:
+      context: ./eureka-server
+      dockerfile: dockerfile
+    container_name: eureka-peer2
+    hostname: eureka-peer2
+    ports:
+      - "8762:8762"
+    environment:
+      - SPRING_PROFILES_ACTIVE=peer2
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    volumes:
+      - eureka2-data:/app/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://eureka:123456@localhost:8762/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Eureka Server Peer 3
+  eureka-peer3:
+    build:
+      context: ./eureka-server
+      dockerfile: dockerfile
+    container_name: eureka-peer3
+    hostname: eureka-peer3
+    ports:
+      - "8763:8763"
+    environment:
+      - SPRING_PROFILES_ACTIVE=peer3
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    volumes:
+      - eureka3-data:/app/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://eureka:123456@localhost:8763/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # API Gateway (Spring Cloud Gateway)
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_HOST=redis-server
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=redis123
+      - JAVA_OPTS=-Xmx512m -Xms256m
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
+    depends_on:
+      - redis
+      - eureka-peer1
+      - eureka-peer2
+      - eureka-peer3
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # KMS Service
+  kms-service:
+    build:
+      context: ./kms
+      dockerfile: Dockerfile
+    container_name: kms-service
+    ports:
+      - "8083:8083"
+    environment:
+      - JAVA_OPTS=-Xmx512m -Xms256m
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
+    depends_on:
+      - eureka-peer1
+      - eureka-peer2
+      - eureka-peer3
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Demo Service for testing
+  demo-service:
+    build:
+      context: ./demo-service
+      dockerfile: Dockerfile
+    container_name: demo-service
+    ports:
+      - "8084:8080"
+    environment:
+      - JAVA_OPTS=-Xmx512m -Xms256m
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
+    depends_on:
+      - eureka-peer1
+      - eureka-peer2
+      - eureka-peer3
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  microservices-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+
+volumes:
+  redis-data:
+  eureka1-data:
+  eureka2-data:
+  eureka3-data:

@@ -1,0 +1,59 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: eureka-server
+
+# Security configuration
+security:
+  user:
+    name: eureka
+    password: 123456
+
+# Eureka peer 1 configuration
+eureka:
+  instance:
+    hostname: eureka-peer1
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+    
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
+      
+  server:
+    enable-self-preservation: true
+    eviction-interval-timer-in-ms: 60000
+    renewal-percent-threshold: 0.85
+    peer-eureka-nodes-update-interval-ms: 600000
+    response-cache-auto-expiration-in-seconds: 180
+    response-cache-update-interval-ms: 30000
+
+# Management and monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+prometheus:
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Logging configuration
+logging:
+  level:
+    com.eureka: INFO
+    org.springframework.cloud.netflix.eureka: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+

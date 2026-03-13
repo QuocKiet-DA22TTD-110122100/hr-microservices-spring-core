@@ -1,0 +1,14 @@
+server:
+  port: 8081
+  address: 127.0.0.1
+
+spring:
+  application:
+    name: mock-iam-service
+
+# THÊM ĐOẠN NÀY VÀO
+app:
+  internal-secret: "your-very-secure-secret-key-2026"
+  jwt:
+    secret: ${JWT_SECRET:microservices-jwt-secret-key-2026-minimum-32chars}
+    expiration-ms: 86400000  # 24 hours

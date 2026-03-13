@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  # HAProxy Load Balancer as Gateway
+  eureka-gateway:
+    image: haproxy:2.8-alpine
+    container_name: eureka-gateway
+    ports:
+      - "8760:8760"  # Gateway port
+      - "8404:8404"  # HAProxy stats
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - eureka-peer1
+      - eureka-peer2
+      - eureka-peer3
+    networks:
+      - eureka-network
+    restart: unless-stopped
+
+  # Eureka Server Peer 1
+  eureka-peer1:
+    build:
+      context: ./eureka-server
+      dockerfile: dockerfile
+    container_name: eureka-peer1
+    hostname: eureka-peer1
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=peer1
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    volumes:
+      - eureka1-data:/app/data
+    networks:
+      - eureka-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://eureka:123456@localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Eureka Server Peer 2
+  eureka-peer2:
+    build:
+      context: ./eureka-server
+      dockerfile: dockerfile
+    container_name: eureka-peer2
+    hostname: eureka-peer2
+    ports:
+      - "8762:8762"
+    environment:
+      - SPRING_PROFILES_ACTIVE=peer2
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    volumes:
+      - eureka2-data:/app/data
+    networks:
+      - eureka-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://eureka:123456@localhost:8762/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Eureka Server Peer 3
+  eureka-peer3:
+    build:
+      context: ./eureka-server
+      dockerfile: dockerfile
+    container_name: eureka-peer3
+    hostname: eureka-peer3
+    ports:
+      - "8763:8763"
+    environment:
+      - SPRING_PROFILES_ACTIVE=peer3
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    volumes:
+      - eureka3-data:/app/data
+    networks:
+      - eureka-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://eureka:123456@localhost:8763/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Demo Service for testing
+  demo-service:
+    build:
+      context: ./demo-service
+      dockerfile: Dockerfile
+    container_name: demo-service
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-gateway:8760/eureka/
+      - SPRING_APPLICATION_NAME=demo-service
+    depends_on:
+      - eureka-gateway
+    networks:
+      - eureka-network
+    restart: unless-stopped
+
+networks:
+  eureka-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  eureka1-data:
+  eureka2-data:
+  eureka3-data:
