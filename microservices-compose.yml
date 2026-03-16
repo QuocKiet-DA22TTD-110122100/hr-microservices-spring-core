@@ -115,6 +115,33 @@ services:
       retries: 3
       start_period: 60s
 
+  # FIX: Thêm Mock IAM Service để xử lý authentication endpoints
+  # Service này sẽ handle các requests đến /iam/auth/* và /iam/user/*
+  mock-iam-service:
+    build:
+      context: ./mock-service
+      dockerfile: Dockerfile
+    container_name: mock-iam-service
+    ports:
+      - "8081:8081"
+    environment:
+      - JAVA_OPTS=-Xmx512m -Xms256m
+      - JWT_SECRET=microservices-jwt-secret-key-2026-minimum-32chars
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
+    depends_on:
+      - eureka-peer1
+      - eureka-peer2
+      - eureka-peer3
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
   # KMS Service
   kms-service:
     build:
@@ -147,7 +174,7 @@ services:
       dockerfile: Dockerfile
     container_name: demo-service
     ports:
-      - "8084:8080"
+      - "8084:8082"
     environment:
       - JAVA_OPTS=-Xmx512m -Xms256m
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/

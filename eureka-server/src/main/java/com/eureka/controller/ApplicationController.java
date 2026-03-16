@@ -4,9 +4,11 @@ import com.eureka.model.InstanceInfo;
 import com.eureka.model.InstanceStatus;
 import com.eureka.registry.ServiceRegistry;
 import com.eureka.validation.RegistrationValidator;
+import com.eureka.peer.PeerClient; // Added by qodo: import peer replication client
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * REST API Controller for service registration operations.
@@ -29,14 +32,20 @@ public class ApplicationController {
     
     private static final Logger logger = LoggerFactory.getLogger(ApplicationController.class);
     
+    // Added by qodo: replication header constant
+    private static final String REPLICATION_HEADER = "X-Replication";
+    
     private final ServiceRegistry serviceRegistry;
     private final RegistrationValidator registrationValidator;
+    private final PeerClient peerClient; // Added by qodo: peer replication client
     
     @Autowired
     public ApplicationController(ServiceRegistry serviceRegistry, 
-                               RegistrationValidator registrationValidator) {
-        this.serviceRegistry = serviceRegistry;
-        this.registrationValidator = registrationValidator;
+    RegistrationValidator registrationValidator,
+    PeerClient peerClient) { // Added by qodo
+    this.serviceRegistry = serviceRegistry;
+    this.registrationValidator = registrationValidator;
+    this.peerClient = peerClient; // Added by qodo
     }
     
     /**
@@ -51,6 +60,7 @@ public class ApplicationController {
     @PostMapping("/{appName}")
     public ResponseEntity<?> registerInstance(
             @PathVariable String appName,
+            @RequestHeader HttpHeaders headers, // Added by qodo: to read replication header
             @Valid @RequestBody InstanceWrapper instanceWrapper) {
         
         logger.info("Received registration request for application: {}", appName);
@@ -79,11 +89,24 @@ public class ApplicationController {
                     validationResult.getErrors());
             }
             
-            // Register the instance
-            serviceRegistry.register(instance);
+            // Added by qodo: detect replication to avoid loops
+            boolean isReplication = Optional.ofNullable(headers.getFirst(REPLICATION_HEADER))
+            .map(v -> v.equalsIgnoreCase("true")).orElse(false);
             
-            logger.info("Successfully registered instance {}/{}", 
-                       appName, instance.getInstanceId());
+            // Register the instance with replication flag
+            serviceRegistry.register(instance, instance.getLeaseInfo().getDurationInSecs(), isReplication);
+            
+            logger.info("Successfully registered instance {}/{}", appName, instance.getInstanceId());
+            
+            // Added by qodo: replicate to peers when this is not a replication request
+            if (!isReplication) {
+                try {
+                    // Use PeerClient to propagate to peers
+                    peerClient.replicateRegister(appName, new InstanceWrapper(instance));
+                } catch (Exception ex) {
+                    logger.warn("Peer replication (REGISTER) failed for {}/{}: {}", appName, instance.getInstanceId(), ex.getMessage());
+                }
+            }
             
             return ResponseEntity.noContent().build();
             
@@ -110,6 +133,7 @@ public class ApplicationController {
     public ResponseEntity<?> sendHeartbeat(
             @PathVariable String appName,
             @PathVariable String instanceId,
+            @RequestHeader HttpHeaders headers, // Added by qodo
             @RequestParam(value = "status", required = false) String status,
             @RequestParam(value = "lastDirtyTimestamp", required = false) String lastDirtyTimestamp) {
         
@@ -124,8 +148,12 @@ public class ApplicationController {
                     "Instance " + instanceId + " not found for application " + appName);
             }
             
-            // Renew the lease
-            boolean renewed = serviceRegistry.renew(appName, instanceId);
+            // Added by qodo: detect replication flag
+            boolean isReplication = Optional.ofNullable(headers.getFirst(REPLICATION_HEADER))
+                    .map(v -> v.equalsIgnoreCase("true")).orElse(false);
+            
+            // Renew the lease with replication flag
+            boolean renewed = serviceRegistry.renew(appName, instanceId, isReplication);
             
             if (!renewed) {
                 logger.warn("Failed to renew lease for {}/{}", appName, instanceId);
@@ -139,7 +167,7 @@ public class ApplicationController {
                 try {
                     InstanceStatus newStatus = InstanceStatus.valueOf(status.toUpperCase());
                     boolean updated = serviceRegistry.updateStatus(appName, instanceId, newStatus, 
-                                                                 lastDirtyTimestamp, false);
+                                                                 lastDirtyTimestamp, isReplication);
                     if (!updated) {
                         logger.warn("Failed to update status for {}/{} to {}", appName, instanceId, status);
                     }
@@ -152,6 +180,15 @@ public class ApplicationController {
             }
             
             logger.debug("Successfully processed heartbeat for {}/{}", appName, instanceId);
+
+            // Added by qodo: replicate to peers when not replication request
+            if (!isReplication) {
+                try {
+                    peerClient.replicateRenew(appName, instanceId, status, lastDirtyTimestamp);
+                } catch (Exception ex) {
+                    logger.warn("Peer replication (RENEW) failed for {}/{}: {}", appName, instanceId, ex.getMessage());
+                }
+            }
             return ResponseEntity.ok().build();
             
         } catch (Exception e) {
@@ -174,7 +211,8 @@ public class ApplicationController {
     @DeleteMapping("/{appName}/{instanceId}")
     public ResponseEntity<?> deregisterInstance(
             @PathVariable String appName,
-            @PathVariable String instanceId) {
+            @PathVariable String instanceId,
+            @RequestHeader HttpHeaders headers) { // Added by qodo
         
         logger.info("Received deregistration request for {}/{}", appName, instanceId);
         
@@ -187,8 +225,12 @@ public class ApplicationController {
                     "Instance " + instanceId + " not found for application " + appName);
             }
             
-            // Deregister the instance
-            boolean deregistered = serviceRegistry.deregister(appName, instanceId);
+            // Added by qodo: detect replication flag
+            boolean isReplication = Optional.ofNullable(headers.getFirst(REPLICATION_HEADER))
+                    .map(v -> v.equalsIgnoreCase("true")).orElse(false);
+            
+            // Deregister the instance with replication flag
+            boolean deregistered = serviceRegistry.deregister(appName, instanceId, isReplication);
             
             if (!deregistered) {
                 logger.warn("Failed to deregister instance {}/{}", appName, instanceId);
@@ -198,6 +240,15 @@ public class ApplicationController {
             }
             
             logger.info("Successfully deregistered instance {}/{}", appName, instanceId);
+
+            // Added by qodo: replicate to peers when not replication request
+            if (!isReplication) {
+                try {
+                    peerClient.replicateDeregister(appName, instanceId);
+                } catch (Exception ex) {
+                    logger.warn("Peer replication (DEREGISTER) failed for {}/{}: {}", appName, instanceId, ex.getMessage());
+                }
+            }
             return ResponseEntity.ok().build();
             
         } catch (Exception e) {

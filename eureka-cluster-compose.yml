@@ -97,7 +97,7 @@ services:
       dockerfile: Dockerfile
     container_name: demo-service
     ports:
-      - "8080:8080"
+      - "8082:8082"
     environment:
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-gateway:8760/eureka/
       - SPRING_APPLICATION_NAME=demo-service
@@ -106,6 +106,66 @@ services:
     networks:
       - eureka-network
     restart: unless-stopped
+
+  # Mock Service (provides /api/v1/auth/register)
+  mock-service:
+
+      build:
+        context: ./mock-service
+        dockerfile: Dockerfile
+      container_name: mock-service
+      ports:
+        - "8081:8081"  # host 8081 -> container 8081 (match mock-service server.port)
+      environment:
+        - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-gateway:8760/eureka/
+        - SPRING_APPLICATION_NAME=mock-service
+      depends_on:
+        - eureka-gateway
+      networks:
+        - eureka-network
+      restart: unless-stopped
+
+  # Redis for API Gateway
+  redis-server:
+    image: redis:7-alpine
+    container_name: eureka-redis-server
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass redis123
+    volumes:
+      - redis-data:/data
+    networks:
+      - eureka-network
+    restart: unless-stopped
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_HOST=redis-server
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=redis123
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_APPLICATION_NAME=api-gateway
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-gateway:8760/eureka/
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    depends_on:
+      - redis-server
+      - eureka-gateway
+    networks:
+      - eureka-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 networks:
   eureka-network:
@@ -118,3 +178,5 @@ volumes:
   eureka1-data:
   eureka2-data:
   eureka3-data:
+  redis-data:
+

@@ -1,10 +1,28 @@
 server:
   port: 8081
-  address: 127.0.0.1
+  address: 0.0.0.0  # FIX: Thay đổi từ 127.0.0.1 thành 0.0.0.0 để có thể access từ Docker containers
 
 spring:
   application:
     name: mock-iam-service
+
+# FIX: Thêm Eureka client configuration để service có thể register với Eureka
+eureka:
+  client:
+    enabled: true
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/}
+    registry-fetch-interval-seconds: 30
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+    metadata-map:
+      zone: us-east-1a
+      version: 1.0.0
+      description: Mock IAM Service for authentication
 
 # THÊM ĐOẠN NÀY VÀO
 app:

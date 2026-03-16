@@ -1,0 +1,476 @@
+{
+	"info": {
+		"_postman_id": "auth-register-fix-test",
+		"name": "Auth Register Fix Test Collection",
+		"description": "Test collection để verify fix cho lỗi 404 NOT_FOUND của endpoint /api/v1/auth/register",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Bug Condition Tests",
+			"description": "Tests để verify bug condition và expected behavior",
+			"item": [
+				{
+					"name": "1. Test /api/v1/auth/register (NEW ENDPOINT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// FIX: Property test cho bug condition - API V1 Auth Register Route",
+									"// Tag: Feature: auth-register-endpoint-404-fix, Property 1: Bug condition validation",
+									"",
+									"pm.test('Status code should be 200 (not 404)', function () {",
+									"    pm.response.to.have.status(200);",
+									"    // Nếu vẫn 404, bug chưa được fix",
+									"});",
+									"",
+									"pm.test('Response should be JSON (not static resource error)', function () {",
+									"    pm.response.to.be.json;",
+									"    // Nếu trả về text 'No static resource', bug chưa được fix",
+									"});",
+									"",
+									"pm.test('Response should contain authentication data', function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.have.property('message');",
+									"    pm.expect(responseJson).to.have.property('accessToken');",
+									"    pm.expect(responseJson).to.have.property('user');",
+									"});",
+									"",
+									"pm.test('JWT token should be generated', function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson.accessToken).to.be.a('string');",
+									"    pm.expect(responseJson.accessToken.length).to.be.greaterThan(10);",
+									"});",
+									"",
+									"pm.test('Response time should be under 500ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(500);",
+									"});",
+									"",
+									"// Store token for subsequent tests",
+									"if (pm.response.code === 200) {",
+									"    const responseJson = pm.response.json();",
+									"    pm.environment.set('auth_token', responseJson.accessToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser_api_v1\",\n    \"password\": \"password123\",\n    \"email\": \"testuser@example.com\",\n    \"fullName\": \"Test User API V1\"\n}"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/api/v1/auth/register",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Test endpoint /api/v1/auth/register - should route to /iam/auth/register on mock-service"
+					}
+				},
+				{
+					"name": "2. Test /api/v1/auth/login (NEW ENDPOINT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response should contain login data', function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.have.property('message');",
+									"    pm.expect(responseJson).to.have.property('accessToken');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser_api_v1\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/api/v1/auth/login",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Preservation Tests",
+			"description": "Tests để verify existing endpoints vẫn hoạt động bình thường",
+			"item": [
+				{
+					"name": "3. Test /iam/auth/register (EXISTING)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// FIX: Property test cho preservation - Existing Authentication Routes",
+									"// Tag: Feature: auth-register-endpoint-404-fix, Property 2: Preservation validation",
+									"",
+									"pm.test('Existing /iam/auth/register should still work', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response should contain expected data', function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.have.property('message');",
+									"    pm.expect(responseJson).to.have.property('accessToken');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser_iam_auth\",\n    \"password\": \"password123\",\n    \"email\": \"testuser_iam@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/iam/auth/register",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"iam",
+								"auth",
+								"register"
+							]
+						}
+					}
+				},
+				{
+					"name": "4. Test /iam/user/register (EXISTING)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Existing /iam/user/register should still work', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response should contain expected data', function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.have.property('message');",
+									"    pm.expect(responseJson).to.have.property('accessToken');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser_iam_user\",\n    \"password\": \"password123\",\n    \"email\": \"testuser_iam_user@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/iam/user/register",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"iam",
+								"user",
+								"register"
+							]
+						}
+					}
+				},
+				{
+					"name": "5. Test /demo/hello (OTHER SERVICE)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Demo service should still work', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Demo service response should be correct', function () {",
+									"    pm.expect(pm.response.text()).to.include('Hello');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{api_gateway_url}}/demo/hello",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"demo",
+								"hello"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Error Handling Tests",
+			"description": "Tests để verify error handling hoạt động đúng",
+			"item": [
+				{
+					"name": "6. Test /api/v1/auth/register with invalid data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Should handle invalid data gracefully', function () {",
+									"    // Should not return 404 anymore, even with invalid data",
+									"    pm.expect(pm.response.code).to.not.equal(404);",
+									"});",
+									"",
+									"pm.test('Response should be JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"invalid\": \"data\"\n}"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/api/v1/auth/register",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"register"
+							]
+						}
+					}
+				},
+				{
+					"name": "7. Test /api/v1/auth/register with empty body",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Should not return 404 with empty body', function () {",
+									"    pm.expect(pm.response.code).to.not.equal(404);",
+									"});",
+									"",
+									"pm.test('Response should be JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/api/v1/auth/register",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"register"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Service Health Tests",
+			"description": "Tests để verify services đang chạy và healthy",
+			"item": [
+				{
+					"name": "8. API Gateway Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('API Gateway should be healthy', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Health check should return status', function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.have.property('status');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{api_gateway_url}}/actuator/health",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"actuator",
+								"health"
+							]
+						}
+					}
+				},
+				{
+					"name": "9. Mock IAM Service Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Mock IAM Service should be healthy', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{mock_service_url}}/actuator/health",
+							"host": [
+								"{{mock_service_url}}"
+							],
+							"path": [
+								"actuator",
+								"health"
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global pre-request script",
+					"console.log('Running test for: ' + pm.info.requestName);"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test script",
+					"pm.test('Response time should be reasonable', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "api_gateway_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "mock_service_url", 
+			"value": "http://localhost:8081",
+			"type": "string"
+		}
+	]
+}

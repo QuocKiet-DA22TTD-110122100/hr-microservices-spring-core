@@ -6,6 +6,11 @@ server:
     whitelabel:
       enabled: false
 
+# JWT Configuration - must be at root level
+app:
+  jwt:
+    secret: ${JWT_SECRET:microservices-jwt-secret-key-2026-minimum-32chars}
+
 spring:
   application:
     name: api-gateway
@@ -63,9 +68,9 @@ spring:
           metadata:
             requires-hmac: false
 
-        # IAM Auth Route (existing)
+        # IAM Auth Route (existing) - Enhanced với container networking
         - id: iam-auth-route
-          uri: http://localhost:8081
+          uri: ${MOCK_IAM_SERVICE_URL:http://mock-iam-service:8081}
           predicates:
             - Path=/iam/auth/**
           metadata:
@@ -73,16 +78,25 @@ spring:
 
         # Login: cần HMAC, KHÔNG cần JWT (đang xin token)
         - id: iam-user-login-route
-          uri: http://localhost:8081
+          uri: ${MOCK_IAM_SERVICE_URL:http://mock-iam-service:8081}
           predicates:
             - Path=/iam/user/login
           metadata:
             requires-hmac: true
             requires-jwt: false
 
+        # API V1 Auth Routes - Direct to mock-service với container networking
+        - id: api-v1-auth-route
+          uri: ${MOCK_IAM_SERVICE_URL:http://mock-iam-service:8081}
+          predicates:
+            - Path=/api/v1/auth/**
+          metadata:
+            requires-hmac: false
+            requires-jwt: false
+
         # Register: cần HMAC, KHÔNG cần JWT
         - id: iam-user-register-route
-          uri: http://localhost:8081
+          uri: ${MOCK_IAM_SERVICE_URL:http://mock-iam-service:8081}
           predicates:
             - Path=/iam/user/register
           metadata:
@@ -91,7 +105,7 @@ spring:
 
         # Các endpoint user khác: cần cả HMAC lẫn JWT
         - id: iam-user-route
-          uri: http://localhost:8081
+          uri: ${MOCK_IAM_SERVICE_URL:http://mock-iam-service:8081}
           predicates:
             - Path=/iam/user/**
           metadata:
@@ -109,6 +123,24 @@ spring:
   data:
     redis:
       host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:redis123}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+---
+# Docker Profile Configuration
+spring:
+  config:
+    activate:
+      on-profile: docker
+  data:
+    redis:
+      host: ${REDIS_HOST:redis-server}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:redis123}
 

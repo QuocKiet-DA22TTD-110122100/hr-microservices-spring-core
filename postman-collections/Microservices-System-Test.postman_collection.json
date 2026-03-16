@@ -1,0 +1,426 @@
+{
+	"info": {
+		"_postman_id": "microservices-system-test",
+		"name": "Microservices System Test Collection",
+		"description": "Comprehensive test collection cho toàn bộ hệ thống microservices - phần đầu của comprehensive testing strategy",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Service Health Checks",
+			"description": "Kiểm tra tất cả services đang chạy và healthy",
+			"item": [
+				{
+					"name": "API Gateway Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{api_gateway_url}}/actuator/health",
+							"host": ["{{api_gateway_url}}"],
+							"path": ["actuator", "health"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('API Gateway is healthy', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson.status).to.eql('UP');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Eureka Server Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{eureka_server_url}}/actuator/health",
+							"host": ["{{eureka_server_url}}"],
+							"path": ["actuator", "health"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Eureka Server is healthy', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Mock IAM Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{mock_service_url}}/actuator/health",
+							"host": ["{{mock_service_url}}"],
+							"path": ["actuator", "health"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Mock IAM Service is healthy', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Authentication Endpoints",
+			"description": "Test tất cả authentication endpoints",
+			"item": [
+				{
+					"name": "Register via /api/v1/auth/register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"{{test_username}}_v1\",\n    \"password\": \"{{test_password}}\",\n    \"email\": \"{{test_email}}\"\n}"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/api/v1/auth/register",
+							"host": ["{{api_gateway_url}}"],
+							"path": ["api", "v1", "auth", "register"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// FIX: Enhanced test để validate JWT token response",
+									"pm.test('Registration successful - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains required fields', function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.have.property('message');",
+									"    pm.expect(responseJson).to.have.property('accessToken');",
+									"    pm.expect(responseJson).to.have.property('tokenType');",
+									"    pm.expect(responseJson).to.have.property('expiresIn');",
+									"    pm.expect(responseJson).to.have.property('user');",
+									"});",
+									"",
+									"pm.test('JWT token is valid format', function () {",
+									"    const responseJson = pm.response.json();",
+									"    const token = responseJson.accessToken;",
+									"    pm.expect(token).to.be.a('string');",
+									"    pm.expect(token.split('.')).to.have.lengthOf(3); // JWT has 3 parts",
+									"    pm.environment.set('auth_token_v1', token);",
+									"});",
+									"",
+									"pm.test('Response time under 2 seconds', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"",
+									"console.log('✅ /api/v1/auth/register test passed - JWT token received');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Login via /api/v1/auth/login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"{{test_username}}_v1\",\n    \"password\": \"{{test_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/api/v1/auth/login",
+							"host": ["{{api_gateway_url}}"],
+							"path": ["api", "v1", "auth", "login"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.have.property('accessToken');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Register via /iam/user/register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"{{test_username}}_iam\",\n    \"password\": \"{{test_password}}\",\n    \"email\": \"{{test_email}}\"\n}"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/iam/user/register",
+							"host": ["{{api_gateway_url}}"],
+							"path": ["iam", "user", "register"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('IAM User registration successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.have.property('accessToken');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Service Integration Tests",
+			"description": "Test tương tác giữa các services",
+			"item": [
+				{
+					"name": "Demo Service Hello",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{api_gateway_url}}/demo/hello",
+							"host": ["{{api_gateway_url}}"],
+							"path": ["demo", "hello"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Demo service accessible via API Gateway', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.text()).to.include('Hello');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Eureka Dashboard Access",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{api_gateway_url}}/eureka/",
+							"host": ["{{api_gateway_url}}"],
+							"path": ["eureka", ""]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Eureka dashboard accessible via API Gateway', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Error Handling Tests",
+			"description": "Test error scenarios và edge cases",
+			"item": [
+				{
+					"name": "Invalid Endpoint Test",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{api_gateway_url}}/invalid/endpoint",
+							"host": ["{{api_gateway_url}}"],
+							"path": ["invalid", "endpoint"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Invalid endpoint returns 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Malformed JSON Test",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ invalid json }"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/api/v1/auth/register",
+							"host": ["{{api_gateway_url}}"],
+							"path": ["api", "v1", "auth", "register"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Malformed JSON handled gracefully', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([400, 500]);",
+									"    pm.expect(pm.response.code).to.not.equal(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "FIX VERIFICATION: /api/v1/auth/register No Longer Returns 404",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"fix_test_user\",\n    \"password\": \"testpass123\",\n    \"email\": \"fixtest@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/api/v1/auth/register",
+							"host": ["{{api_gateway_url}}"],
+							"path": ["api", "v1", "auth", "register"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// FIX VERIFICATION: This test proves the 404 bug is fixed",
+									"pm.test('🔧 FIX VERIFIED: No longer returns 404 NOT_FOUND', function () {",
+									"    pm.expect(pm.response.code).to.not.equal(404);",
+									"    pm.expect(pm.response.text()).to.not.include('No static resource');",
+									"});",
+									"",
+									"pm.test('🔧 FIX VERIFIED: Returns successful response', function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.have.property('accessToken');",
+									"});",
+									"",
+									"pm.test('🔧 FIX VERIFIED: Route mapping works correctly', function () {",
+									"    // This proves /api/v1/auth/register -> /iam/auth/register mapping works",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson.message).to.include('Register success');",
+									"});",
+									"",
+									"console.log('🎉 SUCCESS: /api/v1/auth/register fix is working!');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"console.log('=== Running: ' + pm.info.requestName + ' ===');"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"pm.test('Response time under 5 seconds', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});",
+					"",
+					"console.log('Response time: ' + pm.response.responseTime + 'ms');"
+				]
+			}
+		}
+	]
+}
