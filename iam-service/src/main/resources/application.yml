@@ -1,0 +1,46 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: iam-service
+  datasource:
+    url: ${DB_URL:jdbc:h2:mem:iamdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+    driver-class-name: ${DB_DRIVER:org.h2.Driver}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+security:
+  jwt:
+    issuer: iam-service
+    access-token-minutes: 15
+    refresh-token-days: 7
+    private-key-base64: ${JWT_PRIVATE_KEY_BASE64:}
+    public-key-base64: ${JWT_PUBLIC_KEY_BASE64:}
+  aes:
+    key-base64: ${AES_KEY_BASE64:}
+  password:
+    expiry-days: 90
+  lock:
+    user-max-attempts: 5
+    user-lock-minutes: 30
+    ip-max-attempts: 10
+    ip-lock-minutes: 60
+    ip-rate-limit-per-second: 100
+  internal-hmac:
+    enabled: true
+    clock-skew-seconds: 300
+    # Format: serviceId:secret,service2:secret2
+    service-secrets: ${INTERNAL_SERVICE_SECRETS:gateway-service:change-me,hr-service:change-me-too}
+
+logging:
+  level:
+    root: INFO
