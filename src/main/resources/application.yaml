@@ -1,0 +1,96 @@
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+    whitelabel:
+      enabled: false
+
+spring:
+  threads:
+    virtual:
+      enabled: true
+  cloud:
+    gateway:
+      # Chuyển vào sâu hơn theo khuyến nghị của IntelliJ/Spring
+      server:
+        webflux:
+          # Vị trí mới cho default-filters
+          default-filters:
+            - name: AddRequestHeader
+              args:
+                name: X-Internal-Secret
+                value: "your-very-secure-secret-key-2026"
+            - name: DedupeResponseHeader
+              args:
+                strategy: RETAIN_FIRST
+                headers:
+                  - Access-Control-Allow-Origin
+                  - Access-Control-Allow-Credentials
+
+          # Vị trí mới cho routes (Để hết báo gạch chân đỏ)
+          routes:
+            - id: iam-auth-route
+              uri: http://localhost:8081
+              predicates:
+                - Path=/iam/auth/**
+              metadata:
+                requires-hmac: false
+
+            # Login: cần HMAC, KHÔNG cần JWT (đang xin token)
+            - id: iam-user-login-route
+              uri: http://localhost:8081
+              predicates:
+                - Path=/iam/user/login
+              metadata:
+                requires-hmac: true
+                requires-jwt: false
+
+            # Register: cần HMAC, KHÔNG cần JWT
+            - id: iam-user-register-route
+              uri: http://localhost:8081
+              predicates:
+                - Path=/iam/user/register
+              metadata:
+                requires-hmac: true
+                requires-jwt: false
+
+            # Các endpoint user khác: cần cả HMAC lẫn JWT
+            - id: iam-user-route
+              uri: http://localhost:8081
+              predicates:
+                - Path=/iam/user/**
+              metadata:
+                requires-hmac: true
+                requires-jwt: true
+
+            - id: hr-service-route
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/hr/**
+              metadata:
+                requires-hmac: true
+                requires-jwt: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:redis123}
+  http:
+    codecs:
+      max-in-memory-size: 10MB
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:microservices-jwt-secret-key-2026-minimum-32chars}
+
+eureka:
+  client:
+    enabled: false
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    reactor.netty.http.server: WARN
+    com.microservice.apigateway: INFO
