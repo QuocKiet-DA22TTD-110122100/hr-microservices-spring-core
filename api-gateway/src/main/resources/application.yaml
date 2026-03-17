@@ -10,7 +10,15 @@ server:
 app:
   jwt:
     secret: ${JWT_SECRET:microservices-jwt-secret-key-2026-minimum-32chars}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
 
+  endpoint:
+    gateway:
+      enabled: true
 spring:
   application:
     name: api-gateway
@@ -113,9 +121,11 @@ spring:
             requires-jwt: true
 
         - id: hr-service-route
-          uri: http://localhost:8082
+          uri: lb://hr-service
           predicates:
             - Path=/api/hr/**
+          filters:
+            - StripPrefix=2
           metadata:
             requires-hmac: true
             requires-jwt: true

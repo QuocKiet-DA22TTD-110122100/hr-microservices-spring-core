@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   # Redis for API Gateway
@@ -6,10 +6,28 @@ services:
     image: redis:7-alpine
     container_name: redis-server
     ports:
-      - "6379:6379"
+      - "6379"
     command: redis-server --requirepass redis123
     volumes:
       - redis-data:/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  # API Gateway
+  # HAProxy Load Balancer as Gateway
+  haproxy:
+    image: haproxy:2.8-alpine
+    container_name: haproxy-lb
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./certs/eureka.pem:/etc/ssl/certs/eureka.pem:ro
+    ports:
+      - "80:80"  # Gateway port
+      - "8404:8404"  # HAProxy stats
+    depends_on:
+      - eureka-peer1
+      - eureka-peer2
+      - eureka-peer3
     networks:
       - microservices-network
     restart: unless-stopped
@@ -98,8 +116,10 @@ services:
       - REDIS_HOST=redis-server
       - REDIS_PORT=6379
       - REDIS_PASSWORD=redis123
+      - SPRING_PROFILES_ACTIVE=docker
       - JAVA_OPTS=-Xmx512m -Xms256m
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
     depends_on:
       - redis
       - eureka-peer1
@@ -128,6 +148,7 @@ services:
       - JAVA_OPTS=-Xmx512m -Xms256m
       - JWT_SECRET=microservices-jwt-secret-key-2026-minimum-32chars
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
     depends_on:
       - eureka-peer1
       - eureka-peer2
@@ -153,6 +174,7 @@ services:
     environment:
       - JAVA_OPTS=-Xmx512m -Xms256m
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
     depends_on:
       - eureka-peer1
       - eureka-peer2
@@ -178,6 +200,7 @@ services:
     environment:
       - JAVA_OPTS=-Xmx512m -Xms256m
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
     depends_on:
       - eureka-peer1
       - eureka-peer2
@@ -192,6 +215,60 @@ services:
       retries: 3
       start_period: 30s
 
+# hr-service:
+#   build:
+
+  # MySQL for HR Service
+  hr-mysql:
+    image: mysql:8.0
+    container_name: hr-mysql
+    ports:
+      - "3307:3306"  # Host 3307 -> container 3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: hr_db
+    volumes:
+      - hr-mysql-data:/var/lib/mysql
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # HR Service
+  hr-service:
+    build:
+      context: ./hr-service
+      dockerfile: Dockerfile
+    container_name: hr-service
+    ports:
+      - "8085:8082"
+    environment:
+      - SPRING_APPLICATION_NAME=hr-service
+      - SPRING_DATASOURCE_URL=jdbc:mysql://hr-mysql:3306/hr_db?createDatabaseIfNotExist=true
+      - EUREKA_CLIENT_ENABLED=true
+      - EUREKA_REGISTER_WITH_EUREKA=true
+      - EUREKA_FETCH_REGISTRY=true
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    depends_on:
+      - hr-mysql
+      - eureka-peer1
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
 networks:
   microservices-network:
     driver: bridge
@@ -204,3 +281,4 @@ volumes:
   eureka1-data:
   eureka2-data:
   eureka3-data:
+  hr-mysql-data:

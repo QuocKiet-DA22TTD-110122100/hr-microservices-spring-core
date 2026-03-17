@@ -13,7 +13,7 @@ public class DemoController {
     @Value("${spring.application.name:demo-service}")
     private String applicationName;
 
-    @Value("${server.port:8080}")
+    @Value("${server.port:8082}")
     private String serverPort;
 
     @GetMapping("/")

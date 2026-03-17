@@ -198,8 +198,8 @@ public abstract class AbstractInstanceRegistry implements ServiceRegistry {
     @Override
     public boolean renew(String appName, String instanceId, boolean isReplication) {
         // Tìm lease của instance
-        Map<String, Lease<InstanceInfo>> gMap = registry.get(appName);
-        Lease<InstanceInfo> leaseToRenew = null;
+        Map<String, Lease<InstanceInfo>> gMap = registry.get(appName);// Lấy map của application
+        Lease<InstanceInfo> leaseToRenew = null;// Lấy lease của instance từ map
         
         if (gMap != null) {
             leaseToRenew = gMap.get(instanceId);

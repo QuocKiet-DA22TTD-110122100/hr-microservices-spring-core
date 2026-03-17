@@ -350,7 +350,7 @@ public class DiscoveryController {
     }
     
     /**
-     * Response wrapper for a single instance.
+     * instance response wrapper for a single instance.
      */
     public static class InstanceResponse {
         private InstanceInfo instance;

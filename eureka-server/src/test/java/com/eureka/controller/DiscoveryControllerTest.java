@@ -1,6 +1,6 @@
 package com.eureka.controller;
 
-import com._2.example.eureka_server.EurekaServerApplication;
+import com.sting.example.eureka_server.EurekaServerApplication;
 import com.eureka.config.TestSecurityConfig;
 import com.eureka.model.InstanceInfo;
 import com.eureka.model.InstanceStatus;

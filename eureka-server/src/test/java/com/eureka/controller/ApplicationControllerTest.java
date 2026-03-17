@@ -7,7 +7,7 @@ import com.eureka.model.InstanceStatus;
 import com.eureka.model.LeaseInfo;
 import com.eureka.registry.ServiceRegistry;
 import com.eureka.validation.RegistrationValidator;
-import com._2.example.eureka_server.EurekaServerApplication;
+import com.sting.example.eureka_server.EurekaServerApplication;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

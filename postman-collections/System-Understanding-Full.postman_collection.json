@@ -1,0 +1,379 @@
+{
+  "info": {
+    "name": "System Understanding Full Flow",
+    "_postman_id": "f7a5f8a2-1b89-4f58-b190-f06ab2f8a6a1",
+    "description": "End-to-end collection to understand Gateway -> Security (HMAC/JWT) -> Eureka discovery -> HR routing.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Health Checks",
+      "item": [
+        {
+          "name": "Gateway Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{BASE_URL}}/actuator/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "HR Health (Direct)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{HR_DIRECT_URL}}/actuator/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Public IAM (No HMAC, No JWT)",
+      "item": [
+        {
+          "name": "POST /iam/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{BASE_URL}}/iam/auth/login"
+          }
+        },
+        {
+          "name": "POST /iam/auth/register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newuser\",\n  \"email\": \"newuser@example.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": "{{BASE_URL}}/iam/auth/register"
+          }
+        },
+        {
+          "name": "GET /iam/auth/profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{BASE_URL}}/iam/auth/profile"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Login to Get JWT (HMAC required)",
+      "item": [
+        {
+          "name": "POST /iam/user/login",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const accessKeyId = pm.environment.get('ACCESS_KEY_ID') || 'client-app-001';",
+                  "const secretKey = pm.environment.get('SECRET_KEY') || 'secret-key-12345';",
+                  "const timestamp = Math.floor(Date.now() / 1000).toString();",
+                  "const nonce = Math.random().toString(36).substring(2) + Date.now().toString(36);",
+                  "const method = pm.request.method.toUpperCase();",
+                  "const pathSegments = pm.request.url.getPath();",
+                  "const path = '/' + (Array.isArray(pathSegments) ? pathSegments.join('/') : String(pathSegments || '').replace(/^\\/+/,''));",
+                  "const rawBody = pm.request.body ? pm.request.body.raw : '';",
+                  "let bodyHash = '';",
+                  "if (rawBody && rawBody.trim() !== '') {",
+                  "  bodyHash = crypto.createHash('sha256').update(rawBody, 'utf8').digest('hex');",
+                  "}",
+                  "const canonical = [method, path, timestamp, nonce, bodyHash].join('\\n');",
+                  "const signature = crypto.createHmac('sha256', secretKey).update(canonical, 'utf8').digest('base64');",
+                  "['X-Access-Key-Id','X-Signature','X-Timestamp','X-Nonce','Authorization'].forEach(h => pm.request.headers.remove(h));",
+                  "pm.request.headers.add({ key: 'X-Access-Key-Id', value: accessKeyId });",
+                  "pm.request.headers.add({ key: 'X-Signature', value: signature });",
+                  "pm.request.headers.add({ key: 'X-Timestamp', value: timestamp });",
+                  "pm.request.headers.add({ key: 'X-Nonce', value: nonce });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Has accessToken', function () {",
+                  "  pm.expect(json).to.have.property('accessToken');",
+                  "});",
+                  "pm.environment.set('JWT_TOKEN', json.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{BASE_URL}}/iam/user/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - JWT + HMAC Protected",
+      "item": [
+        {
+          "name": "GET /iam/user/profile",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const accessKeyId = pm.environment.get('ACCESS_KEY_ID') || 'client-app-001';",
+                  "const secretKey = pm.environment.get('SECRET_KEY') || 'secret-key-12345';",
+                  "const timestamp = Math.floor(Date.now() / 1000).toString();",
+                  "const nonce = Math.random().toString(36).substring(2) + Date.now().toString(36);",
+                  "const method = pm.request.method.toUpperCase();",
+                  "const pathSegments = pm.request.url.getPath();",
+                  "const path = '/' + (Array.isArray(pathSegments) ? pathSegments.join('/') : String(pathSegments || '').replace(/^\\/+/,''));",
+                  "const canonical = [method, path, timestamp, nonce, ''].join('\\n');",
+                  "const signature = crypto.createHmac('sha256', secretKey).update(canonical, 'utf8').digest('base64');",
+                  "['X-Access-Key-Id','X-Signature','X-Timestamp','X-Nonce','Authorization'].forEach(h => pm.request.headers.remove(h));",
+                  "pm.request.headers.add({ key: 'X-Access-Key-Id', value: accessKeyId });",
+                  "pm.request.headers.add({ key: 'X-Signature', value: signature });",
+                  "pm.request.headers.add({ key: 'X-Timestamp', value: timestamp });",
+                  "pm.request.headers.add({ key: 'X-Nonce', value: nonce });",
+                  "let token = pm.environment.get('JWT_TOKEN');",
+                  "if (!token) {",
+                  "  const loginBodyObj = { username: 'admin', password: 'password123' };",
+                  "  const loginBody = JSON.stringify(loginBodyObj);",
+                  "  const loginTs = Math.floor(Date.now() / 1000).toString();",
+                  "  const loginNonce = Math.random().toString(36).substring(2) + Date.now().toString(36);",
+                  "  const loginBodyHash = crypto.createHash('sha256').update(loginBody, 'utf8').digest('hex');",
+                  "  const loginCanonical = ['POST', '/iam/user/login', loginTs, loginNonce, loginBodyHash].join('\\n');",
+                  "  const loginSignature = crypto.createHmac('sha256', secretKey).update(loginCanonical, 'utf8').digest('base64');",
+                  "  pm.sendRequest({",
+                  "    url: pm.environment.get('BASE_URL') + '/iam/user/login',",
+                  "    method: 'POST',",
+                  "    header: { 'Content-Type': 'application/json', 'X-Access-Key-Id': accessKeyId, 'X-Signature': loginSignature, 'X-Timestamp': loginTs, 'X-Nonce': loginNonce },",
+                  "    body: { mode: 'raw', raw: loginBody }",
+                  "  }, function (err, res) {",
+                  "    if (err || !res || res.code !== 200) { throw new Error('Auto login failed. Please run request 03 manually once.'); }",
+                  "    const j = res.json(); pm.environment.set('JWT_TOKEN', j.accessToken);",
+                  "  });",
+                  "  token = pm.environment.get('JWT_TOKEN');",
+                  "}",
+                  "pm.request.headers.add({ key: 'Authorization', value: 'Bearer ' + token });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{BASE_URL}}/iam/user/profile"
+          }
+        },
+        {
+          "name": "GET /api/hr/employees (via Gateway)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const accessKeyId = pm.environment.get('ACCESS_KEY_ID') || 'client-app-001';",
+                  "const secretKey = pm.environment.get('SECRET_KEY') || 'secret-key-12345';",
+                  "const timestamp = Math.floor(Date.now() / 1000).toString();",
+                  "const nonce = Math.random().toString(36).substring(2) + Date.now().toString(36);",
+                  "const method = pm.request.method.toUpperCase();",
+                  "const pathSegments = pm.request.url.getPath();",
+                  "const path = '/' + (Array.isArray(pathSegments) ? pathSegments.join('/') : String(pathSegments || '').replace(/^\\/+/,''));",
+                  "const canonical = [method, path, timestamp, nonce, ''].join('\\n');",
+                  "const signature = crypto.createHmac('sha256', secretKey).update(canonical, 'utf8').digest('base64');",
+                  "['X-Access-Key-Id','X-Signature','X-Timestamp','X-Nonce','Authorization'].forEach(h => pm.request.headers.remove(h));",
+                  "pm.request.headers.add({ key: 'X-Access-Key-Id', value: accessKeyId });",
+                  "pm.request.headers.add({ key: 'X-Signature', value: signature });",
+                  "pm.request.headers.add({ key: 'X-Timestamp', value: timestamp });",
+                  "pm.request.headers.add({ key: 'X-Nonce', value: nonce });",
+                  "let token = pm.environment.get('JWT_TOKEN');",
+                  "if (!token) {",
+                  "  const loginBodyObj = { username: 'admin', password: 'password123' };",
+                  "  const loginBody = JSON.stringify(loginBodyObj);",
+                  "  const loginTs = Math.floor(Date.now() / 1000).toString();",
+                  "  const loginNonce = Math.random().toString(36).substring(2) + Date.now().toString(36);",
+                  "  const loginBodyHash = crypto.createHash('sha256').update(loginBody, 'utf8').digest('hex');",
+                  "  const loginCanonical = ['POST', '/iam/user/login', loginTs, loginNonce, loginBodyHash].join('\\n');",
+                  "  const loginSignature = crypto.createHmac('sha256', secretKey).update(loginCanonical, 'utf8').digest('base64');",
+                  "  pm.sendRequest({",
+                  "    url: pm.environment.get('BASE_URL') + '/iam/user/login',",
+                  "    method: 'POST',",
+                  "    header: { 'Content-Type': 'application/json', 'X-Access-Key-Id': accessKeyId, 'X-Signature': loginSignature, 'X-Timestamp': loginTs, 'X-Nonce': loginNonce },",
+                  "    body: { mode: 'raw', raw: loginBody }",
+                  "  }, function (err, res) {",
+                  "    if (err || !res || res.code !== 200) { throw new Error('Auto login failed. Please run request 03 manually once.'); }",
+                  "    const j = res.json(); pm.environment.set('JWT_TOKEN', j.accessToken);",
+                  "  });",
+                  "  token = pm.environment.get('JWT_TOKEN');",
+                  "}",
+                  "pm.request.headers.add({ key: 'Authorization', value: 'Bearer ' + token });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response is array', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(Array.isArray(json)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{BASE_URL}}/api/hr/employees"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Negative Tests (Understanding Errors)",
+      "item": [
+        {
+          "name": "GET /api/hr/employees without JWT (expect 401)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const accessKeyId = pm.environment.get('ACCESS_KEY_ID') || 'client-app-001';",
+                  "const secretKey = pm.environment.get('SECRET_KEY') || 'secret-key-12345';",
+                  "const timestamp = Math.floor(Date.now() / 1000).toString();",
+                  "const nonce = Math.random().toString(36).substring(2) + Date.now().toString(36);",
+                  "const method = pm.request.method.toUpperCase();",
+                  "const pathSegments = pm.request.url.getPath();",
+                  "const path = '/' + (Array.isArray(pathSegments) ? pathSegments.join('/') : String(pathSegments || '').replace(/^\\/+/,''));",
+                  "const canonical = [method, path, timestamp, nonce, ''].join('\\n');",
+                  "const signature = crypto.createHmac('sha256', secretKey).update(canonical, 'utf8').digest('base64');",
+                  "['X-Access-Key-Id','X-Signature','X-Timestamp','X-Nonce','Authorization'].forEach(h => pm.request.headers.remove(h));",
+                  "pm.request.headers.add({ key: 'X-Access-Key-Id', value: accessKeyId });",
+                  "pm.request.headers.add({ key: 'X-Signature', value: signature });",
+                  "pm.request.headers.add({ key: 'X-Timestamp', value: timestamp });",
+                  "pm.request.headers.add({ key: 'X-Nonce', value: nonce });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{BASE_URL}}/api/hr/employees"
+          }
+        },
+        {
+          "name": "GET /api/hr/employees direct to HR with gateway path (expect 404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{HR_DIRECT_URL}}/api/hr/employees"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [],
+  "variable": []
+}

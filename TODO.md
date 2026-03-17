@@ -1,7 +1,7 @@
-# TODO: Add API Gateway to eureka-cluster-compose.yml
+# HAProxy SSL Volume Mount TODO
 
-- [x] Step 1: Create TODO.md (done)
-- [x] Step 2: Edit eureka-cluster-compose.yml to add redis-server and api-gateway services + redis-data volume
-- [x] Step 3: Test with docker-compose -f eureka-cluster-compose.yml up -d api-gateway
-- [x] Step 4: Verify curl localhost:8080/actuator/health && check Eureka dashboard localhost:8760
-- [x] Step 5: Update TODO.md with completion & attempt_completion
+- [x] 1. Edit microservices-compose.yml to add volume mount for eureka.pem to haproxy service
+- [x] 2. Create certs/ directory and generate self-signed eureka.pem
+- [x] 3. No update needed to haproxy.cfg (no SSL configured currently)
+- [ ] 4. docker compose -f microservices-compose.yml up -d & test HTTPS access to port 8760
+- [ ] 5. Mark complete
