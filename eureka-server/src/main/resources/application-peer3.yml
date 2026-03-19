@@ -27,9 +27,9 @@ eureka:
       defaultZone: http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer2:${EUREKA_PEER2_PORT}/eureka/
       
   server:
-    enable-self-preservation: true
-    eviction-interval-timer-in-ms: 60000
-    renewal-percent-threshold: 0.85
+    enable-self-preservation: false
+    eviction-interval-timer-in-ms: 10000
+    renewal-percent-threshold: 0.49
     peer-node-connect-timeout-ms: 10000
     peer-node-read-timeout-ms: 60000
     peer-eureka-nodes-update-interval-ms: 600000
