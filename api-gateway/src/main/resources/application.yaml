@@ -9,7 +9,7 @@ server:
 # JWT Configuration - must be at root level
 app:
   jwt:
-    secret: ${JWT_SECRET:microservices-jwt-secret-key-2026-minimum-32chars}
+    secret: ${JWT_SECRET}
 management:
   endpoints:
     web:
@@ -38,7 +38,7 @@ spring:
         - name: AddRequestHeader
           args:
             name: X-Internal-Secret
-            value: "your-very-secure-secret-key-2026"
+            value: "${INTERNAL_SECRET}"
         - name: DedupeResponseHeader
           args:
             strategy: RETAIN_FIRST
@@ -134,7 +134,7 @@ spring:
     redis:
       host: ${REDIS_HOST:127.0.0.1}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:redis123}
+      password: ${REDIS_PASSWORD}
       timeout: 2000ms
       lettuce:
         pool:
@@ -152,7 +152,7 @@ spring:
     redis:
       host: ${REDIS_HOST:redis-server}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:redis123}
+      password: ${REDIS_PASSWORD}
 
 # Eureka Client Configuration
 eureka:
@@ -161,7 +161,7 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/}
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer2:${EUREKA_PEER2_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer3:${EUREKA_PEER3_PORT}/eureka/}
     registry-fetch-interval-seconds: 30
   instance:
     prefer-ip-address: true
@@ -174,7 +174,7 @@ eureka:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:microservices-jwt-secret-key-2026-minimum-32chars}
+    secret: ${JWT_SECRET}
 
 logging:
   level:
