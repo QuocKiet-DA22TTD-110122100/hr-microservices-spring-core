@@ -1,0 +1,22 @@
+# Root secrets and local runtime config
+.env
+.env.*
+!.env.example
+
+# Optional local outputs
+auth-logs.txt
+
+# TLS certificates - Team tự generate
+certs/eureka.pem
+certs/keystore.p12
+
+# IDE & Tools
+.idea/
+.vscode/
+.kiro/
+.qodo/
+
+# Build outputs
+target/
+logs/
+test-reports/

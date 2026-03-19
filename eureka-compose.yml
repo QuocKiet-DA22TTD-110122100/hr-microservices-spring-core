@@ -1,0 +1,125 @@
+x-java-opts: &java_opts -Xmx512m -Xms256m
+
+services:
+  # HAProxy exposes a single endpoint and balances to Eureka peers
+  haproxy:
+    image: haproxy:2.8-alpine
+    container_name: eureka-haproxy-lb
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./certs/eureka.pem:/etc/ssl/certs/eureka.pem:ro
+    ports:
+      - "8760:8760"
+      - "8404:8404"
+    depends_on:
+      eureka-peer1:
+        condition: service_healthy
+      eureka-peer2:
+        condition: service_healthy
+      eureka-peer3:
+        condition: service_healthy
+    networks:
+      - eureka-network
+    restart: unless-stopped
+
+  eureka-peer1:
+    build:
+      context: ./eureka-server
+      dockerfile: dockerfile
+    container_name: eureka-peer1
+    hostname: eureka-peer1
+    ports:
+      - "${EUREKA_PEER1_PORT}:${EUREKA_PEER1_PORT}"
+    environment:
+      SPRING_PROFILES_ACTIVE: peer1
+      SERVER_PORT: ${EUREKA_PEER1_PORT}
+      EUREKA_USERNAME: ${EUREKA_USERNAME}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+      EUREKA_PEER1_PORT: ${EUREKA_PEER1_PORT}
+      EUREKA_PEER2_PORT: ${EUREKA_PEER2_PORT}
+      EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
+      SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
+      SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+      JAVA_OPTS: *java_opts
+    volumes:
+      - eureka1-data:/app/data
+    networks:
+      - eureka-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:${EUREKA_PEER1_PORT}/actuator/health); [ \"$$code\" = \"200\" ] || [ \"$$code\" = \"401\" ]"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  eureka-peer2:
+    build:
+      context: ./eureka-server
+      dockerfile: dockerfile
+    container_name: eureka-peer2
+    hostname: eureka-peer2
+    ports:
+      - "${EUREKA_PEER2_PORT}:${EUREKA_PEER2_PORT}"
+    environment:
+      SPRING_PROFILES_ACTIVE: peer2
+      SERVER_PORT: ${EUREKA_PEER2_PORT}
+      EUREKA_USERNAME: ${EUREKA_USERNAME}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+      EUREKA_PEER1_PORT: ${EUREKA_PEER1_PORT}
+      EUREKA_PEER2_PORT: ${EUREKA_PEER2_PORT}
+      EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
+      SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
+      SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+      JAVA_OPTS: *java_opts
+    volumes:
+      - eureka2-data:/app/data
+    networks:
+      - eureka-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:${EUREKA_PEER2_PORT}/actuator/health); [ \"$$code\" = \"200\" ] || [ \"$$code\" = \"401\" ]"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  eureka-peer3:
+    build:
+      context: ./eureka-server
+      dockerfile: dockerfile
+    container_name: eureka-peer3
+    hostname: eureka-peer3
+    ports:
+      - "${EUREKA_PEER3_PORT}:${EUREKA_PEER3_PORT}"
+    environment:
+      SPRING_PROFILES_ACTIVE: peer3
+      SERVER_PORT: ${EUREKA_PEER3_PORT}
+      EUREKA_USERNAME: ${EUREKA_USERNAME}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+      EUREKA_PEER1_PORT: ${EUREKA_PEER1_PORT}
+      EUREKA_PEER2_PORT: ${EUREKA_PEER2_PORT}
+      EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
+      SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
+      SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+      JAVA_OPTS: *java_opts
+    volumes:
+      - eureka3-data:/app/data
+    networks:
+      - eureka-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:${EUREKA_PEER3_PORT}/actuator/health); [ \"$$code\" = \"200\" ] || [ \"$$code\" = \"401\" ]"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+networks:
+  eureka-network:
+    driver: bridge
+
+volumes:
+  eureka1-data:
+  eureka2-data:
+  eureka3-data:
