@@ -9,7 +9,7 @@ server:
 # JWT Configuration - must be at root level
 app:
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:microservices-jwt-secret-key-2026-minimum-32chars}
 management:
   endpoints:
     web:
@@ -38,7 +38,7 @@ spring:
         - name: AddRequestHeader
           args:
             name: X-Internal-Secret
-            value: "${INTERNAL_SECRET}"
+            value: "your-very-secure-secret-key-2026"
         - name: DedupeResponseHeader
           args:
             strategy: RETAIN_FIRST
@@ -50,9 +50,19 @@ spring:
       routes:
         # Eureka Dashboard Route - Forward to HAProxy load balancer
         - id: eureka-dashboard-route
-          uri: http://localhost:8761
+          uri: http://localhost:8760
           predicates:
             - Path=/eureka/**
+          metadata:
+            requires-hmac: false
+
+        # Demo Service Route
+        - id: demo-service-route
+          uri: lb://demo-service
+          predicates:
+            - Path=/demo/**
+          filters:
+            - StripPrefix=1
           metadata:
             requires-hmac: false
 
@@ -66,68 +76,49 @@ spring:
           metadata:
             requires-hmac: false
 
-        # IAM auth legacy path -> auth-service via Eureka
+        # IAM Auth Route (existing) - Enhanced với container networking
         - id: iam-auth-route
-          uri: lb://auth-service
+          uri: ${MOCK_IAM_SERVICE_URL:http://mock-iam-service:8081}
           predicates:
             - Path=/iam/auth/**
-          filters:
-            - RewritePath=/iam/auth/(?<segment>.*), /iam/${segment}
           metadata:
             requires-hmac: false
 
-        # Login legacy path -> auth-service (/iam/login)
+        # Login: cần HMAC, KHÔNG cần JWT (đang xin token)
         - id: iam-user-login-route
-          uri: lb://auth-service
+          uri: ${MOCK_IAM_SERVICE_URL:http://mock-iam-service:8081}
           predicates:
             - Path=/iam/user/login
-          filters:
-            - SetPath=/iam/login
           metadata:
             requires-hmac: true
             requires-jwt: false
 
-        # API v1 legacy auth path -> auth-service via Eureka
+        # API V1 Auth Routes - Direct to mock-service với container networking
         - id: api-v1-auth-route
-          uri: lb://auth-service
+          uri: ${MOCK_IAM_SERVICE_URL:http://mock-iam-service:8081}
           predicates:
             - Path=/api/v1/auth/**
-          filters:
-            - RewritePath=/api/v1/auth/(?<segment>.*), /iam/${segment}
           metadata:
             requires-hmac: false
             requires-jwt: false
 
-        # Register legacy path -> auth-service (/iam/register)
+        # Register: cần HMAC, KHÔNG cần JWT
         - id: iam-user-register-route
-          uri: lb://auth-service
+          uri: ${MOCK_IAM_SERVICE_URL:http://mock-iam-service:8081}
           predicates:
             - Path=/iam/user/register
-          filters:
-            - SetPath=/iam/register
           metadata:
             requires-hmac: true
             requires-jwt: false
 
-        # Legacy /iam/user/* path -> auth-service (/iam/*)
+        # Các endpoint user khác: cần cả HMAC lẫn JWT
         - id: iam-user-route
-          uri: lb://auth-service
+          uri: ${MOCK_IAM_SERVICE_URL:http://mock-iam-service:8081}
           predicates:
             - Path=/iam/user/**
-          filters:
-            - RewritePath=/iam/user/(?<segment>.*), /iam/${segment}
           metadata:
             requires-hmac: true
             requires-jwt: true
-
-        # Auth service route via Eureka discovery
-        - id: auth-service-route
-          uri: lb://auth-service
-          predicates:
-            - Path=/iam/**
-          metadata:
-            requires-hmac: false
-            requires-jwt: false
 
         - id: hr-service-route
           uri: lb://hr-service
@@ -143,7 +134,7 @@ spring:
     redis:
       host: ${REDIS_HOST:127.0.0.1}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD}
+      password: ${REDIS_PASSWORD:redis123}
       timeout: 2000ms
       lettuce:
         pool:
@@ -161,7 +152,7 @@ spring:
     redis:
       host: ${REDIS_HOST:redis-server}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD}
+      password: ${REDIS_PASSWORD:redis123}
 
 # Eureka Client Configuration
 eureka:
@@ -170,7 +161,7 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer2:${EUREKA_PEER2_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer3:${EUREKA_PEER3_PORT}/eureka/}
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/}
     registry-fetch-interval-seconds: 30
   instance:
     prefer-ip-address: true
@@ -183,7 +174,7 @@ eureka:
 
 app:
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:microservices-jwt-secret-key-2026-minimum-32chars}
 
 logging:
   level:
