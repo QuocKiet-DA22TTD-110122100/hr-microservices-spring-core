@@ -1,10 +1,12 @@
 package com.eureka.registry;
 
-import com.eureka.model.InstanceInfo;
-import com.eureka.model.InstanceStatus;
-import com.eureka.model.LeaseInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import com.eureka.Domain.model.InstanceInfo;
+import com.eureka.Domain.model.InstanceStatus;
+import com.eureka.Domain.model.LeaseInfo;
+import com.eureka.infrastructure.registry.AbstractInstanceRegistry;
 
 import java.util.List;
 

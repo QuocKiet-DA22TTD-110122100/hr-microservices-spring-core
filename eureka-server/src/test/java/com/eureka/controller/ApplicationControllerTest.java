@@ -1,11 +1,11 @@
 package com.eureka.controller;
 
+import com.eureka.Domain.model.InstanceInfo;
+import com.eureka.Domain.model.InstanceStatus;
+import com.eureka.Domain.model.LeaseInfo;
 import com.eureka.config.TestSecurityConfig;
 import com.eureka.controller.ApplicationController.InstanceWrapper;
-import com.eureka.model.InstanceInfo;
-import com.eureka.model.InstanceStatus;
-import com.eureka.model.LeaseInfo;
-import com.eureka.registry.ServiceRegistry;
+import com.eureka.service.RegistryService;
 import com.eureka.validation.RegistrationValidator;
 import com.sting.example.eureka_server.EurekaServerApplication;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,11 +13,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Objects;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -35,10 +37,10 @@ class ApplicationControllerTest {
     @Autowired
     private MockMvc mockMvc;
     
-    @MockBean
-    private ServiceRegistry serviceRegistry;
+    @MockitoBean
+    private RegistryService serviceRegistry;
     
-    @MockBean
+    @MockitoBean
     private RegistrationValidator registrationValidator;
     
     private ObjectMapper objectMapper;
@@ -69,8 +71,8 @@ class ApplicationControllerTest {
         
         // When & Then
         mockMvc.perform(post("/eureka/apps/TEST-APP")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+            .contentType(MediaType.APPLICATION_JSON_VALUE)
+            .content(Objects.requireNonNull(requestBody)))
                 .andExpect(status().isNoContent());
         
         verify(serviceRegistry).register(any(InstanceInfo.class));
@@ -88,8 +90,8 @@ class ApplicationControllerTest {
         
         // When & Then
         mockMvc.perform(post("/eureka/apps/TEST-APP")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+            .contentType(MediaType.APPLICATION_JSON_VALUE)
+            .content(Objects.requireNonNull(requestBody)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Registration validation failed"));
         

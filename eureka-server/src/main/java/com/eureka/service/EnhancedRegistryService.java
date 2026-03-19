@@ -1,16 +1,15 @@
-package com.eureka.registry;
+package com.eureka.service;
 
-import com.eureka.model.InstanceInfo;
-import com.eureka.model.InstanceStatus;
-import com.eureka.model.ServiceInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.eureka.Domain.model.InstanceInfo;
+import com.eureka.Domain.model.ServiceInstance;
+
 import jakarta.annotation.PostConstruct;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

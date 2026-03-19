@@ -1,12 +1,12 @@
-package com.eureka.registry;
+package com.eureka.infrastructure.registry;
 
-import com.eureka.model.Application;
-import com.eureka.model.InstanceInfo;
-import com.eureka.model.InstanceStatus;
-import com.eureka.model.LeaseInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import com.eureka.Domain.model.InstanceInfo;
+import com.eureka.Domain.model.InstanceStatus;
+import com.eureka.service.RegistryService;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,7 +37,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * }
  */
 @Component
-public abstract class AbstractInstanceRegistry implements ServiceRegistry {
+public abstract class AbstractInstanceRegistry implements RegistryService {
     
     private static final Logger logger = LoggerFactory.getLogger(AbstractInstanceRegistry.class);
     

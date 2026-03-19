@@ -1,12 +1,12 @@
 package com.eureka.validation;
 
-import com.eureka.model.InstanceInfo;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import com.eureka.Domain.model.InstanceInfo;
+
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -136,9 +136,9 @@ public class RegistrationValidator {
     
     private boolean isValidUrl(String url) {
         try {
-            new URL(url);
+            new java.net.URI(url).toURL();
             return true;
-        } catch (MalformedURLException e) {
+        } catch (MalformedURLException | java.net.URISyntaxException e) {
             return false;
         }
     }

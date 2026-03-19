@@ -1,19 +1,19 @@
 server:
   port: 8081
-  address: 0.0.0.0  # FIX: Thay đổi từ 127.0.0.1 thành 0.0.0.0 để có thể access từ Docker containers
+  address: 0.0.0.0
 
 spring:
   application:
     name: mock-iam-service
 
-# FIX: Thêm Eureka client configuration để service có thể register với Eureka
+# Eureka client configuration
 eureka:
   client:
     enabled: true
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/}
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer2:${EUREKA_PEER2_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer3:${EUREKA_PEER3_PORT}/eureka/}
     registry-fetch-interval-seconds: 30
   instance:
     prefer-ip-address: true
@@ -24,9 +24,8 @@ eureka:
       version: 1.0.0
       description: Mock IAM Service for authentication
 
-# THÊM ĐOẠN NÀY VÀO
 app:
-  internal-secret: "your-very-secure-secret-key-2026"
+  internal-secret: ${INTERNAL_SECRET}
   jwt:
-    secret: ${JWT_SECRET:microservices-jwt-secret-key-2026-minimum-32chars}
+    secret: ${JWT_SECRET}
     expiration-ms: 86400000  # 24 hours

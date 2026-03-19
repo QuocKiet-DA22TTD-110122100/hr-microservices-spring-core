@@ -1,17 +1,15 @@
 server:
-  port: 8761
+  port: ${SERVER_PORT:8761}
 
 spring:
   application:
     name: eureka-server
   profiles:
     active: standalone
-
-# Security configuration
-security:
-  user:
-    name: eureka
-    password: 123456
+  security:
+    user:
+      name: ${EUREKA_USERNAME}
+      password: ${EUREKA_PASSWORD}
 
 # Eureka configuration
 eureka:
@@ -42,16 +40,16 @@ management:
   endpoint:
     health:
       show-details: always
-  metrics:
-    export:
-      prometheus:
+  prometheus:
+    metrics:
+      export:
         enabled: true
 
 # Logging configuration
 logging:
   level:
-    com.eureka: INFO
-    org.springframework.cloud.netflix.eureka: INFO
+    "[com.eureka]": INFO
+    "[org.springframework.cloud.netflix.eureka]": INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 

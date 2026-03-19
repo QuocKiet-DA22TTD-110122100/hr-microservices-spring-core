@@ -1,10 +1,11 @@
-package com.eureka.registry;
+package com.eureka.infrastructure.registry;
 
-import com.eureka.model.InstanceInfo;
-import com.eureka.model.InstanceStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import com.eureka.Domain.model.InstanceInfo;
+import com.eureka.Domain.model.InstanceStatus;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;

@@ -1,4 +1,4 @@
-package com.eureka.model;
+package com.eureka.Domain.model;
 
 /**
  * Enumeration representing the status of a service instance.

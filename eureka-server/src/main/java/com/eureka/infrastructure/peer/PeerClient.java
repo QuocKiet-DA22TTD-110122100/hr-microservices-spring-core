@@ -1,4 +1,4 @@
-package com.eureka.peer;
+package com.eureka.infrastructure.peer;
 
 // Added by qodo: Peer replication client for Eureka peers
 
@@ -6,7 +6,6 @@ import com.eureka.controller.ApplicationController.InstanceWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -29,7 +28,6 @@ public class PeerClient {
     public static final String REPLICATION_HEADER = "X-Replication"; // must align with controller
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final Environment environment;
 
     @Value("${eureka.client.service-url.defaultZone:}")
     private String defaultZone;
@@ -40,10 +38,6 @@ public class PeerClient {
     @Value("${eureka.instance.hostname:}")
     private String hostname;
 
-    public PeerClient(Environment environment) {
-        this.environment = environment;
-    }
-
     public void replicateRegister(String appName, InstanceWrapper body) {
         for (String base : getPeerBases()) {
             try {
@@ -51,7 +45,8 @@ public class PeerClient {
                 HttpHeaders headers = replicationHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 HttpEntity<InstanceWrapper> entity = new HttpEntity<>(body, headers);
-                restTemplate.exchange(URI.create(url), HttpMethod.POST, entity, String.class);
+                @SuppressWarnings({"null", "unused"})
+                var response = restTemplate.exchange(URI.create(url), HttpMethod.POST, entity, String.class);
                 logger.debug("Replicated REGISTER to {} for app {}", url, appName);
             } catch (Exception ex) {
                 logger.warn("REGISTER replicate failed to peer for app {}: {}", appName, ex.getMessage());
@@ -72,8 +67,10 @@ public class PeerClient {
                 String url = sb.toString();
 
                 HttpHeaders headers = replicationHeaders();
+                @SuppressWarnings({"null", "unused"})
                 HttpEntity<Void> entity = new HttpEntity<>(headers);
-                restTemplate.exchange(URI.create(url), HttpMethod.PUT, entity, String.class);
+                @SuppressWarnings({"null", "unused"})
+                var response = restTemplate.exchange(URI.create(url), HttpMethod.PUT, entity, String.class);
                 logger.debug("Replicated RENEW to {} for {}/{}", url, appName, instanceId);
             } catch (Exception ex) {
                 logger.warn("RENEW replicate failed to peer for {}/{}: {}", appName, instanceId, ex.getMessage());
@@ -86,8 +83,10 @@ public class PeerClient {
             try {
                 String url = base + "/apps/" + appName + "/" + instanceId;
                 HttpHeaders headers = replicationHeaders();
+                @SuppressWarnings({"null", "unused"})
                 HttpEntity<Void> entity = new HttpEntity<>(headers);
-                restTemplate.exchange(URI.create(url), HttpMethod.DELETE, entity, String.class);
+                @SuppressWarnings({"null", "unused"})
+                var unused = restTemplate.exchange(URI.create(url), HttpMethod.DELETE, entity, String.class);
                 logger.debug("Replicated DEREGISTER to {} for {}/{}", url, appName, instanceId);
             } catch (Exception ex) {
                 logger.warn("DEREGISTER replicate failed to peer for {}/{}: {}", appName, instanceId, ex.getMessage());

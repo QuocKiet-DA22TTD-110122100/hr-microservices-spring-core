@@ -1,12 +1,13 @@
 package com.eureka.controller;
 
-import com.eureka.model.Application;
-import com.eureka.model.InstanceInfo;
-import com.eureka.model.InstanceStatus;
-import com.eureka.registry.ServiceRegistry;
+import com.eureka.Domain.model.Application;
+import com.eureka.Domain.model.InstanceInfo;
+import com.eureka.Domain.model.InstanceStatus;
+import com.eureka.exception.ResourceNotFoundException;
+import com.eureka.service.RegistryService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,14 +29,13 @@ public class DiscoveryController {
     
     private static final Logger logger = LoggerFactory.getLogger(DiscoveryController.class);
     
-    private final ServiceRegistry serviceRegistry;
+    private final RegistryService serviceRegistry;
     
     // Simple delta tracking - in production this would be more sophisticated
     private volatile long lastDeltaGeneration = System.currentTimeMillis();
     private final Map<String, Long> instanceLastModified = new HashMap<>();
     
-    @Autowired
-    public DiscoveryController(ServiceRegistry serviceRegistry) {
+    public DiscoveryController(RegistryService serviceRegistry) {
         this.serviceRegistry = serviceRegistry;
     }
     
@@ -96,33 +96,22 @@ public class DiscoveryController {
         
         logger.debug("Received request for application: {}", appName);
         
-        try {
-            if (!serviceRegistry.hasApplication(appName)) {
-                logger.debug("Application not found: {}", appName);
-                return ResponseEntity.notFound().build();
-            }
-            
-            List<InstanceInfo> instances = serviceRegistry.getInstances(appName);
-            
-            if (instances.isEmpty()) {
-                logger.debug("No instances found for application: {}", appName);
-                return ResponseEntity.notFound().build();
-            }
-            
-            Application application = new Application(appName);
-            application.setInstances(instances);
-            
-            ApplicationResponse response = new ApplicationResponse();
-            response.setApplication(application);
-            
-            logger.debug("Returning application {} with {} instances", appName, instances.size());
-            
-            return ResponseEntity.ok(response);
-            
-        } catch (Exception e) {
-            logger.error("Error retrieving application {}: {}", appName, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        if (!serviceRegistry.hasApplication(appName) || serviceRegistry.getInstances(appName).isEmpty()) {
+            logger.debug("Application not found or no instances: {}", appName);
+            throw new ResourceNotFoundException("Application " + appName + " not found or no instances");
         }
+        
+        List<InstanceInfo> instances = serviceRegistry.getInstances(appName);
+        
+        Application application = new Application(appName);
+        application.setInstances(instances);
+        
+        ApplicationResponse response = new ApplicationResponse();
+        response.setApplication(application);
+        
+        logger.debug("Returning application {} with {} instances", appName, instances.size());
+        
+        return ResponseEntity.ok(response);
     }
     
     /**
@@ -192,25 +181,19 @@ public class DiscoveryController {
         
         logger.debug("Received request for instance {}/{}", appName, instanceId);
         
-        try {
-            InstanceInfo instance = serviceRegistry.getInstance(appName, instanceId);
-            
-            if (instance == null) {
-                logger.debug("Instance not found: {}/{}", appName, instanceId);
-                return ResponseEntity.notFound().build();
-            }
-            
-            InstanceResponse response = new InstanceResponse();
-            response.setInstance(instance);
-            
-            logger.debug("Returning instance {}/{}", appName, instanceId);
-            
-            return ResponseEntity.ok(response);
-            
-        } catch (Exception e) {
-            logger.error("Error retrieving instance {}/{}: {}", appName, instanceId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        InstanceInfo instance = serviceRegistry.getInstance(appName, instanceId);
+        
+        if (instance == null) {
+            logger.debug("Instance not found: {}/{}", appName, instanceId);
+            throw new ResourceNotFoundException("Instance " + instanceId + " not found for application " + appName);
         }
+        
+        InstanceResponse response = new InstanceResponse();
+        response.setInstance(instance);
+        
+        logger.debug("Returning instance {}/{}", appName, instanceId);
+        
+        return ResponseEntity.ok(response);
     }
     
     /**
@@ -227,46 +210,40 @@ public class DiscoveryController {
         
         logger.debug("Received request for applications with status: {}", status);
         
+        InstanceStatus instanceStatus;
         try {
-            InstanceStatus instanceStatus;
-            try {
-                instanceStatus = InstanceStatus.valueOf(status.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                logger.warn("Invalid status parameter: {}", status);
-                return ResponseEntity.badRequest().build();
-            }
-            
-            List<String> applicationNames = serviceRegistry.getApplicationNames();
-            List<Application> filteredApplications = new ArrayList<>();
-            
-            for (String appName : applicationNames) {
-                List<InstanceInfo> instances = serviceRegistry.getInstances(appName);
-                List<InstanceInfo> filteredInstances = instances.stream()
-                    .filter(instance -> instance.getStatus() == instanceStatus)
-                    .collect(Collectors.toList());
-                
-                if (!filteredInstances.isEmpty()) {
-                    Application application = new Application(appName);
-                    application.setInstances(filteredInstances);
-                    filteredApplications.add(application);
-                }
-            }
-            
-            ApplicationsResponse response = new ApplicationsResponse();
-            response.setApplications(filteredApplications);
-            response.setVersionsDelta(1L);
-            response.setAppsHashcode(generateHashCode(filteredApplications));
-            
-            logger.debug("Returning {} applications with status {} containing {} total instances", 
-                        filteredApplications.size(), status,
-                        filteredApplications.stream().mapToInt(Application::size).sum());
-            
-            return ResponseEntity.ok(response);
-            
-        } catch (Exception e) {
-            logger.error("Error retrieving applications by status {}: {}", status, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            instanceStatus = InstanceStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid status parameter: {}", status);
+            throw e;
         }
+        
+        List<String> applicationNames = serviceRegistry.getApplicationNames();
+        List<Application> filteredApplications = new ArrayList<>();
+        
+        for (String appName : applicationNames) {
+            List<InstanceInfo> instances = serviceRegistry.getInstances(appName);
+            List<InstanceInfo> filteredInstances = instances.stream()
+                .filter(instance -> instance.getStatus() == instanceStatus)
+                .collect(Collectors.toList());
+            
+            if (!filteredInstances.isEmpty()) {
+                Application application = new Application(appName);
+                application.setInstances(filteredInstances);
+                filteredApplications.add(application);
+            }
+        }
+        
+        ApplicationsResponse response = new ApplicationsResponse();
+        response.setApplications(filteredApplications);
+        response.setVersionsDelta(1L);
+        response.setAppsHashcode(generateHashCode(filteredApplications));
+        
+        logger.debug("Returning {} applications with status {} containing {} total instances", 
+                    filteredApplications.size(), status,
+                    filteredApplications.stream().mapToInt(Application::size).sum());
+        
+        return ResponseEntity.ok(response);
     }
     
     /**

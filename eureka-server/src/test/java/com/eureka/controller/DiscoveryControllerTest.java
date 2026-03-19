@@ -1,18 +1,19 @@
 package com.eureka.controller;
 
 import com.sting.example.eureka_server.EurekaServerApplication;
+import com.eureka.Domain.model.InstanceInfo;
+import com.eureka.Domain.model.InstanceStatus;
+import com.eureka.Domain.model.LeaseInfo;
 import com.eureka.config.TestSecurityConfig;
-import com.eureka.model.InstanceInfo;
-import com.eureka.model.InstanceStatus;
-import com.eureka.model.LeaseInfo;
-import com.eureka.registry.ServiceRegistry;
+import com.eureka.service.RegistryService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
@@ -34,8 +35,8 @@ class DiscoveryControllerTest {
     @Autowired
     private MockMvc mockMvc;
     
-    @MockBean
-    private ServiceRegistry serviceRegistry;
+    @MockitoBean
+    private RegistryService serviceRegistry;
     
     private InstanceInfo testInstance1;
     private InstanceInfo testInstance2;

@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.0</version>
+		<version>3.5.11</version>
 		<relativePath/>
 	</parent>
 	<groupId>com.eureka</groupId>
@@ -16,7 +16,6 @@
 	<properties>
 		<java.version>21</java.version>
 		<spring-cloud.version>2025.0.1</spring-cloud.version>
-		<junit-quickcheck.version>1.0</junit-quickcheck.version>
 		<commons-validator.version>1.7</commons-validator.version>
 		<commons-net.version>3.9.0</commons-net.version>
 	</properties>
@@ -135,32 +134,7 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-contract-stub-runner</artifactId>
-			<scope>test</scope>
-		</dependency>
-		
-		<!-- Property-Based Testing -->
-		<dependency>
-			<groupId>com.pholser</groupId>
-			<artifactId>junit-quickcheck-core</artifactId>
-			<version>${junit-quickcheck.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.pholser</groupId>
-			<artifactId>junit-quickcheck-generators</artifactId>
-			<version>${junit-quickcheck.version}</version>
-			<scope>test</scope>
-		</dependency>
-	
-   <dependency>
-     <groupId>org.scala-lang</groupId>
-     <artifactId>scala-compiler</artifactId>
-     <version>2.13.0</version>
-   </dependency>
- </dependencies>
+	</dependencies>
 
 	<build>
 		<plugins>
@@ -187,41 +161,6 @@
 				</configuration>
 			</plugin>
 			
-			<!-- Maven Surefire Plugin for Unit Tests -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<includes>
-						<include>**/*Test.java</include>
-						<include>**/*Tests.java</include>
-					</includes>
-					<excludes>
-						<exclude>**/*PropertyTest.java</exclude>
-						<exclude>**/*IntegrationTest.java</exclude>
-					</excludes>
-				</configuration>
-			</plugin>
-			
-			<!-- Maven Failsafe Plugin for Integration Tests -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-failsafe-plugin</artifactId>
-				<configuration>
-					<includes>
-						<include>**/*IntegrationTest.java</include>
-					</includes>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>integration-test</goal>
-							<goal>verify</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			
 			<!-- JaCoCo Code Coverage -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
@@ -244,29 +183,4 @@
 			</plugin>
 		</plugins>
 	</build>
-	
-	<!-- Custom Profiles -->
-	<profiles>
-		<profile>
-			<id>property-tests</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-surefire-plugin</artifactId>
-						<configuration>
-							<includes>
-								<include>**/*PropertyTest.java</include>
-							</includes>
-							<excludes>
-								<exclude>**/*Test.java</exclude>
-								<exclude>**/*Tests.java</exclude>
-								<exclude>**/*IntegrationTest.java</exclude>
-							</excludes>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
 </project>

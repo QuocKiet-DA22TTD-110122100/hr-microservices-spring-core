@@ -1,10 +1,11 @@
 package com.eureka.validation;
 
-import com.eureka.model.InstanceInfo;
-import com.eureka.model.InstanceStatus;
-import com.eureka.model.LeaseInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import com.eureka.Domain.model.InstanceInfo;
+import com.eureka.Domain.model.InstanceStatus;
+import com.eureka.Domain.model.LeaseInfo;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -132,7 +133,7 @@ class RegistrationValidatorTest {
         
         // Then
         assertNotNull(result.getErrorMessage());
-        assertTrue(result.getErrorMessage().contains("Application name is required"));
+        assertTrue(result.getErrorMessage().contains("Application name is required")); 
     }
     
     @Test

@@ -1,8 +1,8 @@
-package com.eureka.converter;
-import com.eureka.model.LeaseInfo;
-import com.eureka.model.InstanceInfo;
-import com.eureka.model.InstanceStatus;
-import com.eureka.model.ServiceInstance;
+package com.eureka.mapper;
+import com.eureka.Domain.model.InstanceInfo;
+import com.eureka.Domain.model.InstanceStatus;
+import com.eureka.Domain.model.LeaseInfo;
+import com.eureka.Domain.model.ServiceInstance;
 
 /**
  * Converter class to transform ServiceInstance to InstanceInfo.

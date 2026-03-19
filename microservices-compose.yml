@@ -1,4 +1,5 @@
-
+x-eureka-default-zone: &eureka_default_zone http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer2:${EUREKA_PEER2_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer3:${EUREKA_PEER3_PORT}/eureka/
+x-java-opts: &java_opts -Xmx512m -Xms256m
 
 services:
   # Redis for API Gateway
@@ -7,13 +8,12 @@ services:
     container_name: redis-server
     ports:
       - "6379"
-    command: redis-server --requirepass redis123
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis-data:/data
     networks:
       - microservices-network
     restart: unless-stopped
-  # API Gateway
   # HAProxy Load Balancer as Gateway
   haproxy:
     image: haproxy:2.8-alpine
@@ -23,11 +23,15 @@ services:
       - ./certs/eureka.pem:/etc/ssl/certs/eureka.pem:ro
     ports:
       - "80:80"  # Gateway port
+      - "8760:8760"  # Eureka HTTPS endpoint
       - "8404:8404"  # HAProxy stats
     depends_on:
-      - eureka-peer1
-      - eureka-peer2
-      - eureka-peer3
+      eureka-peer1:
+        condition: service_healthy
+      eureka-peer2:
+        condition: service_healthy
+      eureka-peer3:
+        condition: service_healthy
     networks:
       - microservices-network
     restart: unless-stopped
@@ -40,21 +44,29 @@ services:
     container_name: eureka-peer1
     hostname: eureka-peer1
     ports:
-      - "8761:8761"
+      - "${EUREKA_PEER1_PORT}:${EUREKA_PEER1_PORT}"
     environment:
-      - SPRING_PROFILES_ACTIVE=peer1
-      - JAVA_OPTS=-Xmx512m -Xms256m
+      SPRING_PROFILES_ACTIVE: peer1
+      SERVER_PORT: ${EUREKA_PEER1_PORT}
+      EUREKA_USERNAME: ${EUREKA_USERNAME}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+      EUREKA_PEER1_PORT: ${EUREKA_PEER1_PORT}
+      EUREKA_PEER2_PORT: ${EUREKA_PEER2_PORT}
+      EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
+      SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
+      SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+      JAVA_OPTS: *java_opts
     volumes:
       - eureka1-data:/app/data
     networks:
       - microservices-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://eureka:123456@localhost:8761/actuator/health"]
+      test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:${EUREKA_PEER1_PORT}/actuator/health); [ \"$$code\" = \"200\" ] || [ \"$$code\" = \"401\" ]"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 5
+      start_period: 120s
 
   # Eureka Server Peer 2
   eureka-peer2:
@@ -64,21 +76,29 @@ services:
     container_name: eureka-peer2
     hostname: eureka-peer2
     ports:
-      - "8762:8762"
+      - "${EUREKA_PEER2_PORT}:${EUREKA_PEER2_PORT}"
     environment:
-      - SPRING_PROFILES_ACTIVE=peer2
-      - JAVA_OPTS=-Xmx512m -Xms256m
+      SPRING_PROFILES_ACTIVE: peer2
+      SERVER_PORT: ${EUREKA_PEER2_PORT}
+      EUREKA_USERNAME: ${EUREKA_USERNAME}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+      EUREKA_PEER1_PORT: ${EUREKA_PEER1_PORT}
+      EUREKA_PEER2_PORT: ${EUREKA_PEER2_PORT}
+      EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
+      SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
+      SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+      JAVA_OPTS: *java_opts
     volumes:
       - eureka2-data:/app/data
     networks:
       - microservices-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://eureka:123456@localhost:8762/actuator/health"]
+      test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:${EUREKA_PEER2_PORT}/actuator/health); [ \"$$code\" = \"200\" ] || [ \"$$code\" = \"401\" ]"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 5
+      start_period: 120s
 
   # Eureka Server Peer 3
   eureka-peer3:
@@ -88,21 +108,29 @@ services:
     container_name: eureka-peer3
     hostname: eureka-peer3
     ports:
-      - "8763:8763"
+      - "${EUREKA_PEER3_PORT}:${EUREKA_PEER3_PORT}"
     environment:
-      - SPRING_PROFILES_ACTIVE=peer3
-      - JAVA_OPTS=-Xmx512m -Xms256m
+      SPRING_PROFILES_ACTIVE: peer3
+      SERVER_PORT: ${EUREKA_PEER3_PORT}
+      EUREKA_USERNAME: ${EUREKA_USERNAME}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+      EUREKA_PEER1_PORT: ${EUREKA_PEER1_PORT}
+      EUREKA_PEER2_PORT: ${EUREKA_PEER2_PORT}
+      EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
+      SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
+      SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+      JAVA_OPTS: *java_opts
     volumes:
       - eureka3-data:/app/data
     networks:
       - microservices-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://eureka:123456@localhost:8763/actuator/health"]
+      test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:${EUREKA_PEER3_PORT}/actuator/health); [ \"$$code\" = \"200\" ] || [ \"$$code\" = \"401\" ]"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 5
+      start_period: 120s
 
   # API Gateway (Spring Cloud Gateway)
   api-gateway:
@@ -113,18 +141,22 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - REDIS_HOST=redis-server
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=redis123
-      - SPRING_PROFILES_ACTIVE=docker
-      - JAVA_OPTS=-Xmx512m -Xms256m
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
+      REDIS_HOST: redis-server
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      AUTH_SERVICE_URL: http://auth-service:8086
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: *java_opts
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
     depends_on:
-      - redis
-      - eureka-peer1
-      - eureka-peer2
-      - eureka-peer3
+      redis:
+        condition: service_started
+      eureka-peer1:
+        condition: service_healthy
+      eureka-peer2:
+        condition: service_healthy
+      eureka-peer3:
+        condition: service_healthy
     networks:
       - microservices-network
     restart: unless-stopped
@@ -135,8 +167,8 @@ services:
       retries: 3
       start_period: 60s
 
-  # FIX: Thêm Mock IAM Service để xử lý authentication endpoints
-  # Service này sẽ handle các requests đến /iam/auth/* và /iam/user/*
+  # Mock IAM Service để xử lý authentication endpoints
+  # Service này handle các requests đến /iam/auth/* và /iam/user/*
   mock-iam-service:
     build:
       context: ./mock-service
@@ -145,19 +177,22 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - JAVA_OPTS=-Xmx512m -Xms256m
-      - JWT_SECRET=microservices-jwt-secret-key-2026-minimum-32chars
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
+      JAVA_OPTS: *java_opts
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
     depends_on:
-      - eureka-peer1
-      - eureka-peer2
-      - eureka-peer3
+      eureka-peer1:
+        condition: service_healthy
+      eureka-peer2:
+        condition: service_healthy
+      eureka-peer3:
+        condition: service_healthy
     networks:
       - microservices-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/actuator/health); [ \"$$code\" = \"200\" ] || [ \"$$code\" = \"403\" ]"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -172,13 +207,15 @@ services:
     ports:
       - "8083:8083"
     environment:
-      - JAVA_OPTS=-Xmx512m -Xms256m
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
+      JAVA_OPTS: *java_opts
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
     depends_on:
-      - eureka-peer1
-      - eureka-peer2
-      - eureka-peer3
+      eureka-peer1:
+        condition: service_healthy
+      eureka-peer2:
+        condition: service_healthy
+      eureka-peer3:
+        condition: service_healthy
     networks:
       - microservices-network
     restart: unless-stopped
@@ -189,35 +226,6 @@ services:
       retries: 3
       start_period: 60s
 
-  # Demo Service for testing
-  demo-service:
-    build:
-      context: ./demo-service
-      dockerfile: Dockerfile
-    container_name: demo-service
-    ports:
-      - "8084:8082"
-    environment:
-      - JAVA_OPTS=-Xmx512m -Xms256m
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
-    depends_on:
-      - eureka-peer1
-      - eureka-peer2
-      - eureka-peer3
-    networks:
-      - microservices-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-# hr-service:
-#   build:
-
   # MySQL for HR Service
   hr-mysql:
     image: mysql:8.0
@@ -225,15 +233,15 @@ services:
     ports:
       - "3307:3306"  # Host 3307 -> container 3306
     environment:
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: hr_db
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     volumes:
       - hr-mysql-data:/var/lib/mysql
     networks:
       - microservices-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -248,17 +256,23 @@ services:
     ports:
       - "8085:8082"
     environment:
-      - SPRING_APPLICATION_NAME=hr-service
-      - SPRING_DATASOURCE_URL=jdbc:mysql://hr-mysql:3306/hr_db?createDatabaseIfNotExist=true
-      - EUREKA_CLIENT_ENABLED=true
-      - EUREKA_REGISTER_WITH_EUREKA=true
-      - EUREKA_FETCH_REGISTRY=true
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:123456@eureka-peer1:8761/eureka/,http://eureka:123456@eureka-peer2:8762/eureka/,http://eureka:123456@eureka-peer3:8763/eureka/
-      - JAVA_OPTS=-Xmx512m -Xms256m
+      SERVER_PORT: "8082"
+      SPRING_APPLICATION_NAME: hr-service
+      SPRING_DATASOURCE_URL: jdbc:mysql://hr-mysql:3306/${MYSQL_DATABASE}?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: ${HR_DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${HR_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "true"
+      EUREKA_CLIENT_ENABLED: "true"
+      EUREKA_REGISTER_WITH_EUREKA: "true"
+      EUREKA_FETCH_REGISTRY: "true"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
+      JAVA_OPTS: *java_opts
     depends_on:
-      - hr-mysql
-      - eureka-peer1
+      hr-mysql:
+        condition: service_healthy
+      eureka-peer1:
+        condition: service_healthy
     networks:
       - microservices-network
     restart: unless-stopped
@@ -267,6 +281,73 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 60s
+
+  # PostgreSQL for Auth Service
+  auth-postgres:
+    image: postgres:16-alpine
+    container_name: auth-postgres
+    ports:
+      - "5433:5432"  # Host 5433 -> container 5432
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - auth-postgres-data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "8086:8086"
+    environment:
+      SERVER_PORT: "8086"
+      DB_URL: ${AUTH_DB_URL}
+      DB_USERNAME: ${AUTH_DB_USERNAME}
+      DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      KMS_BASE_URL: http://kms-service:8083
+      REDIS_HOST: redis-server
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
+      LOGIN_MAX_FAILURES: ${LOGIN_MAX_FAILURES}
+      LOGIN_LOCK_MINUTES: ${LOGIN_LOCK_MINUTES}
+      PASSWORD_EXPIRY_DAYS: ${PASSWORD_EXPIRY_DAYS}
+      JAVA_OPTS: *java_opts
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+      kms-service:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      eureka-peer1:
+        condition: service_healthy
+      eureka-peer2:
+        condition: service_healthy
+      eureka-peer3:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
       start_period: 60s
 
 networks:
@@ -282,3 +363,4 @@ volumes:
   eureka2-data:
   eureka3-data:
   hr-mysql-data:
+  auth-postgres-data:

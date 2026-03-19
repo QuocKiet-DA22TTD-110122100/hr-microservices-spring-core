@@ -1,4 +1,4 @@
-package com.eureka.model;
+package com.eureka.Domain.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotBlank;
@@ -10,12 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * Represents information about a service instance registered with Eureka.
- * 
- * This class contains all the metadata needed to identify, locate, and
- * communicate with a service instance in the microservices architecture.
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InstanceInfo {
     

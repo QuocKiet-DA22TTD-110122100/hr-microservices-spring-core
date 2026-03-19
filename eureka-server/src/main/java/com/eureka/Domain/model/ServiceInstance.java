@@ -1,4 +1,4 @@
-package com.eureka.model;
+package com.eureka.Domain.model;
 
 import java.time.Instant;
 import java.time.Duration;

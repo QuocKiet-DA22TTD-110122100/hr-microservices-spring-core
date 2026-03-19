@@ -1,18 +1,11 @@
-package com.eureka.registry;
-
-import com.eureka.model.InstanceInfo;
-import com.eureka.model.InstanceStatus;
+package com.eureka.service;
 
 import java.util.List;
 
-/**
- * Core interface for service registry operations.
- * 
- * This interface defines the fundamental operations for managing
- * service instances in the Eureka registry, including registration,
- * deregistration, renewal, and querying.
- */
-public interface ServiceRegistry {
+import com.eureka.Domain.model.InstanceInfo;
+import com.eureka.Domain.model.InstanceStatus;
+
+public interface RegistryService {
     
     /**
      * Registers a new service instance with the registry.
