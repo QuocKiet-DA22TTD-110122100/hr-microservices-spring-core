@@ -105,7 +105,9 @@ public class CustomRateLimitFilter implements GlobalFilter, Ordered {
         }
 
         // 5. Fallback: Remote Address (có thể là proxy IP)
-        String remoteIp = exchange.getRequest().getRemoteAddress().getAddress().getHostAddress();
+        String remoteIp = exchange.getRequest().getRemoteAddress() != null
+            ? exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
+            : "unknown";
         log.debug("[IP_DETECTION] Remote Address (fallback): {}", remoteIp);
         return remoteIp;
     }

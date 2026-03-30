@@ -16,12 +16,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * REST API Controller for service discovery operations.
+ * Controller REST API cho cac thao tac discovery service.
  * 
- * This controller handles service discovery requests, providing information
- * about registered service instances and applications.
+ * Controller nay xu ly cac yeu cau tim kiem service, cung cap thong tin
+ * ve cac instance va ung dung da duoc dang ky.
  * 
- * Validates: Requirements 2.1, 2.2, 2.3, 2.4
+ * Dap ung: Yeu cau 2.1, 2.2, 2.3, 2.4
  */
 @RestController
 @RequestMapping("/eureka/apps")
@@ -31,7 +31,7 @@ public class DiscoveryController {
     
     private final RegistryService serviceRegistry;
     
-    // Simple delta tracking - in production this would be more sophisticated
+    // Theo doi delta don gian - ban production can co co che day du hon
     private volatile long lastDeltaGeneration = System.currentTimeMillis();
     private final Map<String, Long> instanceLastModified = new HashMap<>();
     
@@ -40,18 +40,18 @@ public class DiscoveryController {
     }
     
     /**
-     * Gets all registered applications and their instances.
+     * Lay tat ca ung dung da dang ky va cac instance tuong ung.
      * 
      * GET /eureka/apps
      * 
-     * @param regions optional regions filter (not implemented in this version)
-     * @return applications response containing all registered applications
+     * @param regions bo loc theo vung (chua ho tro o phien ban nay)
+     * @return response chua toan bo ung dung da dang ky
      */
     @GetMapping
     public ResponseEntity<ApplicationsResponse> getAllApplications(
             @RequestParam(value = "regions", required = false) String regions) {
         
-        logger.debug("Received request for all applications");
+        logger.debug("Đã nhận được yêu cầu lấy tất cả ứng dụng với filter regions: {}", regions);
         
         try {
             List<String> applicationNames = serviceRegistry.getApplicationNames();
@@ -71,34 +71,34 @@ public class DiscoveryController {
             response.setVersionsDelta(1L);
             response.setAppsHashcode(generateHashCode(applications));
             
-            logger.debug("Returning {} applications with {} total instances", 
+            logger.debug("Tra ve {} ung dung voi tong {} instance", 
                         applications.size(), 
                         applications.stream().mapToInt(Application::size).sum());
             
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            logger.error("Error retrieving all applications: {}", e.getMessage(), e);
+            logger.error("lỗi khi lấy tất cả ứng dụng : {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
     /**
-     * Gets a specific application and its instances.
+     * Lay mot ung dung cu the va danh sach instance cua no.
      * 
      * GET /eureka/apps/{appName}
      * 
-     * @param appName the application name
-     * @return application response containing the requested application
+     * @param appName ten ung dung
+     * @return response chua ung dung duoc yeu cau
      */
     @GetMapping("/{appName}")
     public ResponseEntity<ApplicationResponse> getApplication(@PathVariable String appName) {
         
-        logger.debug("Received request for application: {}", appName);
+        logger.debug("nhận yêu cầu cho ứng dụng: {}", appName);
         
         if (!serviceRegistry.hasApplication(appName) || serviceRegistry.getInstances(appName).isEmpty()) {
-            logger.debug("Application not found or no instances: {}", appName);
-            throw new ResourceNotFoundException("Application " + appName + " not found or no instances");
+            logger.debug("ứng dụng không tìm thấy: {}", appName);
+            throw new ResourceNotFoundException("Ung dung " + appName + " khong tim thay hoac khong co instance nao dang hoat dong");
         }
         
         List<InstanceInfo> instances = serviceRegistry.getInstances(appName);
@@ -109,31 +109,31 @@ public class DiscoveryController {
         ApplicationResponse response = new ApplicationResponse();
         response.setApplication(application);
         
-        logger.debug("Returning application {} with {} instances", appName, instances.size());
+        logger.debug("Tra ve ung dung {} voi {} instance", appName, instances.size());
         
         return ResponseEntity.ok(response);
     }
     
     /**
-     * Gets delta changes since last request.
+     * Lay cac thay doi delta ke tu lan yeu cau truoc.
      * 
      * GET /eureka/apps/delta
      * 
-     * @return applications delta response containing recent changes
+     * @return response delta chua cac thay doi gan nhat
      */
     @GetMapping("/delta")
     public ResponseEntity<ApplicationsResponse> getApplicationsDelta() {
         
-        logger.debug("Received request for applications delta");
+        logger.debug("nhận yêu cầu delta cho tất cả các ứng dụng");
         
         try {
-            // For this implementation, we'll return a simplified delta
-            // In a production system, this would track actual changes
+            // Ban hien tai tra ve delta rut gon
+            // Trong production can theo doi thay doi thuc te
             List<String> applicationNames = serviceRegistry.getApplicationNames();
             List<Application> deltaApplications = new ArrayList<>();
             
             long currentTime = System.currentTimeMillis();
-            long deltaThreshold = currentTime - 30000; // 30 seconds threshold
+            long deltaThreshold = currentTime - 30000; // Nguong 30 giay
             
             for (String appName : applicationNames) {
                 List<InstanceInfo> instances = serviceRegistry.getInstances(appName);
@@ -153,68 +153,68 @@ public class DiscoveryController {
             response.setVersionsDelta(++lastDeltaGeneration);
             response.setAppsHashcode(generateHashCode(deltaApplications));
             
-            logger.debug("Returning delta with {} applications and {} total instances", 
+            logger.debug("Tra ve delta voi {} ung dung va tong {} instance", 
                         deltaApplications.size(),
                         deltaApplications.stream().mapToInt(Application::size).sum());
             
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            logger.error("Error retrieving applications delta: {}", e.getMessage(), e);
+            logger.error("Loi khi lay delta ung dung: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
     /**
-     * Gets a specific instance from an application.
+     * Lay mot instance cu the cua ung dung.
      * 
      * GET /eureka/apps/{appName}/{instanceId}
      * 
-     * @param appName the application name
-     * @param instanceId the instance ID
-     * @return instance response containing the requested instance
+     * @param appName ten ung dung
+     * @param instanceId ID instance
+     * @return response chua instance duoc yeu cau
      */
     @GetMapping("/{appName}/{instanceId}")
     public ResponseEntity<InstanceResponse> getInstance(
             @PathVariable String appName,
             @PathVariable String instanceId) {
         
-        logger.debug("Received request for instance {}/{}", appName, instanceId);
+        logger.debug("Nhan yeu cau lay instance {}/{}", appName, instanceId);
         
         InstanceInfo instance = serviceRegistry.getInstance(appName, instanceId);
         
         if (instance == null) {
-            logger.debug("Instance not found: {}/{}", appName, instanceId);
-            throw new ResourceNotFoundException("Instance " + instanceId + " not found for application " + appName);
+            logger.debug("Khong tim thay instance: {}/{}", appName, instanceId);
+            throw new ResourceNotFoundException("Khong tim thay instance " + instanceId + " cho ung dung " + appName);
         }
         
         InstanceResponse response = new InstanceResponse();
         response.setInstance(instance);
         
-        logger.debug("Returning instance {}/{}", appName, instanceId);
+        logger.debug("Tra ve instance {}/{}", appName, instanceId);
         
         return ResponseEntity.ok(response);
     }
     
     /**
-     * Gets instances filtered by status.
+     * Lay cac instance duoc loc theo trang thai.
      * 
      * GET /eureka/apps?status={status}
      * 
-     * @param status the instance status to filter by
-     * @return applications response containing instances with the specified status
+     * @param status trang thai instance can loc
+     * @return response chua cac instance theo trang thai duoc chi dinh
      */
     @GetMapping(params = "status")
     public ResponseEntity<ApplicationsResponse> getApplicationsByStatus(
             @RequestParam("status") String status) {
         
-        logger.debug("Received request for applications with status: {}", status);
+        logger.debug("Nhan yeu cau lay ung dung theo trang thai: {}", status);
         
         InstanceStatus instanceStatus;
         try {
             instanceStatus = InstanceStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException e) {
-            logger.warn("Invalid status parameter: {}", status);
+            logger.warn("Tham so status khong hop le: {}", status);
             throw e;
         }
         
@@ -239,7 +239,7 @@ public class DiscoveryController {
         response.setVersionsDelta(1L);
         response.setAppsHashcode(generateHashCode(filteredApplications));
         
-        logger.debug("Returning {} applications with status {} containing {} total instances", 
+        logger.debug("Tra ve {} ung dung voi trang thai {} gom tong {} instance", 
                     filteredApplications.size(), status,
                     filteredApplications.stream().mapToInt(Application::size).sum());
         
@@ -247,15 +247,15 @@ public class DiscoveryController {
     }
     
     /**
-     * Simple check to determine if an instance has been modified since a threshold.
-     * In a production system, this would use proper change tracking.
+     * Kiem tra don gian xem instance co thay doi sau moc thoi gian hay khong.
+     * Trong production can su dung co che theo doi thay doi chuan.
      */
     private boolean isInstanceModifiedSince(InstanceInfo instance, long threshold) {
         String key = instance.getAppName() + ":" + instance.getInstanceId();
         Long lastModified = instanceLastModified.get(key);
         
         if (lastModified == null) {
-            // New instance, consider it modified
+            // Instance moi, xem nhu da thay doi
             instanceLastModified.put(key, System.currentTimeMillis());
             return true;
         }
@@ -264,8 +264,8 @@ public class DiscoveryController {
     }
     
     /**
-     * Generates a simple hash code for the applications list.
-     * In a production system, this would be more sophisticated.
+     * Tao hash code don gian cho danh sach ung dung.
+     * Trong production can co cach tinh toan day du hon.
      */
     private String generateHashCode(List<Application> applications) {
         StringBuilder sb = new StringBuilder();
@@ -279,7 +279,7 @@ public class DiscoveryController {
     }
     
     /**
-     * Response wrapper for all applications.
+     * Wrapper response cho tat ca ung dung.
      */
     public static class ApplicationsResponse {
         private List<Application> applications = new ArrayList<>();
@@ -312,7 +312,7 @@ public class DiscoveryController {
     }
     
     /**
-     * Response wrapper for a single application.
+     * Wrapper response cho mot ung dung.
      */
     public static class ApplicationResponse {
         private Application application;
@@ -327,7 +327,7 @@ public class DiscoveryController {
     }
     
     /**
-     * instance response wrapper for a single instance.
+     * Wrapper response cho mot instance.
      */
     public static class InstanceResponse {
         private InstanceInfo instance;

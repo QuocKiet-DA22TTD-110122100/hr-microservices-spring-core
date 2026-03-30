@@ -1,0 +1,71 @@
+{
+  "info": {
+    "name": "01 - Eureka Service Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Peer1 - Get All Applications",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Basic {{eureka_username}}:{{eureka_password}}",
+            "type": "text",
+            "disabled": true
+          }
+        ],
+        "url": "{{eureka_peer1_url}}/eureka/apps",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{eureka_username}}", "type": "string" },
+            { "key": "password", "value": "{{eureka_password}}", "type": "string" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Peer2 - Get Delta",
+      "request": {
+        "method": "GET",
+        "url": "{{eureka_peer2_url}}/eureka/apps/delta",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{eureka_username}}", "type": "string" },
+            { "key": "password", "value": "{{eureka_password}}", "type": "string" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Peer3 - Filter By Status UP",
+      "request": {
+        "method": "GET",
+        "url": "{{eureka_peer3_url}}/eureka/apps?status=UP",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{eureka_username}}", "type": "string" },
+            { "key": "password", "value": "{{eureka_password}}", "type": "string" }
+          ]
+        }
+      }
+    }
+  ]
+}

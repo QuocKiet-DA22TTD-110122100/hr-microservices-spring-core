@@ -18,10 +18,10 @@ import org.springframework.security.config.Customizer;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${security.user.name:eureka}")
+    @Value("${EUREKA_USERNAME:${spring.security.user.name:${security.user.name:eureka}}}")
     private String username;
     
-    @Value("${security.user.password:123456}")
+    @Value("${EUREKA_PASSWORD:${spring.security.user.password:${security.user.password:123456}}}")
     private String password;
 
     @Bean
@@ -30,7 +30,7 @@ public class SecurityConfig {
         UserDetails user = User.builder()
             .username(username)
             .password(passwordEncoder.encode(password))
-            .roles("USER")
+            .roles("ADMIN") // Gán role ADMIN cho user này
             .build();
         
         return new InMemoryUserDetailsManager(user);

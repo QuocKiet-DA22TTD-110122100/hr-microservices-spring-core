@@ -1,0 +1,252 @@
+{
+  "info": {
+    "name": "09 - Performance Monitoring",
+    "description": "Performance and metrics monitoring for microservices",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Gateway Metrics",
+      "item": [
+        {
+          "name": "Get All Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/actuator/metrics",
+              "host": ["{{gateway_url}}"],
+              "path": ["actuator", "metrics"]
+            }
+          }
+        },
+        {
+          "name": "HTTP Server Requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/actuator/metrics/http.server.requests",
+              "host": ["{{gateway_url}}"],
+              "path": ["actuator", "metrics", "http.server.requests"]
+            }
+          }
+        },
+        {
+          "name": "JVM Memory Used",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/actuator/metrics/jvm.memory.used",
+              "host": ["{{gateway_url}}"],
+              "path": ["actuator", "metrics", "jvm.memory.used"]
+            }
+          }
+        },
+        {
+          "name": "System CPU Usage",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/actuator/metrics/system.cpu.usage",
+              "host": ["{{gateway_url}}"],
+              "path": ["actuator", "metrics", "system.cpu.usage"]
+            }
+          }
+        },
+        {
+          "name": "Gateway Routes Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/actuator/gateway/routes",
+              "host": ["{{gateway_url}}"],
+              "path": ["actuator", "gateway", "routes"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth Service Metrics",
+      "item": [
+        {
+          "name": "Auth Service Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{auth_service_url}}/actuator/metrics",
+              "host": ["{{auth_service_url}}"],
+              "path": ["actuator", "metrics"]
+            }
+          }
+        },
+        {
+          "name": "Auth Service Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{auth_service_url}}/actuator/info",
+              "host": ["{{auth_service_url}}"],
+              "path": ["actuator", "info"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "HR Service Metrics",
+      "item": [
+        {
+          "name": "HR Service Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{hr_service_url}}/actuator/metrics",
+              "host": ["{{hr_service_url}}"],
+              "path": ["actuator", "metrics"]
+            }
+          }
+        },
+        {
+          "name": "HR Service Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{hr_service_url}}/actuator/info",
+              "host": ["{{hr_service_url}}"],
+              "path": ["actuator", "info"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Eureka Registry",
+      "item": [
+        {
+          "name": "Get All Registered Services",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{eureka_peer1_url}}/eureka/apps",
+              "host": ["{{eureka_peer1_url}}"],
+              "path": ["eureka", "apps"]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "{{eureka_username}}"},
+                {"key": "password", "value": "{{eureka_password}}"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Specific Service Instances",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{eureka_peer1_url}}/eureka/apps/AUTH-SERVICE",
+              "host": ["{{eureka_peer1_url}}"],
+              "path": ["eureka", "apps", "AUTH-SERVICE"]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "{{eureka_username}}"},
+                {"key": "password", "value": "{{eureka_password}}"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Response Time Tests",
+      "item": [
+        {
+          "name": "Login Response Time",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response time is acceptable', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "pm.test('Login successful', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{test_username}}\",\n  \"password\": \"{{test_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/api/iam/login",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "iam", "login"]
+            }
+          }
+        },
+        {
+          "name": "Health Check Response Time",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Health check is fast', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});",
+                  "",
+                  "pm.test('Service is healthy', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/actuator/health",
+              "host": ["{{gateway_url}}"],
+              "path": ["actuator", "health"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

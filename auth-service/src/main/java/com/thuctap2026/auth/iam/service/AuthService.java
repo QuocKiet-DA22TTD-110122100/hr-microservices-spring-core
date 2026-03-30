@@ -5,11 +5,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thuctap2026.auth.iam.entity.User;
 import com.thuctap2026.auth.iam.entity.UserPasswordHistory;
+import com.thuctap2026.auth.iam.sync.UserSyncService;
 import com.thuctap2026.auth.iam.repository.UserPasswordHistoryRepository;
 import com.thuctap2026.auth.iam.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
@@ -18,6 +20,7 @@ import org.springframework.web.client.RestClient;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
+import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.spec.X509EncodedKeySpec;
@@ -26,6 +29,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +41,7 @@ public class AuthService {
 
     private static final String JWT_ALG = "EdDSA";
     private static final String JWT_TYPE = "JWT";
+    private static final String TOKEN_BLACKLIST_PREFIX = "blacklist:token:";
     private static final Pattern PASSWORD_POLICY_PATTERN =
         Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9])(?=\\S+$).{8,}$");
 
@@ -45,6 +50,8 @@ public class AuthService {
     private final ObjectMapper objectMapper;
     private final Argon2PasswordEncoder passwordEncoder;
     private final LoginAttemptService loginAttemptService;
+    private final UserSyncService userSyncService;
+    private final StringRedisTemplate redisTemplate;
     private final RestClient kmsSignerClient;
     private final RestClient internalKmsClient;
     private final long jwtExpirationSeconds;
@@ -55,6 +62,8 @@ public class AuthService {
         UserPasswordHistoryRepository userPasswordHistoryRepository,
         ObjectMapper objectMapper,
         LoginAttemptService loginAttemptService,
+        UserSyncService userSyncService,
+        StringRedisTemplate redisTemplate,
         @Value("${kms.base-url:http://localhost:8083}") String kmsBaseUrl,
         @Value("${jwt.expiration-seconds:3600}") long jwtExpirationSeconds,
         @Value("${auth.password-policy.expiry-days:90}") int passwordExpiryDays
@@ -64,6 +73,8 @@ public class AuthService {
         this.objectMapper = objectMapper;
         this.passwordEncoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
         this.loginAttemptService = loginAttemptService;
+        this.userSyncService = userSyncService;
+        this.redisTemplate = redisTemplate;
         this.kmsSignerClient = RestClient.builder().baseUrl(kmsBaseUrl).build();
         this.internalKmsClient = RestClient.builder()
             .baseUrl(kmsBaseUrl)
@@ -76,12 +87,12 @@ public class AuthService {
     @Transactional
     public User register(String username, String password, String role) {
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
-            throw new IllegalArgumentException("username and password are required");
+            throw new IllegalArgumentException("username and password là bắt buộc");
         }
 
         String normalizedUsername = username.trim();
         if (normalizedUsername.length() > 100) {
-            throw new IllegalArgumentException("username must be <= 100 characters");
+            throw new IllegalArgumentException("username phải dưới <= 100 ký tự");
         }
 
         validatePasswordPolicy(password, "password");
@@ -92,7 +103,7 @@ public class AuthService {
 
         String normalizedRole = role == null || role.isBlank() ? "USER" : role.trim().toUpperCase();
         if (normalizedRole.length() > 50) {
-            throw new IllegalArgumentException("role must be <= 50 characters");
+            throw new IllegalArgumentException("role phải dưới <= 50 ký tự");
         }
 
         User user = new User();
@@ -104,8 +115,19 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
         savePasswordHistory(savedUser.getId(), passwordHash);
+        userSyncService.enqueueUserCreated(savedUser);
 
         return savedUser;
+    }
+
+    @Transactional(readOnly = true)
+    public UserSyncService.SyncStatusView getUserSyncStatus(UUID userId) {
+        return userSyncService.getSyncStatus(userId);
+    }
+
+    @Transactional
+    public UserSyncService.SyncStatusView retryUserSync(UUID userId) {
+        return userSyncService.retrySync(userId);
     }
 
     @Transactional
@@ -140,7 +162,7 @@ public class AuthService {
 
     public String login(String username, String password) {
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
-            throw new IllegalArgumentException("username and password are required");
+            throw new IllegalArgumentException("username and password là bắt buộc");
         }
 
         String normalizedUsername = username.trim();
@@ -153,6 +175,10 @@ public class AuthService {
                 loginAttemptService.recordFailure(normalizedUsername);
                 throw new SecurityException("Invalid credentials");
             });
+
+        if (user.isLocked()) {
+            throw new AccountLockedException("Account is locked by administrator");
+        }
 
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
             loginAttemptService.recordFailure(normalizedUsername);
@@ -172,6 +198,7 @@ public class AuthService {
         payload.put("userId", user.getId());
         payload.put("username", user.getUsername());
         payload.put("role", user.getRole());
+        payload.put("jti", UUID.randomUUID().toString());
         payload.put("exp", exp);
 
         String encodedPayload = encodeBase64Url(toJsonBytes(payload));
@@ -226,6 +253,18 @@ public class AuthService {
         validateExpiration(payload);
 
         return payload;
+    }
+
+    public void revokeToken(String token) {
+        Map<String, Object> claims = verifyToken(token);
+        String tokenId = resolveTokenId(claims, token);
+        long ttlSeconds = resolveTtlSeconds(claims.get("exp"));
+
+        redisTemplate.opsForValue().set(
+            TOKEN_BLACKLIST_PREFIX + tokenId,
+            "1",
+            Duration.ofSeconds(Math.max(ttlSeconds, 1))
+        );
     }
 
     private KmsSignResponse signByKms(String payloadToSign) {
@@ -336,6 +375,39 @@ public class AuthService {
         }
     }
 
+    private String resolveTokenId(Map<String, Object> claims, String token) {
+        Object jti = claims.get("jti");
+        if (jti != null) {
+            String value = String.valueOf(jti).trim();
+            if (!value.isBlank()) {
+                return value;
+            }
+        }
+
+        return sha256(token);
+    }
+
+    private long resolveTtlSeconds(Object expObj) {
+        long exp;
+        if (expObj instanceof Number num) {
+            exp = num.longValue();
+        } else {
+            exp = Long.parseLong(String.valueOf(expObj));
+        }
+
+        long now = Instant.now().truncatedTo(ChronoUnit.SECONDS).getEpochSecond();
+        return exp - now;
+    }
+
+    private String sha256(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Unable to hash token", ex);
+        }
+    }
+
     private ClientHttpRequestInterceptor buildInternalSignatureInterceptor() {
         return (request, body, execution) -> {
             String timestamp = String.valueOf(Instant.now().toEpochMilli());
@@ -395,6 +467,35 @@ public class AuthService {
 
         Instant expiresAt = updatedAt.plus(Duration.ofDays(passwordExpiryDays));
         return Instant.now().isAfter(expiresAt);
+    }
+
+    @Transactional
+    public void lockAccount(String username) {
+        if (username == null || username.isBlank()) {
+            throw new IllegalArgumentException("username is required");
+        }
+
+        User user = userRepository.findByUsername(username.trim())
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        user.setLocked(true);
+        user.setLockedAt(Instant.now());
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void unlockAccount(String username) {
+        if (username == null || username.isBlank()) {
+            throw new IllegalArgumentException("username is required");
+        }
+
+        User user = userRepository.findByUsername(username.trim())
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        user.setLocked(false);
+        user.setLockedAt(null);
+        loginAttemptService.resetAttempts(username.trim());
+        userRepository.save(user);
     }
 
     private record KmsSignRequest(String payload) {

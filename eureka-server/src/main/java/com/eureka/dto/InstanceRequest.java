@@ -21,40 +21,40 @@ public class InstanceRequest {
     /**
      * Unique instance identifier (hostname:port or custom).
      */
-    @NotBlank(message = "instanceId is required")
+    @NotBlank(message = "Bat buoc nhap instanceId")
     private String instanceId;
 
     /**
      * Application/service name.
      */
-    @NotBlank(message = "appName is required")
+    @NotBlank(message = "Bat buoc nhap appName")
     private String appName;
 
     /**
      * Hostname of the instance.
      */
-    @NotBlank(message = "hostName is required")
+    @NotBlank(message = "Bat buoc nhap hostName")
     private String hostName;
 
     /**
      * HTTP port of the instance.
      */
     @NotNull
-    @Min(value = 1, message = "port must be between 1 and 65535")
-    @Max(value = 65535, message = "port must be between 1 and 65535")
+    @Min(value = 1, message = "Port phai nam trong khoang tu 1 den 65535")
+    @Max(value = 65535, message = "Port phai nam trong khoang tu 1 den 65535")
     private Integer port;
 
     /**
      * Instance status: UP, DOWN, OUT_OF_SERVICE, UNKNOWN, STARTING.
      */
-    @NotBlank(message = "status is required")
+    @NotBlank(message = "Bat buoc nhap status")
     private String status;  // "UP", "DOWN", etc.
 
     /**
      * Lease duration in seconds (default 90s).
      */
     @NotNull
-    @Positive(message = "leaseDurationSeconds must be positive")
+    @Positive(message = "leaseDurationSeconds phai la so duong")
     @Builder.Default
     private Integer leaseDurationSeconds = 90;
 

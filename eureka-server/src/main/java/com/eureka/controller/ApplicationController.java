@@ -60,7 +60,7 @@ public class ApplicationController {
             @RequestHeader HttpHeaders headers, // Added by qodo: to read replication header
             @Valid @RequestBody InstanceWrapper instanceWrapper) {
         
-        logger.info("Received registration request for application: {}", appName);
+        logger.info("Đã nhận được yêu cầu đăng ký: {}", appName);
         
         InstanceInfo instance = instanceWrapper.getInstance();
         
@@ -68,7 +68,7 @@ public class ApplicationController {
         if (instance.getAppName() == null || instance.getAppName().isEmpty()) {
             instance.setAppName(appName.toUpperCase());
         } else if (!appName.equalsIgnoreCase(instance.getAppName()) ) {
-            throw new IllegalArgumentException("Application name in URL does not match instance data. URL app name: " + appName + ", Instance app name: " + instance.getAppName());
+            throw new IllegalArgumentException("Ten ung dung trong URL khong khop voi du lieu instance. URL app name: " + appName + ", Instance app name: " + instance.getAppName());
         }
         
         // Validate instance data
@@ -76,9 +76,9 @@ public class ApplicationController {
             registrationValidator.validate(instance);
         
         if (!validationResult.isValid()) {
-            logger.warn("Registration validation failed for {}/{}: {}", 
+            logger.warn("Xac thuc dang ky that bai cho {}/{}: {}", 
                        appName, instance.getInstanceId(), validationResult.getErrorMessage());
-            throw new IllegalArgumentException("Registration validation failed: " + validationResult.getErrorMessage());
+            throw new IllegalArgumentException("Xac thuc dang ky that bai: " + validationResult.getErrorMessage());
         }
         
         // Added by qodo: detect replication to avoid loops
@@ -88,7 +88,7 @@ public class ApplicationController {
         // Register the instance with replication flag
         serviceRegistry.register(instance, instance.getLeaseInfo().getDurationInSecs(), isReplication);
         
-        logger.info("Successfully registered instance {}/{}", appName, instance.getInstanceId());
+        logger.info("Dang ky instance thanh cong {}/{}", appName, instance.getInstanceId());
         
         // Added by qodo: replicate to peers when this is not a replication request
         if (!isReplication) {
@@ -96,7 +96,7 @@ public class ApplicationController {
                 // Use PeerClient to propagate to peers
                 peerClient.replicateRegister(appName, new InstanceWrapper(instance));
             } catch (Exception ex) {
-                logger.warn("Peer replication (REGISTER) failed for {}/{}: {}", appName, instance.getInstanceId(), ex.getMessage());
+                logger.warn("Dong bo peer (REGISTER) that bai cho {}/{}: {}", appName, instance.getInstanceId(), ex.getMessage());
             }
         }
         
@@ -122,12 +122,12 @@ public class ApplicationController {
             @RequestParam(value = "status", required = false) String status,
             @RequestParam(value = "lastDirtyTimestamp", required = false) String lastDirtyTimestamp) {
         
-        logger.debug("Received heartbeat for {}/{}", appName, instanceId);
+        logger.debug("Nhan heartbeat cho {}/{}", appName, instanceId);
         
         // Check if instance exists
         if (!serviceRegistry.hasInstance(appName, instanceId)) {
-            logger.warn("Heartbeat received for non-existent instance {}/{}", appName, instanceId);
-            throw new ResourceNotFoundException("Instance " + instanceId + " not found for application " + appName);
+            logger.warn("Nhan heartbeat cho instance khong ton tai {}/{}", appName, instanceId);
+            throw new ResourceNotFoundException("Khong tim thay instance " + instanceId + " cho ung dung " + appName);
         }
         
         // Added by qodo: detect replication flag
@@ -138,8 +138,8 @@ public class ApplicationController {
         boolean renewed = serviceRegistry.renew(appName, instanceId, isReplication);
         
         if (!renewed) {
-            logger.warn("Failed to renew lease for {}/{}", appName, instanceId);
-            throw new ResourceNotFoundException("Instance " + instanceId + " lease renewal failed for application " + appName);
+            logger.warn("Gia han lease that bai cho {}/{}", appName, instanceId);
+            throw new ResourceNotFoundException("Gia han lease that bai cho instance " + instanceId + " cua ung dung " + appName);
         }
         
         // Update status if provided
@@ -149,22 +149,22 @@ public class ApplicationController {
                 boolean updated = serviceRegistry.updateStatus(appName, instanceId, newStatus, 
                                                              lastDirtyTimestamp, isReplication);
                 if (!updated) {
-                    logger.warn("Failed to update status for {}/{} to {}", appName, instanceId, status);
+                    logger.warn("Cap nhat trang thai that bai cho {}/{} sang {}", appName, instanceId, status);
                 }
             } catch (IllegalArgumentException e) {
-                logger.warn("Invalid status value provided: {}", status);
+                logger.warn("Gia tri status khong hop le: {}", status);
                 throw e;
             }
         }
         
-        logger.debug("Successfully processed heartbeat for {}/{}", appName, instanceId);
+        logger.debug("Xu ly heartbeat thanh cong cho {}/{}", appName, instanceId);
 
         // Added by qodo: replicate to peers when not replication request
         if (!isReplication) {
             try {
                 peerClient.replicateRenew(appName, instanceId, status, lastDirtyTimestamp);
             } catch (Exception ex) {
-                logger.warn("Peer replication (RENEW) failed for {}/{}: {}", appName, instanceId, ex.getMessage());
+                logger.warn("Dong bo peer (RENEW) that bai cho {}/{}: {}", appName, instanceId, ex.getMessage());
             }
         }
         return ResponseEntity.ok().build();
@@ -185,12 +185,12 @@ public class ApplicationController {
             @PathVariable String instanceId,
             @RequestHeader HttpHeaders headers) { // Added by qodo
         
-        logger.info("Received deregistration request for {}/{}", appName, instanceId);
+        logger.info("Đã nhận được yêu cầu hủy đăng ký cho {}/{}", appName, instanceId);
         
         // Check if instance exists
         if (!serviceRegistry.hasInstance(appName, instanceId)) {
-            logger.warn("Deregistration requested for non-existent instance {}/{}", appName, instanceId);
-            throw new ResourceNotFoundException("Instance " + instanceId + " not found for application " + appName);
+            logger.warn("Yêu cầu hủy đăng ký cho instance không tồn tại {}/{}", appName, instanceId);
+            throw new ResourceNotFoundException("Khong tim thay instance " + instanceId + " cho ung dung " + appName);
         }
         
         // Added by qodo: detect replication flag
@@ -201,18 +201,18 @@ public class ApplicationController {
         boolean deregistered = serviceRegistry.deregister(appName, instanceId, isReplication);
         
         if (!deregistered) {
-            logger.warn("Failed to deregister instance {}/{}", appName, instanceId);
-            throw new IllegalStateException("Instance " + instanceId + " deregistration failed for application " + appName);
+            logger.warn("lỗi khi hủy đăng ký instance {}/{}", appName, instanceId);
+            throw new IllegalStateException("Huy dang ky that bai cho instance " + instanceId + " cua ung dung " + appName);
         }
         
-        logger.info("Successfully deregistered instance {}/{}", appName, instanceId);
+        logger.info("thành công hủy đăng ký {}/{}", appName, instanceId);
 
         // Added by qodo: replicate to peers when not replication request
         if (!isReplication) {
             try {
                 peerClient.replicateDeregister(appName, instanceId);
             } catch (Exception ex) {
-                logger.warn("Peer replication (DEREGISTER) failed for {}/{}: {}", appName, instanceId, ex.getMessage());
+                logger.warn("Dong bo peer (DEREGISTER) that bai cho {}/{}: {}", appName, instanceId, ex.getMessage());
             }
         }
         return ResponseEntity.ok().build();

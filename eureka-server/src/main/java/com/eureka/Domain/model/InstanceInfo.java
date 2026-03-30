@@ -13,21 +13,21 @@ import java.util.Objects;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InstanceInfo {
     
-    @NotBlank(message = "Instance ID is required")
+    @NotBlank(message = "Bat buoc nhap Instance ID")
     private String instanceId;
     
-    @NotBlank(message = "Application name is required")
+    @NotBlank(message = "Bat buoc nhap ten ung dung")
     private String appName;
     
-    @NotBlank(message = "IP address is required")
+    @NotBlank(message = "Bat buoc nhap dia chi IP")
     private String ipAddr;
     
-    @Min(value = 1, message = "Port must be between 1 and 65535")
-    @Max(value = 65535, message = "Port must be between 1 and 65535")
+    @Min(value = 1, message = "Port phai nam trong khoang tu 1 den 65535")
+    @Max(value = 65535, message = "Port phai nam trong khoang tu 1 den 65535")
     private int port;
     
-    @Min(value = 1, message = "Secure port must be between 1 and 65535")
-    @Max(value = 65535, message = "Secure port must be between 1 and 65535")
+    @Min(value = 1, message = "Secure port phai nam trong khoang tu 1 den 65535")
+    @Max(value = 65535, message = "Secure port phai nam trong khoang tu 1 den 65535")
     private int securePort;
     
     private String homePageUrl;
@@ -35,12 +35,12 @@ public class InstanceInfo {
     private String healthCheckUrl;
     private String secureHealthCheckUrl;
     
-    @NotNull(message = "Instance status is required")
+    @NotNull(message = "Bat buoc nhap trang thai instance")
     private InstanceStatus status = InstanceStatus.UP;
     
     private Map<String, String> metadata = new HashMap<>();
     
-    @NotNull(message = "Lease information is required")
+    @NotNull(message = "Bat buoc nhap thong tin lease")
     private LeaseInfo leaseInfo = new LeaseInfo();
     
     private DataCenterInfo dataCenterInfo = new DataCenterInfo();

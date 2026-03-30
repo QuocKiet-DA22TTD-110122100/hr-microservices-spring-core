@@ -3,27 +3,35 @@ package com.microservice.apigateway.util;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.HexFormat;
 
-public class HmacUtils {
+public final class HmacUtils {
 
     private static final String ALGORITHM = "HmacSHA256";
+
+    private HmacUtils() {
+    }
 
     /**
      * Tạo chữ ký HMAC từ dữ liệu và khóa bí mật
      */
     public static String generateSignature(String data, String secret) {
-        try {
+        if (data == null || secret == null) {
+            throw new IllegalArgumentException("data và secret không được null");
+        }
+        try 
+        {
             SecretKeySpec signingKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), ALGORITHM);
             Mac mac = Mac.getInstance(ALGORITHM);
             mac.init(signingKey);
             byte[] rawHmac = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(rawHmac);
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi tính toán HMAC", e);
+        } catch (GeneralSecurityException e) {
+            throw new HmacOperationException("Lỗi khi tính toán HMAC", e);
         }
     }
 
@@ -50,7 +58,7 @@ public class HmacUtils {
             return HexFormat.of().formatHex(encodedHash);
 
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Error hashing content", e);
+            throw new HmacOperationException("Error hashing content", e);
         }
     }
 
@@ -60,5 +68,11 @@ public class HmacUtils {
     // Trong HmacUtils.java
     public static String buildCanonicalString(String method, String path, String timestamp, String nonce, String bodyHash) {
         return String.join("\n", method, path, timestamp, nonce, bodyHash);
+    }
+
+    public static final class HmacOperationException extends IllegalStateException {
+        public HmacOperationException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

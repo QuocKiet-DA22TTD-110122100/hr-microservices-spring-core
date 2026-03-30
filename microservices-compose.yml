@@ -20,11 +20,10 @@ services:
     container_name: haproxy-lb
     volumes:
       - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
-      - ./certs/eureka.pem:/etc/ssl/certs/eureka.pem:ro
     ports:
-      - "80:80"  # Gateway port
-      - "8760:8760"  # Eureka HTTPS endpoint
-      - "8404:8404"  # HAProxy stats
+      - "${HAPROXY_HTTP_PORT:-8088}:80"  # Gateway port (avoid host port 80 conflict)
+      - "${HAPROXY_EUREKA_PORT:-18760}:8760"  # Eureka HTTP endpoint via HAProxy
+      - "${HAPROXY_STATS_PORT:-18404}:8404"  # HAProxy stats
     depends_on:
       eureka-peer1:
         condition: service_healthy
@@ -55,6 +54,8 @@ services:
       EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
       SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
       SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+      SECURITY_USER_NAME: ${EUREKA_USERNAME}
+      SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
       JAVA_OPTS: *java_opts
     volumes:
       - eureka1-data:/app/data
@@ -66,7 +67,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 120s
+      start_period: 300s
 
   # Eureka Server Peer 2
   eureka-peer2:
@@ -87,6 +88,8 @@ services:
       EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
       SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
       SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+      SECURITY_USER_NAME: ${EUREKA_USERNAME}
+      SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
       JAVA_OPTS: *java_opts
     volumes:
       - eureka2-data:/app/data
@@ -98,7 +101,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 120s
+      start_period: 300s
 
   # Eureka Server Peer 3
   eureka-peer3:
@@ -119,6 +122,8 @@ services:
       EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
       SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
       SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+      SECURITY_USER_NAME: ${EUREKA_USERNAME}
+      SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
       JAVA_OPTS: *java_opts
     volumes:
       - eureka3-data:/app/data
@@ -130,7 +135,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 120s
+      start_period: 300s
 
   # API Gateway (Spring Cloud Gateway)
   api-gateway:
@@ -144,10 +149,13 @@ services:
       REDIS_HOST: redis-server
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
       AUTH_SERVICE_URL: http://auth-service:8086
       SPRING_PROFILES_ACTIVE: docker
       JAVA_OPTS: *java_opts
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     depends_on:
       redis:
         condition: service_started
@@ -165,7 +173,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 300s
 
   # Mock IAM Service để xử lý authentication endpoints
   # Service này handle các requests đến /iam/auth/* và /iam/user/*
@@ -196,7 +204,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 300s
 
   # KMS Service
   kms-service:
@@ -209,6 +217,10 @@ services:
     environment:
       JAVA_OPTS: *java_opts
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
+      REDIS_HOST: redis-server
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     depends_on:
       eureka-peer1:
         condition: service_healthy
@@ -224,7 +236,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 300s
 
   # MySQL for HR Service
   hr-mysql:
@@ -245,7 +257,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 180s
 
   # HR Service
   hr-service:
@@ -263,11 +275,13 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${HR_DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "true"
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
       EUREKA_CLIENT_ENABLED: "true"
       EUREKA_REGISTER_WITH_EUREKA: "true"
       EUREKA_FETCH_REGISTRY: "true"
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
       JAVA_OPTS: *java_opts
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     depends_on:
       hr-mysql:
         condition: service_healthy
@@ -281,7 +295,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 300s
 
   # PostgreSQL for Auth Service
   auth-postgres:
@@ -303,7 +317,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 20s
+      start_period: 60s
 
   # Auth Service
   auth-service:
@@ -326,7 +340,11 @@ services:
       LOGIN_MAX_FAILURES: ${LOGIN_MAX_FAILURES}
       LOGIN_LOCK_MINUTES: ${LOGIN_LOCK_MINUTES}
       PASSWORD_EXPIRY_DAYS: ${PASSWORD_EXPIRY_DAYS}
+      HR_SYNC_ENABLED: "true"
+      HR_SYNC_BASE_URL: http://hr-service:8082
+      HR_SYNC_INTERNAL_SECRET: ${INTERNAL_SECRET}
       JAVA_OPTS: *java_opts
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     depends_on:
       auth-postgres:
         condition: service_healthy
@@ -348,7 +366,80 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 300s
+
+  # Frontend - React SPA với Nginx proxy
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hr-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
       start_period: 60s
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    depends_on:
+      api-gateway:
+        condition: service_started
+      auth-service:
+        condition: service_started
+      hr-service:
+        condition: service_started
+      kms-service:
+        condition: service_started
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      prometheus:
+        condition: service_started
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  zipkin:
+    image: openzipkin/zipkin:3.4
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - microservices-network
+    restart: unless-stopped
 
 networks:
   microservices-network:
@@ -364,3 +455,6 @@ volumes:
   eureka3-data:
   hr-mysql-data:
   auth-postgres-data:
+  prometheus-data:
+  grafana-data:
+  frontend-build:

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microservice.apigateway.dto.request.HmacHeaders;
 import com.microservice.apigateway.dto.response.ApiResponse;
 import com.microservice.apigateway.security.KeyProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
@@ -31,6 +32,7 @@ import org.springframework.http.HttpHeaders;
 
 
 @Component
+@Slf4j
 public class HmacSecurityFilter implements GlobalFilter, Ordered {
 
     @Autowired
@@ -51,7 +53,14 @@ public class HmacSecurityFilter implements GlobalFilter, Ordered {
         HmacHeaders hmac = HmacHeaders.from(request);
 
         if (hmac.isInvalid()) {
-            return onError(exchange, "Missing security headers", HttpStatus.UNAUTHORIZED);
+            // 1. Log ra trước để debug
+            log.info("--- DEBUG SECURITY FILTER ---");
+            log.info("Danh sách Header nhận được: {}", request.getHeaders().keySet());
+            
+            String authHeader = request.getHeaders().getFirst("Authorization");
+            log.info("Giá trị Authorization thực tế: {}", authHeader);
+            return onError(exchange, "Thiếu tiêu đề bảo mật", HttpStatus.UNAUTHORIZED);
+            
         }
 
         return validateNonce(hmac.nonce())
@@ -120,7 +129,7 @@ public class HmacSecurityFilter implements GlobalFilter, Ordered {
     private Mono<Void> verifyHmacStep(ServerWebExchange exchange, HmacHeaders hmac, String bodyHash) {
         // 1. Lấy chìa khóa bí mật
         return keyProvider.getSecretKey(hmac.accessKeyId())
-                .switchIfEmpty(Mono.error(new RuntimeException("Access Key not found")))
+                .switchIfEmpty(Mono.error(new RuntimeException("Access Key ID không tồn tại"))) // Nếu không tìm thấy key, ném lỗi
                 .flatMap(secretKey -> {
                     // 2. Chuẩn bị dữ liệu để ký
                     String dataToSign = HmacUtils.buildCanonicalString(
@@ -136,7 +145,7 @@ public class HmacSecurityFilter implements GlobalFilter, Ordered {
                     if (isValid) {
                         return Mono.empty();
                     } else {
-                        return Mono.error(new RuntimeException("Invalid signature")); // Chữ ký sai -> ném lỗi
+                        return Mono.error(new RuntimeException("Chữ ký không hợp lệ")); // Chữ ký sai -> ném lỗi
                     }
                 });
     }
@@ -147,7 +156,7 @@ public class HmacSecurityFilter implements GlobalFilter, Ordered {
                 .setIfAbsent(nonceKey, "1", Duration.ofMinutes(5))
                 .flatMap(isNew -> Boolean.TRUE.equals(isNew) ?
                         Mono.empty() :
-                        Mono.error(new RuntimeException("Duplicate request")));
+                        Mono.error(new RuntimeException("Yêu cầu trùng lặp")));
     }
 
     private Mono<Void> validateTimestamp(String timestamp) {
@@ -162,7 +171,7 @@ public class HmacSecurityFilter implements GlobalFilter, Ordered {
             // Nếu ổn thì trả về trống (đi tiếp)
             return Mono.empty();
         } catch (Exception e) {
-            return Mono.error(new RuntimeException("Invalid timestamp format"));
+            return Mono.error(new RuntimeException("Invalid timestamp format"));// thiếu hoặc sai định dạng timestamp -> ném lỗi
         }
     }
 

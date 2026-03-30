@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.11</version>
+		<version>3.5.12</version>
 		<relativePath/>
 	</parent>
 	<groupId>com.eureka</groupId>
@@ -134,7 +134,19 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-	</dependencies>
+	
+   <dependency>
+     <groupId>io.reactivex.rxjava2</groupId>
+     <artifactId>rxjava</artifactId>
+     <version>2.2.11</version>
+   </dependency>
+ 
+   <dependency>
+     <groupId>org.apache.kafka</groupId>
+     <artifactId>kafka-clients</artifactId>
+     <version>2.3.0</version>
+   </dependency>
+ </dependencies>
 
 	<build>
 		<plugins>

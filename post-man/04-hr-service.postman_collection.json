@@ -1,0 +1,67 @@
+{
+  "info": {
+    "name": "04 - HR Service Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Employees",
+      "request": {
+        "method": "GET",
+        "url": "{{hr_service_url}}/employees"
+      }
+    },
+    {
+      "name": "Create Employee",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman Employee\",\n  \"position\": \"QA\"\n}"
+        },
+        "url": "{{hr_service_url}}/employees"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json && json.id) {",
+              "    pm.environment.set('employee_id', json.id);",
+              "}",
+              "pm.test('Create employee returns 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Employee",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman Employee Updated\",\n  \"position\": \"Senior QA\"\n}"
+        },
+        "url": "{{hr_service_url}}/employees/{{employee_id}}"
+      }
+    },
+    {
+      "name": "Delete Employee",
+      "request": {
+        "method": "DELETE",
+        "url": "{{hr_service_url}}/employees/{{employee_id}}"
+      }
+    }
+  ]
+}

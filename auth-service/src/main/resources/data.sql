@@ -2,6 +2,8 @@
 DELETE FROM user_password_history;
 DELETE FROM users;
 DELETE FROM kms_keys;
+DELETE FROM user_sync_outbox;
+DELETE FROM user_sync_dlq;
 
 INSERT INTO users (id, username, password_hash, role, password_updated_at)
 VALUES (

@@ -1,6 +1,9 @@
 package microservices.kms.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import microservices.kms.config.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.security.KeyPair;
@@ -43,6 +46,7 @@ public class KmsSigningService {
     /**
      * Generate a new Ed25519 key pair and store it
      */
+    @CacheEvict(cacheNames = {CacheConfig.JWK_BY_KID_CACHE, CacheConfig.JWKS_ALL_CACHE}, allEntries = true)
     public synchronized String generateNewKeyPair() {
         try {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed25519");
@@ -90,6 +94,7 @@ public class KmsSigningService {
     /**
      * Get public key in JWK format for a specific key ID
      */
+    @Cacheable(cacheNames = CacheConfig.JWK_BY_KID_CACHE, key = "#keyId")
     public Map<String, Object> getPublicKeyAsJwk(String keyId) {
         try {
             KeyPair keyPair = keyStore.get(keyId);
@@ -121,6 +126,7 @@ public class KmsSigningService {
     /**
      * Get JWKS (JSON Web Key Set) with all public keys
      */
+    @Cacheable(cacheNames = CacheConfig.JWKS_ALL_CACHE)
     public Map<String, Object> getJwks() {
         try {
             List<Map<String, Object>> keys = keyStore.keySet().stream()

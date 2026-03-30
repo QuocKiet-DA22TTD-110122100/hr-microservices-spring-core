@@ -34,6 +34,12 @@ public class User {
     @Column(name = "password_updated_at", nullable = false)
     private Instant passwordUpdatedAt;
 
+    @Column(name = "locked", nullable = false)
+    private boolean locked = false;
+
+    @Column(name = "locked_at", nullable = true)
+    private Instant lockedAt;
+
     @PrePersist
     void onCreate() {
         Instant now = Instant.now();
@@ -89,5 +95,21 @@ public class User {
 
     public void setPasswordUpdatedAt(Instant passwordUpdatedAt) {
         this.passwordUpdatedAt = passwordUpdatedAt;
+    }
+
+    public boolean isLocked() {
+        return locked;
+    }
+
+    public void setLocked(boolean locked) {
+        this.locked = locked;
+    }
+
+    public Instant getLockedAt() {
+        return lockedAt;
+    }
+
+    public void setLockedAt(Instant lockedAt) {
+        this.lockedAt = lockedAt;
     }
 }

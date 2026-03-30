@@ -35,7 +35,7 @@ public class KmsController {
         response.put("port", serverPort);
         response.put("status", "UP");
             response.put("timestamp", Instant.now().toString());
-        response.put("message", "Key Management Service is running!");
+        response.put("message", "khóa quản lý Các dịch vụ có thể sử dụng để ký JWT Service!");
         return response;
     }
 
@@ -53,7 +53,7 @@ public class KmsController {
         Map<String, Object> response = new HashMap<>();
         response.put("app", applicationName);
         response.put("version", "1.0.0");
-        response.put("description", "Key Management Service");
+        response.put("description", "Khóa quản lý Các dịch vụ có thể sử dụng để ký JWT Service");
         response.put("port", serverPort);
         return response;
     }

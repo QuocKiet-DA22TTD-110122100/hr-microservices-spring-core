@@ -22,7 +22,7 @@ public class HmacClientTest {
 
         // 3. Thiết lập Header
         HttpHeaders headers = new HttpHeaders();
-        headers.set("X-API-Key", apiKey);
+        headers.set("X-Access-Key-Id", apiKey);
         headers.set("X-Timestamp", timestamp);
         headers.set("X-Nonce", nonce);
         headers.set("X-Signature", signature);

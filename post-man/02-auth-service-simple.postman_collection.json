@@ -1,0 +1,68 @@
+{
+  "info": {
+    "name": "02 - Auth Service Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Register User (/iam/register)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{test_username}}\",\n  \"password\": \"{{test_password}}\",\n  \"role\": \"USER\"\n}"
+        },
+        "url": "{{auth_service_url}}/iam/register"
+      }
+    },
+    {
+      "name": "Login (/iam/login)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{test_username}}\",\n  \"password\": \"{{test_password}}\"\n}"
+        },
+        "url": "{{auth_service_url}}/iam/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json && json.token) {",
+              "    pm.environment.set('auth_token', json.token);",
+              "}",
+              "pm.test('Login status is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Verify Token (/iam/verify)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"{{auth_token}}\"\n}"
+        },
+        "url": "{{auth_service_url}}/iam/verify"
+      }
+    }
+  ]
+}

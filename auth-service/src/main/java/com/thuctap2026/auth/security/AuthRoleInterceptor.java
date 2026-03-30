@@ -8,8 +8,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Component
 public class AuthRoleInterceptor implements HandlerInterceptor {
@@ -24,7 +29,7 @@ public class AuthRoleInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
         if (!(handler instanceof HandlerMethod handlerMethod)) {
             return true;
         }
@@ -36,8 +41,7 @@ public class AuthRoleInterceptor implements HandlerInterceptor {
 
         String authorization = request.getHeader(AUTHORIZATION_HEADER);
         if (authorization == null || !authorization.startsWith(BEARER_PREFIX)) {
-            response.sendError(HttpStatus.UNAUTHORIZED.value(), "Missing or invalid Authorization header");
-            return false;
+            return deny(response, HttpStatus.UNAUTHORIZED, "Missing or invalid Authorization header");
         }
 
         String token = authorization.substring(BEARER_PREFIX.length());
@@ -46,19 +50,80 @@ public class AuthRoleInterceptor implements HandlerInterceptor {
         try {
             claims = authService.verifyToken(token);
         } catch (RuntimeException ex) {
-            response.sendError(HttpStatus.UNAUTHORIZED.value(), "Invalid token");
-            return false;
+            return deny(response, HttpStatus.UNAUTHORIZED, "Invalid token");
         }
 
-        Object roleObj = claims.get("role");
-        String role = roleObj == null ? "" : String.valueOf(roleObj);
-        boolean allowed = Arrays.stream(requiredRoles.value()).anyMatch(allowedRole -> allowedRole.equals(role));
+        List<String> userRoles = extractRoles(claims);
+        boolean allowed = Arrays.stream(requiredRoles.value())
+            .anyMatch(required -> userRoles.stream().anyMatch(role -> role.equalsIgnoreCase(required)));
 
         if (!allowed) {
-            response.sendError(HttpStatus.FORBIDDEN.value(), "Access denied");
-            return false;
+            return deny(response, HttpStatus.FORBIDDEN, "Access denied");
         }
 
         return true;
+    }
+
+    private boolean deny(HttpServletResponse response, HttpStatus status, String message) throws IOException {
+        response.sendError(status.value(), message);
+        return false;
+    }
+
+    private List<String> extractRoles(Map<String, Object> claims) {
+        List<String> roles = extractRolesFromClaim(claims.get("roles"));
+        if (!roles.isEmpty()) {
+            return roles;
+        }
+        return extractSingleRole(claims.get("role"));
+    }
+
+    private List<String> extractRolesFromClaim(Object rolesClaim) {
+        if (rolesClaim instanceof Collection<?> collection) {
+            return normalizeCollectionRoles(collection);
+        }
+        if (rolesClaim instanceof String rolesText) {
+            return normalizeCsvRoles(rolesText);
+        }
+        return List.of();
+    }
+
+    private List<String> normalizeCollectionRoles(Collection<?> collection) {
+        List<String> roles = new ArrayList<>();
+        for (Object role : collection) {
+            String normalized = normalizeRole(role);
+            if (normalized != null) {
+                roles.add(normalized);
+            }
+        }
+        return roles;
+    }
+
+    private List<String> normalizeCsvRoles(String rolesText) {
+        if (rolesText.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(rolesText.split(","))
+            .map(this::normalizeRole)
+            .filter(Objects::nonNull)
+            .toList();
+    }
+
+    private List<String> extractSingleRole(Object roleClaim) {
+        String role = normalizeRole(roleClaim);
+        if (role == null) {
+            return List.of();
+        }
+        return List.of(role);
+    }
+
+    private String normalizeRole(Object role) {
+        if (role == null) {
+            return null;
+        }
+        String value = String.valueOf(role).trim();
+        if (value.isBlank()) {
+            return null;
+        }
+        return value;
     }
 }

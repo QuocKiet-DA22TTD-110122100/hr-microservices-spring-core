@@ -2,84 +2,76 @@ package com.eureka.service;
 
 import com.eureka.Domain.model.InstanceInfo;
 import com.eureka.controller.ApplicationController;
-import com.eureka.infrastructure.peer.PeerClient;
+import java.util.List;
+import java.util.function.Consumer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class ReplicationService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ReplicationService.class);
+        private static final Logger logger = LoggerFactory.getLogger(ReplicationService.class);
 
-    private final PeerClient peerClient;
-    
-    @Value("${eureka.peers:}")
-    private List<String> peerUrls;
+        private final ReplicationExecutor executor;
+        private final PeerClient peerClient;
 
-    public ReplicationService(PeerClient peerClient) {
-        this.peerClient = peerClient;
-    }
+        @Value("${eureka.peers:}")
+        private List<String> peerUrls;
 
-    /**
-     * Replicates instance registration to peer Eureka servers asynchronously.
-     */
-    @Async
-    public void replicateRegister(String appName, InstanceInfo instance) {
-        logger.debug("Replicating REGISTER for {}/{} to peers", appName, instance.getInstanceId());
-        if (peerUrls.isEmpty()) {
-            logger.debug("No peers configured for replication");
-            return;
+        public ReplicationService(ReplicationExecutor executor,
+                                  @Qualifier("serviceReplicationPeerClient") PeerClient peerClient) {
+            this.executor = executor;
+            this.peerClient = peerClient;
         }
-        peerUrls.forEach(peerUrl -> {
-            try {
-                peerClient.replicateRegister(appName, new ApplicationController.InstanceWrapper(instance));
-                logger.debug("Replicated REGISTER to {}", peerUrl);
-            } catch (Exception ex) {
-                logger.warn("Replication REGISTER failed to {} for {}/{}: {}", peerUrl, appName, instance.getInstanceId(), ex.getMessage());
-            }
-        });
-    }
 
-    /**
-     * Replicates heartbeat renewal to peers asynchronously.
-     */
-    @Async
-    public void replicateRenew(String appName, String instanceId, String status, String lastDirtyTimestamp) {
-        logger.debug("Replicating RENEW for {}/{}", appName, instanceId);
-        if (peerUrls.isEmpty()) {
-            return;
-        }
-        peerUrls.forEach(peerUrl -> {
-            try {
-                peerClient.replicateRenew(appName, instanceId, status, lastDirtyTimestamp);
-                logger.debug("Replicated RENEW to {}", peerUrl);
-            } catch (Exception ex) {
-                logger.warn("Replication RENEW failed to {} for {}/{}: {}", peerUrl, appName, instanceId, ex.getMessage());
-            }
-        });
-    }
+        private void replicate(String action,
+                       String appName,
+                       String instanceId,
+                       Consumer<String> task) {
 
-    /**
-     * Replicates deregistration to peers asynchronously.
-     */
-    @Async
-    public void replicateDeregister(String appName, String instanceId) {
-        logger.debug("Replicating DEREGISTER for {}/{}", appName, instanceId);
-        if (peerUrls.isEmpty()) {
-            return;
-        }
-        peerUrls.forEach(peerUrl -> {
-            try {
-                peerClient.replicateDeregister(appName, instanceId);
-                logger.debug("Replicated DEREGISTER to {}", peerUrl);
-            } catch (Exception ex) {
-                logger.warn("Replication DEREGISTER failed to {} for {}/{}: {}", peerUrl, appName, instanceId, ex.getMessage());
+            if (peerUrls == null || peerUrls.isEmpty()) {
+                logger.debug("No peers configured");
+                return;
             }
-        });
+
+                peerUrls.forEach(peerUrl ->
+                    executor.execute(
+                        peerUrl,
+                        action,
+                        appName,
+                        instanceId,
+                        () -> task.accept(peerUrl)
+                    )
+                );
+        }
+
+        // ================= BUSINESS =================
+
+        @Async
+        public void register(String appName, InstanceInfo instance) {
+
+            var wrapper = new ApplicationController.InstanceWrapper(instance);
+
+            replicate("REGISTER", appName, instance.getInstanceId(),
+                    peerUrl -> peerClient.replicateRegister(peerUrl, appName, wrapper));
+        }
+
+        @Async
+        public void renew(String appName, String instanceId, String status, String ts) {
+
+            replicate("RENEW", appName, instanceId,
+                    peerUrl -> peerClient.replicateRenew(peerUrl, appName, instanceId, status, ts));
+        }
+
+        @Async
+        public void deregister(String appName, String instanceId) {
+
+            replicate("DEREGISTER", appName, instanceId,
+                    peerUrl -> peerClient.replicateDeregister(peerUrl, appName, instanceId));
+        }
     }
-}

@@ -21,7 +21,9 @@ public class LoggingGlobalFilter implements GlobalFilter {
         long startTime = System.currentTimeMillis();
         String path = exchange.getRequest().getPath().value();
         String method = exchange.getRequest().getMethod().name();
-        String ip = exchange.getRequest().getRemoteAddress().getAddress().getHostAddress();
+        String ip = exchange.getRequest().getRemoteAddress() != null
+            ? exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
+            : "unknown";
 
         // 1. Log Request khi vừa đến
         log.info("[GATEWAY] Incoming Request: IP={}, Method={}, Path={}", ip, method, path);

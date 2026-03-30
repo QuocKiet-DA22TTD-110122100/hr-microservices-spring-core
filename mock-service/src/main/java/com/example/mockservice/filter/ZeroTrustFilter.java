@@ -31,7 +31,7 @@ public class ZeroTrustFilter extends OncePerRequestFilter {
             // Nếu không có mật mã hoặc sai -> Chặn đứng (403 Forbidden)
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");
-            response.getWriter().write("{\"code\": 403, \"message\": \"Direct access is forbidden - Zero Trust Policy\"}");
+            response.getWriter().write("{\"code\": 403, \"message\": \"Quyền truy cập bị từ chối hoặc thiếu header X-Internal-Secret\"}");
             return; // Ngắt luồng tại đây
         }
 

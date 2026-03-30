@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.11</version>
+		<version>3.5.12</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
@@ -17,6 +17,7 @@
 	<properties>
 		<java.version>21</java.version>
 		<spring-cloud.version>2025.0.1</spring-cloud.version>
+		<spring-boot.repackage.skip>true</spring-boot.repackage.skip>
 	</properties>
 
 	<dependencies>
@@ -56,6 +57,9 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

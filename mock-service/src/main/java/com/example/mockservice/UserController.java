@@ -19,8 +19,7 @@ public class UserController {
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody Map<String, String> credentials) {
         String username = credentials.getOrDefault("username", "anonymous");
-        // Tạo JWT token với thông tin user
-        String token = jwtService.generateToken(username, List.of("ROLE_USER"));
+        String token = jwtService.generateToken(username, resolveRoles(username));
         return Map.of(
                 "accessToken", token,
                 "tokenType", "Bearer",
@@ -32,9 +31,9 @@ public class UserController {
     @PostMapping("/register")
     public Map<String, Object> register(@RequestBody Map<String, Object> userData) {
         String username = (String) userData.getOrDefault("username", "anonymous");
-        String token = jwtService.generateToken(username, List.of("ROLE_USER"));
+        String token = jwtService.generateToken(username, resolveRoles(username));
         return Map.of(
-                "message", "Register success",
+                "message", "Đăng ký thành công",
                 "accessToken", token,
                 "tokenType", "Bearer",
                 "expiresIn", 86400,
@@ -47,11 +46,18 @@ public class UserController {
         // Lấy thông tin user từ header do api-gateway truyền xuống sau khi xác thực JWT
         String username = request.getHeader("X-Auth-User");
         if (username == null || username.isBlank()) {
-            username = "Unknown";
+            username = "Không xác định";
         }
         return Map.of(
                 "user", username,
                 "content", "User profile of " + username
         );
+    }
+
+    private List<String> resolveRoles(String username) {
+        if ("admin".equalsIgnoreCase(username)) {
+            return List.of("ROLE_ADMIN");
+        }
+        return List.of("ROLE_USER");
     }
 }

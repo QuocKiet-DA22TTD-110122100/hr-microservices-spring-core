@@ -40,6 +40,16 @@ auth:
   password-policy:
     expiry-days: ${PASSWORD_EXPIRY_DAYS}
 
+sync:
+  hr:
+    enabled: ${HR_SYNC_ENABLED:true}
+    base-url: ${HR_SYNC_BASE_URL:http://hr-service:8082}
+    internal-secret: ${HR_SYNC_INTERNAL_SECRET:${INTERNAL_SECRET:change_me}}
+    fixed-delay-ms: ${HR_SYNC_FIXED_DELAY_MS:5000}
+    batch-size: ${HR_SYNC_BATCH_SIZE:20}
+    max-retries: ${HR_SYNC_MAX_RETRIES:5}
+    retry-base-delay-seconds: ${HR_SYNC_RETRY_BASE_DELAY_SECONDS:10}
+
 server:
   port: ${SERVER_PORT:8086}
   error:
@@ -49,7 +59,23 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${MANAGEMENT_ZIPKIN_TRACING_ENDPOINT:http://zipkin:9411/api/v2/spans}
   endpoint:
     health:
       show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

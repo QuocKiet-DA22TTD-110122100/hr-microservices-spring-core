@@ -50,7 +50,13 @@ public class IpBlacklistFilter implements GlobalFilter, Ordered {
 
     private String getClientIp(ServerWebExchange exchange) {
         String xf = exchange.getRequest().getHeaders().getFirst("X-Forwarded-For");
-        return (xf != null) ? xf.split(",")[0] : exchange.getRequest().getRemoteAddress().getAddress().getHostAddress();
+        if (xf != null && !xf.isBlank()) {
+            return xf.split(",")[0].trim();
+        }
+        if (exchange.getRequest().getRemoteAddress() != null) {
+            return exchange.getRequest().getRemoteAddress().getAddress().getHostAddress();
+        }
+        return "unknown";
     }
 
     private Mono<Void> responseForbidden(ServerWebExchange exchange, String ip, long secondsLeft) {
