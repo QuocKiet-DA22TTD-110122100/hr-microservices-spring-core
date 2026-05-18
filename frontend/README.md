@@ -1,145 +1,79 @@
-# Hệ thống Quản lý Nhân sự - Frontend
+# Frontend
 
-Frontend application cho hệ thống quản lý nhân sự, được xây dựng với React + TypeScript + Vite.
+Frontend cho hệ thống quản lý nhân sự, xây dựng bằng React + TypeScript + Vite.
 
-## Công nghệ sử dụng
+## Yêu cầu
 
-- **React 18** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool
-- **React Router** - Routing
-- **Zustand** - State management
-- **Axios** - HTTP client
-- **React Hook Form** - Form handling
-- **Tailwind CSS** - Styling
-- **Lucide React** - Icons
-- **date-fns** - Date formatting
+- Node.js 20+
+- `npm` đi kèm `package-lock.json`
 
 ## Cài đặt
 
 ```bash
-# Cài đặt dependencies
-npm install
-
-# Hoặc sử dụng yarn
-yarn install
+cd frontend
+npm ci
 ```
 
-## Chạy ứng dụng
+## Chạy cục bộ
 
 ```bash
-# Development mode
 npm run dev
+```
 
-# Build production
+Mặc định ứng dụng chạy bằng Vite dev server. API backend được proxy qua `vite.config.ts` tới `http://localhost:8080`.
+
+## Kiểm tra chất lượng
+
+```bash
+npm run lint
+npm run test
 npm run build
-
-# Preview production build
-npm run preview
 ```
 
-## Cấu trúc thư mục
+Nếu muốn format toàn bộ file:
 
-```
-src/
-├── api/              # API service calls
-├── components/       # Reusable components
-│   ├── Layout/      # Layout components
-│   └── UI/          # UI components
-├── pages/           # Page components
-├── store/           # Zustand stores
-├── types/           # TypeScript types
-├── utils/           # Utility functions
-├── App.tsx          # Main app component
-└── main.tsx         # Entry point
+```bash
+npm run format
 ```
 
-## Tính năng
+## Cấu hình môi trường
 
-### Xác thực & Bảo mật
-- Đăng nhập với JWT
-- Tự động refresh token
-- Xử lý rate limiting (429)
-- Xử lý account locked (423)
-- Đổi mật khẩu với validation
-- Cảnh báo mật khẩu sắp hết hạn
-
-### Quản lý Nhân viên
-- Danh sách nhân viên với phân trang
-- Tìm kiếm nhân viên
-- Thêm/Sửa/Xóa nhân viên
-- Xem chi tiết nhân viên
-
-### Quản lý Phòng ban
-- Danh sách phòng ban
-- Cấu trúc phòng ban dạng cây
-- Thêm/Sửa/Xóa phòng ban
-
-### UI/UX
-- Responsive design
-- Loading states
-- Error handling
-- Toast notifications
-- Modal dialogs
-
-## API Configuration
-
-API endpoint được cấu hình trong `vite.config.ts`:
-
-```typescript
-server: {
-  proxy: {
-    '/api': {
-      target: 'http://localhost:8080',
-      changeOrigin: true,
-    },
-  },
-}
-```
-
-Thay đổi `target` để trỏ đến backend server của bạn.
-
-## Environment Variables
-
-Tạo file `.env` trong thư mục frontend:
+Tạo file `frontend/.env` nếu cần override API URL:
 
 ```env
 VITE_API_URL=http://localhost:8080/api
 ```
 
-## Build & Deploy
+## Build và deploy
+
+### Build local
 
 ```bash
-# Build production
 npm run build
-
-# Output sẽ ở thư mục dist/
-# Deploy thư mục dist/ lên web server
 ```
 
-## Yêu cầu Backend API
+Kết quả nằm trong thư mục `dist/`.
 
-Frontend này yêu cầu backend API với các endpoints:
+### Build Docker image
 
-### Auth
-- POST `/api/auth/login` - Đăng nhập
-- POST `/api/auth/logout` - Đăng xuất
-- POST `/api/auth/refresh` - Refresh token
-- POST `/api/auth/change-password` - Đổi mật khẩu
-- GET `/api/auth/profile` - Lấy thông tin user
+```bash
+docker build -t hr-frontend:latest ./frontend
+```
 
-### HR Service
-- GET `/api/hr/employees` - Danh sách nhân viên
-- GET `/api/hr/employees/:id` - Chi tiết nhân viên
-- POST `/api/hr/employees` - Tạo nhân viên
-- PUT `/api/hr/employees/:id` - Cập nhật nhân viên
-- DELETE `/api/hr/employees/:id` - Xóa nhân viên
-- GET `/api/hr/departments` - Danh sách phòng ban
-- GET `/api/hr/departments/:id` - Chi tiết phòng ban
-- POST `/api/hr/departments` - Tạo phòng ban
-- PUT `/api/hr/departments/:id` - Cập nhật phòng ban
-- DELETE `/api/hr/departments/:id` - Xóa phòng ban
+### Chạy với compose
 
-## License
+`compose.edge.yml` hỗ trợ cả `build` lẫn `image`:
 
-Private - Dự án thực tập 2026
+```bash
+FRONTEND_IMAGE=hr-frontend:latest docker compose -f compose.edge.yml up -d frontend
+```
+
+Nếu muốn build tại chỗ thì chỉ cần:
+
+```bash
+docker compose -f compose.edge.yml up -d --build frontend
+```
+
+## Ghi chú backend
+
+Frontend cần backend API qua gateway để đăng nhập và gọi các endpoint HR/Auth.

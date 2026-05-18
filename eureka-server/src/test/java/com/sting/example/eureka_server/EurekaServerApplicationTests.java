@@ -9,6 +9,7 @@ class EurekaServerApplicationTests {
 
 	@Test
 	void contextLoads() {
+		// Context load smoke test: successful startup is the assertion.
 	}
 
 }

@@ -3,16 +3,20 @@ import { useAuthStore } from './store/authStore';
 import { useUIStore } from './store/uiStore';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { EmployeeListPage } from './pages/EmployeeListPage';
 import { EmployeeFormPage } from './pages/EmployeeFormPage';
 import { EmployeeDetailPage } from './pages/EmployeeDetailPage';
 import { DepartmentListPage } from './pages/DepartmentListPage';
 import { DepartmentFormPage } from './pages/DepartmentFormPage';
+import { OrganizationListPage } from './pages/OrganizationListPage';
+import { OrganizationFormPage } from './pages/OrganizationFormPage';
 import { UserManagementPage } from './pages/UserManagementPage';
 import { RoleManagementPage } from './pages/RoleManagementPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { getNotificationClasses } from './utils/notificationClasses';
 import { X } from 'lucide-react';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -30,15 +34,7 @@ function App() {
         {notifications.map((notification) => (
           <div
             key={notification.id}
-            className={`flex items-center gap-3 p-4 rounded-lg shadow-lg min-w-[300px] ${
-              notification.type === 'success'
-                ? 'bg-green-50 text-green-800 border border-green-200'
-                : notification.type === 'error'
-                ? 'bg-red-50 text-red-800 border border-red-200'
-                : notification.type === 'warning'
-                ? 'bg-yellow-50 text-yellow-800 border border-yellow-200'
-                : 'bg-blue-50 text-blue-800 border border-blue-200'
-            }`}
+            className={`flex items-center gap-3 p-4 rounded-lg shadow-lg min-w-[300px] ${getNotificationClasses(notification.type)}`}
           >
             <p className="flex-1">{notification.message}</p>
             <button
@@ -54,6 +50,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route
           path="/"
           element={
@@ -115,6 +112,30 @@ function App() {
           element={
             <PrivateRoute>
               <DepartmentFormPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/organizations"
+          element={
+            <PrivateRoute>
+              <OrganizationListPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/organizations/add"
+          element={
+            <PrivateRoute>
+              <OrganizationFormPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/organizations/edit/:id"
+          element={
+            <PrivateRoute>
+              <OrganizationFormPage />
             </PrivateRoute>
           }
         />

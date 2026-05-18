@@ -8,8 +8,8 @@ spring:
     active: standalone
   security:
     user:
-      name: ${EUREKA_USERNAME}
-      password: ${EUREKA_PASSWORD}
+      name: ${EUREKA_USERNAME:eureka}
+      password: ${EUREKA_PASSWORD:change_me}
 
 # Eureka configuration
 eureka:

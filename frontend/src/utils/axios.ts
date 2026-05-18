@@ -1,5 +1,12 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { ApiError } from '@/types/common';
+import { storage } from '@/utils/storage';
+
+const toApiError = (message: string, source: unknown): Error => {
+  const error = new Error(message);
+  (error as Error & { cause?: unknown }).cause = source;
+  return error;
+};
 
 const apiClient = axios.create({
   baseURL: '/api',
@@ -9,47 +16,82 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor
+// Request interceptor — tự động gắn Bearer token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('accessToken');
+    const token = storage.getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    throw error;
+  }
 );
 
-// Response interceptor
+// Token refresh state
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];
+
+function processQueue(error: unknown, token: string | null = null) {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) reject(error);
+    else resolve(token!);
+  });
+  failedQueue = [];
+}
+
+// Response interceptor — tự động refresh token khi nhận 401
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<ApiError>) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // Handle 401 - Token expired
+    // Nếu 401 và chưa retry, thử refresh token
     if (error.response?.status === 401 && !originalRequest._retry) {
+      const refreshToken = storage.getRefreshToken();
+
+      // Không có refresh token → logout ngay
+      if (!refreshToken) {
+        storage.clear();
+        if (globalThis.location.pathname !== '/login') {
+          globalThis.location.href = '/login';
+        }
+        return Promise.reject(error);
+      }
+
+      // Đang refresh → đưa request vào hàng đợi
+      if (isRefreshing) {
+        return new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return apiClient(originalRequest);
+        });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          const response = await axios.post('/api/auth/refresh', { refreshToken });
-          const { accessToken } = response.data.data;
-          
-          localStorage.setItem('accessToken', accessToken);
-          
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          }
-          
-          return apiClient(originalRequest);
-        }
+        const { data } = await axios.post('/api/iam/refresh', { refreshToken });
+        const newToken: string = data.token ?? data.accessToken ?? data.data?.accessToken;
+
+        storage.setAccessToken(newToken);
+        processQueue(null, newToken);
+
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return apiClient(originalRequest);
       } catch (refreshError) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
+        processQueue(refreshError, null);
+        storage.clear();
+        if (globalThis.location.pathname !== '/login') {
+          globalThis.location.href = '/login';
+        }
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
@@ -57,16 +99,16 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 429) {
       const retryAfter = error.response.headers['retry-after'];
       const message = `Quá nhiều yêu cầu. Vui lòng thử lại sau ${retryAfter || 60} giây.`;
-      return Promise.reject({ ...error, message });
+      throw toApiError(message, error);
     }
 
     // Handle 423 - Account locked
     if (error.response?.status === 423) {
       const lockedUntil = error.response.data.message;
-      return Promise.reject({ ...error, message: `Tài khoản bị khóa. ${lockedUntil}` });
+      throw toApiError(`Tài khoản bị khóa. ${lockedUntil}`, error);
     }
 
-    return Promise.reject(error);
+    throw error;
   }
 );
 

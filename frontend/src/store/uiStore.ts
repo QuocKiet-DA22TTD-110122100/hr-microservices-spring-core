@@ -15,7 +15,11 @@ interface UIState {
   setLoading: (isLoading: boolean) => void;
 }
 
-export const useUIStore = create<UIState>((set) => ({
+const removeNotificationById = (notifications: Notification[], id: string) => {
+  return notifications.filter((notification) => notification.id !== id);
+};
+
+export const useUIStore = create<UIState>((set, get) => ({
   notifications: [],
   isLoading: false,
 
@@ -30,15 +34,13 @@ export const useUIStore = create<UIState>((set) => ({
     // Auto remove after duration
     const duration = notification.duration || 5000;
     setTimeout(() => {
-      set((state) => ({
-        notifications: state.notifications.filter((n) => n.id !== id),
-      }));
+      get().removeNotification(id);
     }, duration);
   },
 
   removeNotification: (id) => {
     set((state) => ({
-      notifications: state.notifications.filter((n) => n.id !== id),
+      notifications: removeNotificationById(state.notifications, id),
     }));
   },
 

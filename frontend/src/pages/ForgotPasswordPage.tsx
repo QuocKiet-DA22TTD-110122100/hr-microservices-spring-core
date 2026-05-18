@@ -19,13 +19,12 @@ export const ForgotPasswordPage = () => {
     formState: { errors },
   } = useForm<ForgotPasswordForm>();
 
-  const onSubmit = async (data: ForgotPasswordForm) => {
+  const onSubmit = async () => {
     setIsLoading(true);
     // Giả lập gửi email
     setTimeout(() => {
       setIsLoading(false);
       setSuccess(true);
-      console.log('Gửi email khôi phục đến:', data.email);
     }, 1500);
   };
 

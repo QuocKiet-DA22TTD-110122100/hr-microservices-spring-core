@@ -1,7 +1,7 @@
 import { ReactNode, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
-import { Menu, X, LogOut, User, Key, Home, Users, Building2 } from 'lucide-react';
+import { Menu, X, LogOut, User, Key, Home, Users, Building2, Layers } from 'lucide-react';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -19,6 +19,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
 
   const menuItems = [
     { icon: Home, label: 'Trang chủ', path: '/' },
+    { icon: Layers, label: 'Tổ chức', path: '/organizations' },
     { icon: Users, label: 'Nhân viên', path: '/employees' },
     { icon: Building2, label: 'Phòng ban', path: '/departments' },
     { icon: User, label: 'Tài khoản', path: '/users' },

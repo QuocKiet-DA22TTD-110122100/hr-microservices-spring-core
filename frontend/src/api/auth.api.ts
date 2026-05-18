@@ -1,6 +1,11 @@
 import apiClient from '@/utils/axios';
 import { ApiResponse } from '@/types/common';
-import { LoginRequest, LoginResponse, ChangePasswordRequest } from '@/types/auth';
+import {
+  LoginRequest,
+  LoginResponse,
+  ChangePasswordApiRequest,
+  VerifyTokenResponse,
+} from '@/types/auth';
 
 interface RegisterRequest {
   username: string;
@@ -17,7 +22,18 @@ interface RegisterResponse {
 export const authApi = {
   login: async (data: LoginRequest): Promise<LoginResponse> => {
     const response = await apiClient.post('/iam/login', data);
-    return response.data;
+    const payload = response.data as {
+      token?: string;
+      data?: { token?: string; accessToken?: string };
+    };
+
+    const token = payload.token ?? payload.data?.token ?? payload.data?.accessToken;
+
+    if (!token) {
+      throw new Error('Login response does not include token');
+    }
+
+    return { token };
   },
 
   register: async (data: RegisterRequest): Promise<RegisterResponse> => {
@@ -35,12 +51,12 @@ export const authApi = {
     return response.data;
   },
 
-  changePassword: async (data: ChangePasswordRequest): Promise<ApiResponse<void>> => {
+  changePassword: async (data: ChangePasswordApiRequest): Promise<ApiResponse<void>> => {
     const response = await apiClient.post('/iam/change-password', data);
     return response.data;
   },
 
-  getProfile: async (): Promise<ApiResponse<unknown>> => {
+  getProfile: async (): Promise<VerifyTokenResponse> => {
     const token = localStorage.getItem('accessToken') || '';
     const response = await apiClient.post('/iam/verify', { token });
     return response.data;

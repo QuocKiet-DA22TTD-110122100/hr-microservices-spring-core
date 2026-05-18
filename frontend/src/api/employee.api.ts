@@ -48,24 +48,51 @@ export const employeeApi = {
     };
   },
 
-  getById: async (id: string): Promise<ApiResponse<Employee>> => {
+  getByDepartmentId: async (departmentId: number, params?: SearchParams): Promise<ApiResponse<PaginatedResponse<Employee>>> => {
+    const response = await apiClient.get('/hr/employees', { 
+      params: { departmentId, ...params } 
+    });
+    return {
+      success: true,
+      data: toPaginated(response.data),
+      timestamp: new Date().toISOString(),
+    };
+  },
+
+  getById: async (id: number): Promise<ApiResponse<Employee>> => {
     const response = await apiClient.get(`/hr/employees/${id}`);
-    return response.data;
+    return {
+      success: true,
+      data: response.data,
+      timestamp: new Date().toISOString(),
+    };
   },
 
   create: async (data: CreateEmployeeRequest): Promise<ApiResponse<Employee>> => {
     const response = await apiClient.post('/hr/employees', data);
-    return response.data;
+    return {
+      success: true,
+      data: response.data,
+      timestamp: new Date().toISOString(),
+    };
   },
 
-  update: async (id: string, data: UpdateEmployeeRequest): Promise<ApiResponse<Employee>> => {
+  update: async (id: number, data: UpdateEmployeeRequest): Promise<ApiResponse<Employee>> => {
     const response = await apiClient.put(`/hr/employees/${id}`, data);
-    return response.data;
+    return {
+      success: true,
+      data: response.data,
+      timestamp: new Date().toISOString(),
+    };
   },
 
-  delete: async (id: string): Promise<ApiResponse<void>> => {
-    const response = await apiClient.delete(`/hr/employees/${id}`);
-    return response.data;
+  delete: async (id: number): Promise<ApiResponse<null>> => {
+    await apiClient.delete(`/hr/employees/${id}`);
+    return {
+      success: true,
+      data: null,
+      timestamp: new Date().toISOString(),
+    };
   },
 
   search: async (keyword: string, params?: SearchParams): Promise<ApiResponse<PaginatedResponse<Employee>>> => {

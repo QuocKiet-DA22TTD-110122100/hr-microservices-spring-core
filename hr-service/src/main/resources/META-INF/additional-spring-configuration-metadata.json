@@ -1,0 +1,16 @@
+{
+  "groups": [
+    {
+      "name": "app",
+      "type": "java.lang.Object",
+      "description": "Application custom configuration root."
+    }
+  ],
+  "properties": [
+    {
+      "name": "app.internal-secret",
+      "type": "java.lang.String",
+      "description": "Internal shared secret used for trusted service-to-service calls."
+    }
+  ]
+}

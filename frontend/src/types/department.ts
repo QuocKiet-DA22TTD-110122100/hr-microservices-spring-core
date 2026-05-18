@@ -1,26 +1,16 @@
 export interface Department extends Record<string, unknown> {
-  id: string;
-  code: string;
+  id: number;
   name: string;
-  description?: string;
-  managerId?: string;
-  managerName?: string;
-  parentDepartmentId?: string;
-  parentDepartmentName?: string;
-  employeeCount: number;
-  status: 'ACTIVE' | 'INACTIVE';
-  createdAt: string;
-  updatedAt: string;
+  code?: string;
+  organizationUnitId?: number;
+  organizationUnitName?: string;
 }
 
 export interface CreateDepartmentRequest {
-  code: string;
   name: string;
-  description?: string;
-  managerId?: string;
-  parentDepartmentId?: string;
+  code?: string;
+  organizationUnitId?: number;
 }
 
 export interface UpdateDepartmentRequest extends Partial<CreateDepartmentRequest> {
-  status?: 'ACTIVE' | 'INACTIVE';
 }

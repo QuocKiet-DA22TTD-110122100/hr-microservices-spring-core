@@ -1,24 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { Input } from '@/components/UI/Input';
 import { Button } from '@/components/UI/Button';
 import { useUIStore } from '@/store/uiStore';
-import { ArrowLeft } from 'lucide-react';
+import { organizationApi } from '@/api/organization.api';
+import { departmentApi } from '@/api/department.api';
+import { employeeApi } from '@/api/employee.api';
+import { OrganizationUnit } from '@/types/organization';
+import { Department } from '@/types/department';
+import { getApiErrorMessage } from '@/utils/error';
+import { ArrowLeft, Loader } from 'lucide-react';
 
 interface EmployeeFormData {
-  employeeCode: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  dateOfBirth: string;
-  gender: string;
-  address: string;
-  position: string;
-  departmentId: string;
-  hireDate: string;
-  salary: string;
+  name: string;
+  position?: string;
+  departmentId?: number;
 }
 
 export const EmployeeFormPage = () => {
@@ -26,24 +24,150 @@ export const EmployeeFormPage = () => {
   const navigate = useNavigate();
   const { addNotification } = useUIStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(!!id);
+  const [organizations, setOrganizations] = useState<OrganizationUnit[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [selectedOrgId, setSelectedOrgId] = useState<number | undefined>();
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
-  } = useForm<EmployeeFormData>();
+  } = useForm<EmployeeFormData>({
+    defaultValues: {
+      name: '',
+      position: '',
+      departmentId: undefined,
+    },
+  });
 
-  const onSubmit = async () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+  // Fetch all organizations
+  const fetchOrganizations = async () => {
+    try {
+      const response = await organizationApi.getAll();
+      setOrganizations(response.data);
+    } catch (error: unknown) {
       addNotification({
-        type: 'success',
-        message: id ? 'Cập nhật nhân viên thành công!' : 'Thêm nhân viên thành công!',
+        type: 'error',
+        message: getApiErrorMessage(error, 'Lỗi khi tải danh sách tổ chức.'),
+      });
+    }
+  };
+
+  // Fetch departments filtered by organization
+  const fetchDepartmentsByOrg = async (orgId: number) => {
+    try {
+      const response = await departmentApi.getByOrganizationUnitId(orgId);
+      setDepartments(response.data.content);
+    } catch (error: unknown) {
+      setDepartments([]);
+      addNotification({
+        type: 'error',
+        message: getApiErrorMessage(error, 'Lỗi khi tải danh sách phòng ban.'),
+      });
+    }
+  };
+
+  // Fetch employee if editing
+  const fetchEmployee = async () => {
+    if (!id) return;
+
+    try {
+      const response = await employeeApi.getById(Number(id));
+      const emp = response.data;
+      setValue('name', emp.name);
+      setValue('position', emp.position);
+      setValue('departmentId', emp.departmentId);
+      
+      // If employee has a department, fetch it to get the organization
+      if (emp.departmentId) {
+        try {
+          const deptResponse = await departmentApi.getById(emp.departmentId);
+          const dept = deptResponse.data;
+          if (dept.organizationUnitId) {
+            setSelectedOrgId(dept.organizationUnitId);
+            // Fetch departments for that organization
+            await fetchDepartmentsByOrg(dept.organizationUnitId);
+          }
+        } catch (error: unknown) {
+          addNotification({
+            type: 'error',
+            message: getApiErrorMessage(error, 'Lỗi khi tải chi tiết phòng ban.'),
+          });
+        }
+      }
+    } catch (error: unknown) {
+      addNotification({
+        type: 'error',
+        message: getApiErrorMessage(error, 'Lỗi khi tải thông tin nhân viên.'),
       });
       navigate('/employees');
-    }, 1000);
+    } finally {
+      setPageLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchOrganizations();
+    if (id) {
+      fetchEmployee();
+    } else {
+      setPageLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const handleOrgChange = async (orgId: string) => {
+    const numOrgId = orgId ? Number(orgId) : undefined;
+    setSelectedOrgId(numOrgId);
+    setValue('departmentId', undefined);
+    setDepartments([]);
+
+    if (numOrgId) {
+      await fetchDepartmentsByOrg(numOrgId);
+    }
+  };
+
+  const onSubmit = async (data: EmployeeFormData) => {
+    setIsLoading(true);
+    try {
+      if (id) {
+        await employeeApi.update(Number(id), data);
+        addNotification({
+          type: 'success',
+          message: 'Cập nhật nhân viên thành công!',
+        });
+      } else {
+        await employeeApi.create(data);
+        addNotification({
+          type: 'success',
+          message: 'Thêm nhân viên thành công!',
+        });
+      }
+      navigate('/employees');
+    } catch (error: unknown) {
+      addNotification({
+        type: 'error',
+        message: getApiErrorMessage(
+          error,
+          id ? 'Lỗi khi cập nhật nhân viên.' : 'Lỗi khi thêm nhân viên.'
+        ),
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (pageLoading) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center items-center py-12">
+          <Loader size={32} className="animate-spin text-blue-600" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -68,145 +192,76 @@ export const EmployeeFormPage = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="bg-white rounded-lg border shadow-sm p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Thông tin cơ bản */}
-              <div className="md:col-span-2">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
-                  Thông tin cơ bản
-                </h3>
-              </div>
-
               <Input
-                label="Mã nhân viên"
-                placeholder="Nhập mã nhân viên"
-                error={errors.employeeCode?.message}
-                {...register('employeeCode', { required: 'Vui lòng nhập mã nhân viên' })}
+                label="Tên nhân viên"
+                placeholder="Nhập tên nhân viên"
+                error={errors.name?.message}
+                {...register('name', { required: 'Vui lòng nhập tên nhân viên' })}
               />
-
-              <Input
-                label="Họ và tên"
-                placeholder="Nhập họ và tên đầy đủ"
-                error={errors.fullName?.message}
-                {...register('fullName', { required: 'Vui lòng nhập họ và tên' })}
-              />
-
-              <Input
-                label="Email"
-                type="email"
-                placeholder="Nhập email"
-                error={errors.email?.message}
-                {...register('email', {
-                  required: 'Vui lòng nhập email',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Email không hợp lệ',
-                  },
-                })}
-              />
-
-              <Input
-                label="Số điện thoại"
-                type="tel"
-                placeholder="Nhập số điện thoại"
-                error={errors.phone?.message}
-                {...register('phone', {
-                  required: 'Vui lòng nhập số điện thoại',
-                  pattern: {
-                    value: /^[0-9]{10,11}$/,
-                    message: 'Số điện thoại không hợp lệ',
-                  },
-                })}
-              />
-
-              <Input
-                label="Ngày sinh"
-                type="date"
-                error={errors.dateOfBirth?.message}
-                {...register('dateOfBirth', { required: 'Vui lòng chọn ngày sinh' })}
-              />
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Giới tính <span className="text-red-500">*</span>
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  {...register('gender', { required: 'Vui lòng chọn giới tính' })}
-                >
-                  <option value="">Chọn giới tính</option>
-                  <option value="MALE">Nam</option>
-                  <option value="FEMALE">Nữ</option>
-                  <option value="OTHER">Khác</option>
-                </select>
-                {errors.gender && (
-                  <p className="mt-1 text-sm text-red-500">{errors.gender.message}</p>
-                )}
-              </div>
-
-              <div className="md:col-span-2">
-                <Input
-                  label="Địa chỉ"
-                  placeholder="Nhập địa chỉ"
-                  error={errors.address?.message}
-                  {...register('address', { required: 'Vui lòng nhập địa chỉ' })}
-                />
-              </div>
-
-              {/* Thông tin công việc */}
-              <div className="md:col-span-2 mt-4">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
-                  Thông tin công việc
-                </h3>
-              </div>
 
               <Input
                 label="Chức vụ"
-                placeholder="Nhập chức vụ"
+                placeholder="Nhập chức vụ (tuỳ chọn)"
                 error={errors.position?.message}
-                {...register('position', { required: 'Vui lòng nhập chức vụ' })}
+                {...register('position')}
               />
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phòng ban <span className="text-red-500">*</span>
+                <label htmlFor="organizationId" className="block text-sm font-medium text-gray-700 mb-1">
+                  Tổ chức <span className="text-red-500">*</span>
                 </label>
                 <select
+                  id="organizationId"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  {...register('departmentId', { required: 'Vui lòng chọn phòng ban' })}
+                  value={selectedOrgId?.toString() || ''}
+                  onChange={(e) => handleOrgChange(e.target.value)}
                 >
-                  <option value="">Chọn phòng ban</option>
-                  <option value="1">Phòng IT</option>
-                  <option value="2">Phòng Nhân sự</option>
-                  <option value="3">Phòng Kế toán</option>
-                  <option value="4">Phòng Marketing</option>
+                  <option value="">Chọn tổ chức</option>
+                  {organizations.map((org) => (
+                    <option key={org.id} value={org.id}>
+                      {org.name} {org.code ? `(${org.code})` : ''} - {org.level}
+                    </option>
+                  ))}
                 </select>
-                {errors.departmentId && (
-                  <p className="mt-1 text-sm text-red-500">{errors.departmentId.message}</p>
-                )}
               </div>
 
-              <Input
-                label="Ngày vào làm"
-                type="date"
-                error={errors.hireDate?.message}
-                {...register('hireDate', { required: 'Vui lòng chọn ngày vào làm' })}
-              />
-
-              <Input
-                label="Lương (VNĐ)"
-                type="number"
-                placeholder="Nhập mức lương"
-                error={errors.salary?.message}
-                {...register('salary')}
-              />
+              <div>
+                <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 mb-1">
+                  Phòng ban <span className="text-red-500">*</span>
+                </label>
+                {selectedOrgId ? (
+                  <select
+                    id="departmentId"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    {...register('departmentId')}
+                  >
+                    <option value="">Chọn phòng ban</option>
+                    {departments.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name} {dept.code ? `(${dept.code})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="px-3 py-2 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-gray-500 text-sm">
+                    Vui lòng chọn tổ chức trước
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex gap-3 mt-6 pt-6 border-t">
-              <Button type="submit" isLoading={isLoading}>
-                {id ? 'Cập nhật' : 'Thêm mới'}
+            <div className="flex gap-3 mt-8">
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader size={18} className="mr-2 animate-spin" />}
+                {id ? 'Cập nhật' : 'Thêm nhân viên'}
               </Button>
-              <Button type="button" variant="secondary" onClick={() => navigate('/employees')}>
+              <button
+                type="button"
+                onClick={() => navigate('/employees')}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
                 Hủy
-              </Button>
+              </button>
             </div>
           </div>
         </form>

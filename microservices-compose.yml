@@ -1,19 +1,19 @@
-x-eureka-default-zone: &eureka_default_zone http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer2:${EUREKA_PEER2_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer3:${EUREKA_PEER3_PORT}/eureka/
-x-java-opts: &java_opts -Xmx512m -Xms256m
+x-eureka-default-zone: &eureka_default_zone http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/
+x-java-opts: &java_opts -Xmx256m -Xms128m
+x-logging-level: &logging_level WARN
 
 services:
   # Redis for API Gateway
   redis:
     image: redis:7-alpine
     container_name: redis-server
-    ports:
-      - "6379"
     command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis-data:/data
     networks:
       - microservices-network
     restart: unless-stopped
+    mem_limit: 100m
   # HAProxy Load Balancer as Gateway
   haproxy:
     image: haproxy:2.8-alpine
@@ -27,13 +27,10 @@ services:
     depends_on:
       eureka-peer1:
         condition: service_healthy
-      eureka-peer2:
-        condition: service_healthy
-      eureka-peer3:
-        condition: service_healthy
     networks:
       - microservices-network
     restart: unless-stopped
+    mem_limit: 100m
 
   # Eureka Server Peer 1
   eureka-peer1:
@@ -56,12 +53,14 @@ services:
       SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
       SECURITY_USER_NAME: ${EUREKA_USERNAME}
       SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+      LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
     volumes:
       - eureka1-data:/app/data
     networks:
       - microservices-network
     restart: unless-stopped
+    mem_limit: 300m
     healthcheck:
       test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:${EUREKA_PEER1_PORT}/actuator/health); [ \"$$code\" = \"200\" ] || [ \"$$code\" = \"401\" ]"]
       interval: 30s
@@ -69,73 +68,73 @@ services:
       retries: 5
       start_period: 300s
 
-  # Eureka Server Peer 2
-  eureka-peer2:
-    build:
-      context: ./eureka-server
-      dockerfile: dockerfile
-    container_name: eureka-peer2
-    hostname: eureka-peer2
-    ports:
-      - "${EUREKA_PEER2_PORT}:${EUREKA_PEER2_PORT}"
-    environment:
-      SPRING_PROFILES_ACTIVE: peer2
-      SERVER_PORT: ${EUREKA_PEER2_PORT}
-      EUREKA_USERNAME: ${EUREKA_USERNAME}
-      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
-      EUREKA_PEER1_PORT: ${EUREKA_PEER1_PORT}
-      EUREKA_PEER2_PORT: ${EUREKA_PEER2_PORT}
-      EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
-      SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
-      SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
-      SECURITY_USER_NAME: ${EUREKA_USERNAME}
-      SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
-      JAVA_OPTS: *java_opts
-    volumes:
-      - eureka2-data:/app/data
-    networks:
-      - microservices-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:${EUREKA_PEER2_PORT}/actuator/health); [ \"$$code\" = \"200\" ] || [ \"$$code\" = \"401\" ]"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 300s
+  # ❌ TẮT: Eureka Server Peer 2 (dev không cần HA)
+  # eureka-peer2:
+  #   build:
+  #     context: ./eureka-server
+  #     dockerfile: dockerfile
+  #   container_name: eureka-peer2
+  #   hostname: eureka-peer2
+  #   ports:
+  #     - "${EUREKA_PEER2_PORT}:${EUREKA_PEER2_PORT}"
+  #   environment:
+  #     SPRING_PROFILES_ACTIVE: peer2
+  #     SERVER_PORT: ${EUREKA_PEER2_PORT}
+  #     EUREKA_USERNAME: ${EUREKA_USERNAME}
+  #     EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+  #     EUREKA_PEER1_PORT: ${EUREKA_PEER1_PORT}
+  #     EUREKA_PEER2_PORT: ${EUREKA_PEER2_PORT}
+  #     EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
+  #     SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
+  #     SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+  #     SECURITY_USER_NAME: ${EUREKA_USERNAME}
+  #     SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+  #     JAVA_OPTS: *java_opts
+  #   volumes:
+  #     - eureka2-data:/app/data
+  #   networks:
+  #     - microservices-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:${EUREKA_PEER2_PORT}/actuator/health); [ \"$$code\" = \"200\" ] || [ \"$$code\" = \"401\" ]"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #     start_period: 300s
 
-  # Eureka Server Peer 3
-  eureka-peer3:
-    build:
-      context: ./eureka-server
-      dockerfile: dockerfile
-    container_name: eureka-peer3
-    hostname: eureka-peer3
-    ports:
-      - "${EUREKA_PEER3_PORT}:${EUREKA_PEER3_PORT}"
-    environment:
-      SPRING_PROFILES_ACTIVE: peer3
-      SERVER_PORT: ${EUREKA_PEER3_PORT}
-      EUREKA_USERNAME: ${EUREKA_USERNAME}
-      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
-      EUREKA_PEER1_PORT: ${EUREKA_PEER1_PORT}
-      EUREKA_PEER2_PORT: ${EUREKA_PEER2_PORT}
-      EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
-      SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
-      SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
-      SECURITY_USER_NAME: ${EUREKA_USERNAME}
-      SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
-      JAVA_OPTS: *java_opts
-    volumes:
-      - eureka3-data:/app/data
-    networks:
-      - microservices-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:${EUREKA_PEER3_PORT}/actuator/health); [ \"$$code\" = \"200\" ] || [ \"$$code\" = \"401\" ]"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 300s
+  # ❌ TẮT: Eureka Server Peer 3 (dev không cần HA)
+  # eureka-peer3:
+  #   build:
+  #     context: ./eureka-server
+  #     dockerfile: dockerfile
+  #   container_name: eureka-peer3
+  #   hostname: eureka-peer3
+  #   ports:
+  #     - "${EUREKA_PEER3_PORT}:${EUREKA_PEER3_PORT}"
+  #   environment:
+  #     SPRING_PROFILES_ACTIVE: peer3
+  #     SERVER_PORT: ${EUREKA_PEER3_PORT}
+  #     EUREKA_USERNAME: ${EUREKA_USERNAME}
+  #     EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+  #     EUREKA_PEER1_PORT: ${EUREKA_PEER1_PORT}
+  #     EUREKA_PEER2_PORT: ${EUREKA_PEER2_PORT}
+  #     EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
+  #     SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
+  #     SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+  #     SECURITY_USER_NAME: ${EUREKA_USERNAME}
+  #     SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+  #     JAVA_OPTS: *java_opts
+  #   volumes:
+  #     - eureka3-data:/app/data
+  #   networks:
+  #     - microservices-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:${EUREKA_PEER3_PORT}/actuator/health); [ \"$$code\" = \"200\" ] || [ \"$$code\" = \"401\" ]"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #     start_period: 300s
 
   # API Gateway (Spring Cloud Gateway)
   api-gateway:
@@ -153,54 +152,20 @@ services:
       INTERNAL_SECRET: ${INTERNAL_SECRET}
       AUTH_SERVICE_URL: http://auth-service:8086
       SPRING_PROFILES_ACTIVE: docker
+      LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     depends_on:
       redis:
         condition: service_started
       eureka-peer1:
         condition: service_healthy
-      eureka-peer2:
-        condition: service_healthy
-      eureka-peer3:
-        condition: service_healthy
     networks:
       - microservices-network
     restart: unless-stopped
+    mem_limit: 300m
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 300s
-
-  # Mock IAM Service để xử lý authentication endpoints
-  # Service này handle các requests đến /iam/auth/* và /iam/user/*
-  mock-iam-service:
-    build:
-      context: ./mock-service
-      dockerfile: Dockerfile
-    container_name: mock-iam-service
-    ports:
-      - "8081:8081"
-    environment:
-      JAVA_OPTS: *java_opts
-      JWT_SECRET: ${JWT_SECRET}
-      INTERNAL_SECRET: ${INTERNAL_SECRET}
-      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
-    depends_on:
-      eureka-peer1:
-        condition: service_healthy
-      eureka-peer2:
-        condition: service_healthy
-      eureka-peer3:
-        condition: service_healthy
-    networks:
-      - microservices-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/actuator/health); [ \"$$code\" = \"200\" ] || [ \"$$code\" = \"403\" ]"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -215,22 +180,19 @@ services:
     ports:
       - "8083:8083"
     environment:
+      LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
       REDIS_HOST: redis-server
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     depends_on:
       eureka-peer1:
-        condition: service_healthy
-      eureka-peer2:
-        condition: service_healthy
-      eureka-peer3:
         condition: service_healthy
     networks:
       - microservices-network
     restart: unless-stopped
+    mem_limit: 300m
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
       interval: 30s
@@ -242,8 +204,6 @@ services:
   hr-mysql:
     image: mysql:8.0
     container_name: hr-mysql
-    ports:
-      - "3307:3306"  # Host 3307 -> container 3306
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -252,6 +212,7 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
+    mem_limit: 256m
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 30s
@@ -274,14 +235,14 @@ services:
       SPRING_DATASOURCE_USERNAME: ${HR_DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${HR_DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_SHOW_SQL: "true"
+      SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_SECRET: ${INTERNAL_SECRET}
       EUREKA_CLIENT_ENABLED: "true"
       EUREKA_REGISTER_WITH_EUREKA: "true"
       EUREKA_FETCH_REGISTRY: "true"
+      LOGGING_LEVEL_ROOT: *logging_level
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
       JAVA_OPTS: *java_opts
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     depends_on:
       hr-mysql:
         condition: service_healthy
@@ -290,6 +251,7 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
+    mem_limit: 300m
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
       interval: 30s
@@ -301,8 +263,6 @@ services:
   auth-postgres:
     image: postgres:16-alpine
     container_name: auth-postgres
-    ports:
-      - "5433:5432"  # Host 5433 -> container 5432
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -312,6 +272,7 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
+    mem_limit: 256m
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -343,8 +304,8 @@ services:
       HR_SYNC_ENABLED: "true"
       HR_SYNC_BASE_URL: http://hr-service:8082
       HR_SYNC_INTERNAL_SECRET: ${INTERNAL_SECRET}
+      LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
     depends_on:
       auth-postgres:
         condition: service_healthy
@@ -354,13 +315,10 @@ services:
         condition: service_started
       eureka-peer1:
         condition: service_healthy
-      eureka-peer2:
-        condition: service_healthy
-      eureka-peer3:
-        condition: service_healthy
     networks:
       - microservices-network
     restart: unless-stopped
+    mem_limit: 300m
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
       interval: 30s
@@ -382,6 +340,7 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
+    mem_limit: 256m
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/"]
       interval: 30s
@@ -398,7 +357,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus:/etc/prometheus:ro
       - prometheus-data:/prometheus
     depends_on:
       api-gateway:
@@ -412,6 +371,7 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
+    mem_limit: 256m
 
   grafana:
     image: grafana/grafana:11.2.0
@@ -431,15 +391,17 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
+    mem_limit: 256m
 
-  zipkin:
-    image: openzipkin/zipkin:3.4
-    container_name: zipkin
-    ports:
-      - "9411:9411"
-    networks:
-      - microservices-network
-    restart: unless-stopped
+  # zipkin:
+  #   image: openzipkin/zipkin:3.4
+  #   container_name: zipkin
+  #   ports:
+  #     - "9411:9411"
+  #   networks:
+  #     - microservices-network
+  #   restart: unless-stopped
+  #   mem_limit: 256m
 
 networks:
   microservices-network:
@@ -451,10 +413,10 @@ networks:
 volumes:
   redis-data:
   eureka1-data:
-  eureka2-data:
-  eureka3-data:
+  # eureka2-data:  # Commented out - not needed for single Eureka
+  # eureka3-data:  # Commented out - not needed for single Eureka
   hr-mysql-data:
   auth-postgres-data:
   prometheus-data:
   grafana-data:
-  frontend-build:
+  # frontend-build:

@@ -6,16 +6,16 @@ import { formatDate } from '@/utils/format';
 export const ProfilePage = () => {
   const { user } = useAuthStore();
 
-  // Dữ liệu mẫu cho demo
+  // Dữ liệu hiển thị hồ sơ
   const profileData = {
-    username: user?.username || 'admin',
-    fullName: user?.fullName || 'Nguyễn Văn A',
-    email: user?.email || 'admin@company.com',
+    username: user?.username || '--',
+    fullName: user?.fullName || 'Người dùng',
+    email: user?.email || '--',
     phone: '0123456789',
     position: 'Quản trị viên hệ thống',
     department: 'Phòng IT',
     joinDate: '2024-01-15',
-    roles: user?.roles || ['ADMIN', 'USER'],
+    roles: user?.roles || [],
     lastLogin: new Date().toISOString(),
   };
 
@@ -93,6 +93,11 @@ export const ProfilePage = () => {
                   <div>
                     <p className="text-sm text-gray-500">Vai trò</p>
                     <div className="flex flex-wrap gap-2 mt-1">
+                      {profileData.roles.length === 0 && (
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full font-medium">
+                          Chưa có vai trò
+                        </span>
+                      )}
                       {profileData.roles.map((role) => (
                         <span
                           key={role}

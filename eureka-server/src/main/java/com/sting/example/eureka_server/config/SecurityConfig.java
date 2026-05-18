@@ -30,7 +30,7 @@ public class SecurityConfig {
         UserDetails user = User.builder()
             .username(username)
             .password(passwordEncoder.encode(password))
-            .roles("ADMIN") // Gán role ADMIN cho user này
+            .roles("ADMIN")
             .build();
         
         return new InMemoryUserDetailsManager(user);
@@ -49,13 +49,13 @@ public class SecurityConfig {
             )
             // Configure authorization
             .authorizeHttpRequests(auth -> auth 
-                .requestMatchers("/actuator/health", "/actuator/info").permitAll() // Health checks don't need auth
-                .requestMatchers("/eureka/css/**", "/eureka/js/**", "/eureka/fonts/**").permitAll() // Static resources
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                .requestMatchers("/eureka/css/**", "/eureka/js/**", "/eureka/fonts/**").permitAll()
                 .anyRequest().authenticated()
             )
             // Use only HTTP Basic auth, disable form login to prevent double authentication
             .httpBasic(Customizer.withDefaults())
-            .formLogin(form -> form.disable()); // DISABLE form login to prevent double authentication
+            .formLogin(form -> form.disable());
         
         return http.build();    
     }

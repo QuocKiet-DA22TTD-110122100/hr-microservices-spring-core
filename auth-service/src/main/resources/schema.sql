@@ -21,6 +21,15 @@ ADD COLUMN IF NOT EXISTS locked BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE users
 ADD COLUMN IF NOT EXISTS locked_at TIMESTAMPTZ;
 
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS two_factor_secret VARCHAR(128);
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS two_factor_enabled_at TIMESTAMPTZ;
+
 CREATE TABLE IF NOT EXISTS user_password_history (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
@@ -34,19 +43,6 @@ CREATE TABLE IF NOT EXISTS user_password_history (
 
 CREATE INDEX IF NOT EXISTS idx_user_password_history_user_created
     ON user_password_history (user_id, created_at DESC);
-
-CREATE TABLE IF NOT EXISTS kms_keys (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    algorithm VARCHAR(50) NOT NULL,
-    public_key TEXT NOT NULL,
-    private_key TEXT NOT NULL,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('ACTIVE', 'INACTIVE')),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_kms_keys_single_active
-    ON kms_keys ((status))
-    WHERE status = 'ACTIVE';
 
 CREATE TABLE IF NOT EXISTS user_sync_outbox (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

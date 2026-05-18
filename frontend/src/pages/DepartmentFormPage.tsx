@@ -1,18 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { Input } from '@/components/UI/Input';
 import { Button } from '@/components/UI/Button';
 import { useUIStore } from '@/store/uiStore';
-import { ArrowLeft } from 'lucide-react';
+import { organizationApi } from '@/api/organization.api';
+import { departmentApi } from '@/api/department.api';
+import { OrganizationUnit } from '@/types/organization';
+import { getApiErrorMessage } from '@/utils/error';
+import { ArrowLeft, Loader } from 'lucide-react';
 
 interface DepartmentFormData {
-  code: string;
+  code?: string;
   name: string;
-  description: string;
-  managerId: string;
-  parentDepartmentId: string;
+  organizationUnitId?: number;
 }
 
 export const DepartmentFormPage = () => {
@@ -20,25 +22,105 @@ export const DepartmentFormPage = () => {
   const navigate = useNavigate();
   const { addNotification } = useUIStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(!!id);
+  const [organizations, setOrganizations] = useState<OrganizationUnit[]>([]);
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
-  } = useForm<DepartmentFormData>();
+  } = useForm<DepartmentFormData>({
+    defaultValues: {
+      name: '',
+      code: '',
+      organizationUnitId: undefined,
+    },
+  });
 
-  const onSubmit = async (data: DepartmentFormData) => {
-    console.log('Form data:', data);
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+  // Fetch all organizations
+  const fetchOrganizations = async () => {
+    try {
+      const response = await organizationApi.getAll();
+      setOrganizations(response.data);
+    } catch (error: unknown) {
       addNotification({
-        type: 'success',
-        message: id ? 'Cập nhật phòng ban thành công!' : 'Thêm phòng ban thành công!',
+        type: 'error',
+        message: getApiErrorMessage(error, 'Lỗi khi tải danh sách tổ chức.'),
+      });
+    }
+  };
+
+  // Fetch department if editing
+  const fetchDepartment = async () => {
+    if (!id) return;
+
+    try {
+      const response = await departmentApi.getById(Number(id));
+      const dept = response.data;
+      setValue('name', dept.name);
+      setValue('code', dept.code);
+      setValue('organizationUnitId', dept.organizationUnitId);
+    } catch (error: unknown) {
+      addNotification({
+        type: 'error',
+        message: getApiErrorMessage(error, 'Lỗi khi tải thông tin phòng ban.'),
       });
       navigate('/departments');
-    }, 1000);
+    } finally {
+      setPageLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchOrganizations();
+    if (id) {
+      fetchDepartment();
+    } else {
+      setPageLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const onSubmit = async (data: DepartmentFormData) => {
+    setIsLoading(true);
+    try {
+      if (id) {
+        await departmentApi.update(Number(id), data);
+        addNotification({
+          type: 'success',
+          message: 'Cập nhật phòng ban thành công!',
+        });
+      } else {
+        await departmentApi.create(data);
+        addNotification({
+          type: 'success',
+          message: 'Thêm phòng ban thành công!',
+        });
+      }
+      navigate('/departments');
+    } catch (error: unknown) {
+      addNotification({
+        type: 'error',
+        message: getApiErrorMessage(
+          error,
+          id ? 'Lỗi khi cập nhật phòng ban.' : 'Lỗi khi thêm phòng ban.'
+        ),
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (pageLoading) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center items-center py-12">
+          <Loader size={32} className="animate-spin text-blue-600" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -65,9 +147,9 @@ export const DepartmentFormPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <Input
                 label="Mã phòng ban"
-                placeholder="Nhập mã phòng ban"
+                placeholder="Nhập mã phòng ban (tuỳ chọn)"
                 error={errors.code?.message}
-                {...register('code', { required: 'Vui lòng nhập mã phòng ban' })}
+                {...register('code')}
               />
 
               <Input
@@ -77,56 +159,37 @@ export const DepartmentFormPage = () => {
                 {...register('name', { required: 'Vui lòng nhập tên phòng ban' })}
               />
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mô tả
-                </label>
-                <textarea
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  placeholder="Nhập mô tả về phòng ban"
-                  {...register('description')}
-                />
-              </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Trưởng phòng
+                <label htmlFor="organizationUnitId" className="block text-sm font-medium text-gray-700 mb-1">
+                  Tổ chức <span className="text-red-500">*</span>
                 </label>
                 <select
+                  id="organizationUnitId"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  {...register('managerId')}
+                  {...register('organizationUnitId')}
                 >
-                  <option value="">Chọn trưởng phòng</option>
-                  <option value="1">Nguyễn Văn A</option>
-                  <option value="2">Trần Thị B</option>
-                  <option value="3">Lê Văn C</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phòng ban cha
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  {...register('parentDepartmentId')}
-                >
-                  <option value="">Không có (Phòng ban cấp cao nhất)</option>
-                  <option value="1">Ban Giám đốc</option>
-                  <option value="2">Phòng Hành chính</option>
-                  <option value="3">Phòng Kinh doanh</option>
+                  <option value="">Chọn tổ chức</option>
+                  {organizations.map((org) => (
+                    <option key={org.id} value={org.id}>
+                      {org.name} {org.code ? `(${org.code})` : ''} - {org.level}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
 
-            <div className="flex gap-3 mt-6 pt-6 border-t">
-              <Button type="submit" isLoading={isLoading}>
-                {id ? 'Cập nhật' : 'Thêm mới'}
+            <div className="flex gap-3 mt-8">
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader size={18} className="mr-2 animate-spin" />}
+                {id ? 'Cập nhật' : 'Thêm phòng ban'}
               </Button>
-              <Button type="button" variant="secondary" onClick={() => navigate('/departments')}>
+              <button
+                type="button"
+                onClick={() => navigate('/departments')}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
                 Hủy
-              </Button>
+              </button>
             </div>
           </div>
         </form>

@@ -10,8 +10,8 @@ public class PasswordConfig {
     @Bean
     @SuppressWarnings("deprecation")
     public PasswordEncoder passwordEncoder() {
-        // NoOpPasswordEncoder - Không mã hóa password (chỉ dùng cho development)
-        // Production nên dùng BCryptPasswordEncoder
+        // NoOpPasswordEncoder is for development only.
+        // Production should use BCryptPasswordEncoder.
         return NoOpPasswordEncoder.getInstance();
     }
 

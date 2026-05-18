@@ -5,6 +5,8 @@ import { Input } from '@/components/UI/Input';
 import { Button } from '@/components/UI/Button';
 import { UserPlus, ArrowLeft } from 'lucide-react';
 import { authApi } from '@/api/auth.api';
+import { useUIStore } from '@/store/uiStore';
+import { getApiErrorMessage } from '@/utils/error';
 
 interface RegisterForm {
   username: string;
@@ -13,6 +15,7 @@ interface RegisterForm {
 }
 
 export const RegisterPage = () => {
+  const { addNotification } = useUIStore();
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -35,9 +38,16 @@ export const RegisterPage = () => {
         role: 'USER',
       });
 
+      addNotification({
+        type: 'success',
+        message: 'Đăng ký thành công!',
+      });
       setSuccess(true);
-    } catch (error) {
-      console.error('Register failed:', error);
+    } catch (error: unknown) {
+      addNotification({
+        type: 'error',
+        message: getApiErrorMessage(error, 'Đăng ký thất bại. Vui lòng thử lại.'),
+      });
     } finally {
       setIsLoading(false);
     }

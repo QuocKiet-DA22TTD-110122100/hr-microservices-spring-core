@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { Table } from '@/components/UI/Table';
@@ -7,15 +7,31 @@ import { Input } from '@/components/UI/Input';
 import { employeeApi } from '@/api/employee.api';
 import { Employee } from '@/types/employee';
 import { formatDate } from '@/utils/format';
+import { getApiErrorMessage } from '@/utils/error';
+import { useUIStore } from '@/store/uiStore';
 import { Plus, Search } from 'lucide-react';
 
 export const EmployeeListPage = () => {
   const navigate = useNavigate();
+  const { addNotification } = useUIStore();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const lastSearchAtRef = useRef(0);
+
+  const getStatusClass = (status: string) => {
+    if (status === 'ACTIVE') return 'bg-green-100 text-green-800';
+    if (status === 'INACTIVE') return 'bg-red-100 text-red-800';
+    return 'bg-yellow-100 text-yellow-800';
+  };
+
+  const getStatusLabel = (status: string) => {
+    if (status === 'ACTIVE') return 'Đang làm';
+    if (status === 'INACTIVE') return 'Nghỉ việc';
+    return 'Nghỉ phép';
+  };
 
   const fetchEmployees = async () => {
     setLoading(true);
@@ -23,8 +39,11 @@ export const EmployeeListPage = () => {
       const response = await employeeApi.getAll({ page, size: 10 });
       setEmployees(response.data.content);
       setTotalPages(response.data.totalPages);
-    } catch (error) {
-      console.error('Failed to fetch employees:', error);
+    } catch (error: unknown) {
+      addNotification({
+        type: 'error',
+        message: getApiErrorMessage(error, 'Lỗi khi tải danh sách nhân viên.'),
+      });
     } finally {
       setLoading(false);
     }
@@ -36,6 +55,13 @@ export const EmployeeListPage = () => {
   }, [page]);
 
   const handleSearch = async () => {
+    const now = Date.now();
+    if (now - lastSearchAtRef.current < 1000) {
+      return;
+    }
+
+    lastSearchAtRef.current = now;
+
     if (!searchKeyword.trim()) {
       fetchEmployees();
       return;
@@ -46,8 +72,11 @@ export const EmployeeListPage = () => {
       const response = await employeeApi.search(searchKeyword, { page, size: 10 });
       setEmployees(response.data.content);
       setTotalPages(response.data.totalPages);
-    } catch (error) {
-      console.error('Failed to search employees:', error);
+    } catch (error: unknown) {
+      addNotification({
+        type: 'error',
+        message: getApiErrorMessage(error, 'Lỗi khi tìm kiếm nhân viên.'),
+      });
     } finally {
       setLoading(false);
     }
@@ -69,15 +98,9 @@ export const EmployeeListPage = () => {
       title: 'Trạng thái',
       render: (value: Employee[keyof Employee]) => (
         <span
-          className={`px-2 py-1 rounded text-xs font-medium ${
-            value === 'ACTIVE'
-              ? 'bg-green-100 text-green-800'
-              : value === 'INACTIVE'
-              ? 'bg-red-100 text-red-800'
-              : 'bg-yellow-100 text-yellow-800'
-          }`}
+          className={`px-2 py-1 rounded text-xs font-medium ${getStatusClass(String(value))}`}
         >
-          {value === 'ACTIVE' ? 'Đang làm' : value === 'INACTIVE' ? 'Nghỉ việc' : 'Nghỉ phép'}
+          {getStatusLabel(String(value))}
         </span>
       ),
     },
@@ -109,10 +132,10 @@ export const EmployeeListPage = () => {
                 placeholder="Tìm kiếm theo tên, email, mã nhân viên..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-            <Button onClick={handleSearch}>
+            <Button onClick={handleSearch} isLoading={loading}>
               <Search size={18} className="mr-2" />
               Tìm kiếm
             </Button>

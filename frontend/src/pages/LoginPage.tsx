@@ -1,18 +1,59 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { Input } from '@/components/UI/Input';
 import { Button } from '@/components/UI/Button';
-import { LoginRequest } from '@/types/auth';
+import { LoginRequest, User } from '@/types/auth';
 import { authApi } from '@/api/auth.api';
+import { getApiErrorMessage } from '@/utils/error';
+
+const toStringArray = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
+const toStringClaim = (value: unknown, fallback: string): string => {
+  return typeof value === 'string' && value.trim() ? value : fallback;
+};
+
+const mapClaimsToUser = (claims: Record<string, unknown>, fallbackUsername: string): User => {
+  const username = toStringClaim(claims.username ?? claims.sub, fallbackUsername);
+  const roles = toStringArray(claims.roles);
+  const permissions = toStringArray(claims.permissions);
+  const expiresAt = typeof claims.exp === 'number'
+    ? new Date(claims.exp * 1000).toISOString()
+    : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+
+  return {
+    id: toStringClaim(claims.userId ?? claims.sub, username),
+    username,
+    email: toStringClaim(claims.email, `${username}@company.com`),
+    fullName: toStringClaim(claims.fullName, username),
+    roles,
+    permissions,
+    passwordExpiresAt: expiresAt,
+    isLocked: false,
+  };
+};
 
 export const LoginPage = () => {
   const navigate = useNavigate();
   const { setUser, setTokens } = useAuthStore();
   const { addNotification } = useUIStore();
   const [isLoading, setIsLoading] = useState(false);
+  const lastSubmitAtRef = useRef(0);
 
   const {
     register,
@@ -21,23 +62,24 @@ export const LoginPage = () => {
   } = useForm<LoginRequest>();
 
   const onSubmit = async (data: LoginRequest) => {
+    const now = Date.now();
+    if (now - lastSubmitAtRef.current < 1000) {
+      return;
+    }
+
+    lastSubmitAtRef.current = now;
     setIsLoading(true);
 
     try {
       const loginResponse = await authApi.login(data);
-
-      const user = {
-        id: '1',
-        username: data.username,
-        email: `${data.username}@company.com`,
-        fullName: data.username,
-        roles: ['USER'],
-        permissions: ['READ'],
-        passwordExpiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-        isLocked: false,
-      };
-
       setTokens(loginResponse.token, '');
+
+      const profile = await authApi.getProfile();
+      if (!profile.valid) {
+        throw new Error('Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.');
+      }
+
+      const user = mapClaimsToUser(profile.claims as Record<string, unknown>, data.username);
       setUser(user);
 
       addNotification({
@@ -47,7 +89,7 @@ export const LoginPage = () => {
 
       navigate('/');
     } catch (error: unknown) {
-      const message = (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
+      const message = getApiErrorMessage(error, 'Đăng nhập thất bại. Vui lòng thử lại.');
       addNotification({
         type: 'error',
         message,

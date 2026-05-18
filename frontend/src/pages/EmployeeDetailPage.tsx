@@ -1,29 +1,100 @@
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { Button } from '@/components/UI/Button';
+import { employeeApi } from '@/api/employee.api';
+import { Employee } from '@/types/employee';
+import { useUIStore } from '@/store/uiStore';
+import { getApiErrorMessage } from '@/utils/error';
 import { ArrowLeft, Edit, Trash2, Mail, Phone, MapPin, Calendar, Briefcase } from 'lucide-react';
 
 export const EmployeeDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { addNotification } = useUIStore();
+  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Dữ liệu mẫu
-  const employee = {
-    id: id,
-    employeeCode: 'NV001',
-    fullName: 'Nguyễn Văn A',
-    email: 'nguyenvana@company.com',
-    phone: '0123456789',
-    dateOfBirth: '1990-01-15',
-    gender: 'Nam',
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    position: 'Senior Developer',
-    departmentName: 'Phòng IT',
-    hireDate: '2020-01-01',
-    salary: '20000000',
-    status: 'ACTIVE',
-    avatar: null,
+  useEffect(() => {
+    const fetchEmployee = async () => {
+      if (!id) {
+        addNotification({
+          type: 'error',
+          message: 'Thiếu mã nhân viên.',
+        });
+        navigate('/employees');
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const response = await employeeApi.getById(Number(id));
+        setEmployee(response.data);
+      } catch (error: unknown) {
+        addNotification({
+          type: 'error',
+          message: getApiErrorMessage(error, 'Lỗi khi tải chi tiết nhân viên.'),
+        });
+        navigate('/employees');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEmployee();
+  }, [id, navigate, addNotification]);
+
+  const handleDelete = async () => {
+    if (!id || !employee) {
+      return;
+    }
+
+    if (!globalThis.confirm(`Bạn có chắc chắn muốn xóa nhân viên "${employee.name}"?`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await employeeApi.delete(Number(id));
+      addNotification({
+        type: 'success',
+        message: 'Xóa nhân viên thành công.',
+      });
+      navigate('/employees');
+    } catch (error: unknown) {
+      addNotification({
+        type: 'error',
+        message: getApiErrorMessage(error, 'Lỗi khi xóa nhân viên.'),
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center items-center py-12">
+          <div className="text-gray-500">Đang tải...</div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!employee) {
+    return null;
+  }
+
+  const avatarText = employee.name?.charAt(0)?.toUpperCase() || 'N';
+  const employeeCode = typeof employee.employeeCode === 'string' ? employee.employeeCode : `NV-${employee.id}`;
+  const email = typeof employee.email === 'string' ? employee.email : '--';
+  const phone = typeof employee.phone === 'string' ? employee.phone : '--';
+  const dateOfBirth = typeof employee.dateOfBirth === 'string' ? employee.dateOfBirth : '--';
+  const address = typeof employee.address === 'string' ? employee.address : '--';
+  const hireDate = typeof employee.hireDate === 'string' ? employee.hireDate : '--';
+  const salary = typeof employee.salary === 'number' ? employee.salary : 0;
+  const status = typeof employee.status === 'string' ? employee.status : 'ACTIVE';
 
   return (
     <MainLayout>
@@ -47,9 +118,9 @@ export const EmployeeDetailPage = () => {
               <Edit size={18} className="mr-2" />
               Chỉnh sửa
             </Button>
-            <Button variant="danger">
+            <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
               <Trash2 size={18} className="mr-2" />
-              Xóa
+              {isDeleting ? 'Đang xóa...' : 'Xóa'}
             </Button>
           </div>
         </div>
@@ -60,22 +131,22 @@ export const EmployeeDetailPage = () => {
             <div className="text-center">
               <div className="w-32 h-32 bg-blue-100 rounded-full mx-auto flex items-center justify-center mb-4">
                 <span className="text-4xl font-bold text-blue-600">
-                  {employee.fullName.charAt(0)}
+                  {avatarText}
                 </span>
               </div>
-              <h2 className="text-xl font-semibold text-gray-800">{employee.fullName}</h2>
+              <h2 className="text-xl font-semibold text-gray-800">{employee.name}</h2>
               <p className="text-gray-600 text-sm mt-1">{employee.position}</p>
               <p className="text-gray-500 text-sm">{employee.departmentName}</p>
 
               <div className="mt-4">
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    employee.status === 'ACTIVE'
+                    status === 'ACTIVE'
                       ? 'bg-green-100 text-green-800'
                       : 'bg-red-100 text-red-800'
                   }`}
                 >
-                  {employee.status === 'ACTIVE' ? 'Đang làm việc' : 'Nghỉ việc'}
+                  {status === 'ACTIVE' ? 'Đang làm việc' : 'Nghỉ việc'}
                 </span>
               </div>
             </div>
@@ -95,7 +166,7 @@ export const EmployeeDetailPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Mã nhân viên</p>
-                    <p className="text-gray-800 font-medium">{employee.employeeCode}</p>
+                    <p className="text-gray-800 font-medium">{employeeCode}</p>
                   </div>
                 </div>
 
@@ -105,7 +176,7 @@ export const EmployeeDetailPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Email</p>
-                    <p className="text-gray-800 font-medium">{employee.email}</p>
+                    <p className="text-gray-800 font-medium">{email}</p>
                   </div>
                 </div>
 
@@ -115,7 +186,7 @@ export const EmployeeDetailPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Số điện thoại</p>
-                    <p className="text-gray-800 font-medium">{employee.phone}</p>
+                    <p className="text-gray-800 font-medium">{phone}</p>
                   </div>
                 </div>
 
@@ -125,7 +196,7 @@ export const EmployeeDetailPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Ngày sinh</p>
-                    <p className="text-gray-800 font-medium">{employee.dateOfBirth}</p>
+                    <p className="text-gray-800 font-medium">{dateOfBirth}</p>
                   </div>
                 </div>
 
@@ -135,7 +206,7 @@ export const EmployeeDetailPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Địa chỉ</p>
-                    <p className="text-gray-800 font-medium">{employee.address}</p>
+                    <p className="text-gray-800 font-medium">{address}</p>
                   </div>
                 </div>
               </div>
@@ -159,7 +230,7 @@ export const EmployeeDetailPage = () => {
 
                 <div>
                   <p className="text-sm text-gray-500">Ngày vào làm</p>
-                  <p className="text-gray-800 font-medium mt-1">{employee.hireDate}</p>
+                  <p className="text-gray-800 font-medium mt-1">{hireDate}</p>
                 </div>
 
                 <div>
@@ -168,7 +239,7 @@ export const EmployeeDetailPage = () => {
                     {new Intl.NumberFormat('vi-VN', {
                       style: 'currency',
                       currency: 'VND',
-                    }).format(Number(employee.salary))}
+                    }).format(Number(salary))}
                   </p>
                 </div>
               </div>

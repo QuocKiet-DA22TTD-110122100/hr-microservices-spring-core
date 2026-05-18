@@ -1,8 +1,0 @@
-package com.thuctap2026.auth.iam.sync;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.UUID;
-
-public interface UserSyncDlqRepository extends JpaRepository<UserSyncDlq, UUID> {
-}

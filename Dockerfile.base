@@ -1,0 +1,19 @@
+# Base image for Maven build stage - push to Docker Hub for reuse
+# This provides Maven + Java 21 for building services
+# Individual services will cache their own dependencies via COPY pom.xml layer
+#
+# Usage: docker build -f Dockerfile.base -t your-dockerhub-username/maven-spring-base:21 .
+#        docker push your-dockerhub-username/maven-spring-base:21
+
+FROM maven:3.9-eclipse-temurin-21-alpine
+
+# Install curl for health checks in runtime stages
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# Labels for identification
+LABEL description="Maven base image for Spring Boot 3.5.12 projects"
+LABEL java.version="21"
+LABEL maven.version="3.9"
+LABEL org.opencontainers.image.source="https://github.com/your-repo/hr-microservices"

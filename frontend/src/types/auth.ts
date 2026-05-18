@@ -7,6 +7,22 @@ export interface LoginResponse {
   token: string;
 }
 
+export interface AuthClaims {
+  sub?: string;
+  username?: string;
+  email?: string;
+  fullName?: string;
+  roles?: string[] | string;
+  permissions?: string[] | string;
+  exp?: number;
+  [key: string]: unknown;
+}
+
+export interface VerifyTokenResponse {
+  valid: boolean;
+  claims: AuthClaims;
+}
+
 export interface User {
   id: string;
   username: string;
@@ -23,8 +39,14 @@ export interface RefreshTokenRequest {
   refreshToken: string;
 }
 
-export interface ChangePasswordRequest {
+export interface ChangePasswordForm {
   oldPassword: string;
   newPassword: string;
   confirmPassword: string;
+}
+
+export interface ChangePasswordApiRequest {
+  username: string;
+  oldPassword: string;
+  newPassword: string;
 }

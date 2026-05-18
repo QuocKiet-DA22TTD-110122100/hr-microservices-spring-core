@@ -1,0 +1,99 @@
+x-eureka-default-zone: &eureka_default_zone http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/
+x-java-opts: &java_opts -Xmx256m -Xms128m
+x-logging-level: &logging_level WARN
+
+services:
+  business-mysql:
+    image: mysql:8.0
+    container_name: business-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: project_db
+    volumes:
+      - business-mysql-data:/var/lib/mysql
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  project-service:
+    build:
+      context: ./project-service
+      dockerfile: Dockerfile
+    container_name: project-service
+    ports:
+      - "8084:8084"
+    environment:
+      SERVER_PORT: "8084"
+      SPRING_DATASOURCE_URL: jdbc:mysql://business-mysql:3306/project_db?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      REDIS_HOST: redis-server
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
+      LOGGING_LEVEL_ROOT: *logging_level
+      JAVA_OPTS: *java_opts
+    depends_on:
+      business-mysql:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: on-failure
+    mem_limit: 300m
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8084/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+
+  task-service:
+    build:
+      context: ./task-service
+      dockerfile: Dockerfile
+    container_name: task-service
+    ports:
+      - "8087:8087"
+    environment:
+      SERVER_PORT: "8087"
+      SPRING_DATASOURCE_URL: jdbc:mysql://business-mysql:3306/task_db?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      REDIS_HOST: redis-server
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      EUREKA_CLIENT_ENABLED: "true"
+      EUREKA_REGISTER_WITH_EUREKA: "true"
+      EUREKA_FETCH_REGISTRY: "true"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
+      LOGGING_LEVEL_ROOT: *logging_level
+      JAVA_OPTS: *java_opts
+    depends_on:
+      business-mysql:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: on-failure
+    mem_limit: 300m
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8087/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+
+networks:
+  microservices-network:
+    name: microservices-network
+    external: true
+
+volumes:
+  business-mysql-data:
+    name: business-mysql-data

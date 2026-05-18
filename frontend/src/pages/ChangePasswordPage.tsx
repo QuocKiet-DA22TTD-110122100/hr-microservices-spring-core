@@ -5,11 +5,14 @@ import { MainLayout } from '@/components/Layout/MainLayout';
 import { Input } from '@/components/UI/Input';
 import { Button } from '@/components/UI/Button';
 import { authApi } from '@/api/auth.api';
+import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
-import { ChangePasswordRequest } from '@/types/auth';
+import { ChangePasswordForm } from '@/types/auth';
+import { getApiErrorMessage } from '@/utils/error';
 
 export const ChangePasswordPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const { addNotification } = useUIStore();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -18,21 +21,30 @@ export const ChangePasswordPage = () => {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<ChangePasswordRequest>();
+  } = useForm<ChangePasswordForm>();
 
   const newPassword = watch('newPassword');
 
-  const onSubmit = async (data: ChangePasswordRequest) => {
+  const onSubmit = async (data: ChangePasswordForm) => {
     setIsLoading(true);
     try {
-      await authApi.changePassword(data);
+      if (!user?.username) {
+        throw new Error('Không tìm thấy thông tin người dùng hiện tại.');
+      }
+
+      await authApi.changePassword({
+        username: user.username,
+        oldPassword: data.oldPassword,
+        newPassword: data.newPassword,
+      });
+
       addNotification({
         type: 'success',
         message: 'Đổi mật khẩu thành công!',
       });
       navigate('/');
     } catch (error: unknown) {
-      const message = (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Đổi mật khẩu thất bại. Vui lòng thử lại.';
+      const message = getApiErrorMessage(error, 'Đổi mật khẩu thất bại. Vui lòng thử lại.');
       addNotification({
         type: 'error',
         message,

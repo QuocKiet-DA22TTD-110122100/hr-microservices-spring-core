@@ -11,7 +11,7 @@ spring:
       ddl-auto: none
     properties:
       hibernate:
-        format_sql: true
+        '[format_sql]': true
   sql:
     init:
       mode: always
@@ -40,6 +40,14 @@ auth:
   password-policy:
     expiry-days: ${PASSWORD_EXPIRY_DAYS}
 
+app:
+  security:
+    2fa:
+      issuer: ${TWO_FACTOR_ISSUER:HRSystem}
+      time-step-seconds: ${TWO_FACTOR_TIME_STEP_SECONDS:30}
+      digits: ${TWO_FACTOR_DIGITS:6}
+      window: ${TWO_FACTOR_WINDOW:1}
+
 sync:
   hr:
     enabled: ${HR_SYNC_ENABLED:true}
@@ -65,7 +73,7 @@ management:
       probability: 1.0
   zipkin:
     tracing:
-      endpoint: ${MANAGEMENT_ZIPKIN_TRACING_ENDPOINT:http://zipkin:9411/api/v2/spans}
+      endpoint: ${MANAGEMENT_ZIPKIN_TRACING_ENDPOINT:http://jaeger:9411/api/v2/spans}
   endpoint:
     health:
       show-details: always

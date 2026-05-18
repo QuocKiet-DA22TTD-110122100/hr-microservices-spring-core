@@ -1,32 +1,56 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { Table } from '@/components/UI/Table';
 import { Button } from '@/components/UI/Button';
 import { departmentApi } from '@/api/department.api';
 import { Department } from '@/types/department';
-import { Plus } from 'lucide-react';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { useUIStore } from '@/store/uiStore';
+import { getApiErrorMessage } from '@/utils/error';
 
 export const DepartmentListPage = () => {
   const navigate = useNavigate();
+  const { addNotification } = useUIStore();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchDepartments = async () => {
+  const fetchDepartments = useCallback(async () => {
     setLoading(true);
     try {
       const response = await departmentApi.getAll();
       setDepartments(response.data.content);
-    } catch (error) {
-      console.error('Failed to fetch departments:', error);
+    } catch (error: unknown) {
+      addNotification({
+        type: 'error',
+        message: getApiErrorMessage(error, 'Lỗi khi tải danh sách phòng ban.'),
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [addNotification]);
 
   useEffect(() => {
     fetchDepartments();
-  }, []);
+  }, [fetchDepartments]);
+
+  const handleDelete = async (deptId: number) => {
+    if (!confirm('Bạn chắc chắn muốn xóa phòng ban này?')) return;
+
+    try {
+      await departmentApi.delete(deptId);
+      setDepartments((current) => current.filter((d) => d.id !== deptId));
+      addNotification({
+        type: 'success',
+        message: 'Xóa phòng ban thành công',
+      });
+    } catch (error: unknown) {
+      addNotification({
+        type: 'error',
+        message: getApiErrorMessage(error, 'Lỗi khi xóa phòng ban.'),
+      });
+    }
+  };
 
   const columns: Array<{
     key: string;
@@ -35,20 +59,31 @@ export const DepartmentListPage = () => {
   }> = [
     { key: 'code', title: 'Mã phòng ban' },
     { key: 'name', title: 'Tên phòng ban' },
-    { key: 'managerName', title: 'Trưởng phòng' },
-    { key: 'parentDepartmentName', title: 'Phòng ban cha' },
-    { key: 'employeeCount', title: 'Số nhân viên' },
     {
-      key: 'status',
-      title: 'Trạng thái',
-      render: (value: Department[keyof Department]) => (
-        <span
-          className={`px-2 py-1 rounded text-xs font-medium ${
-            value === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}
-        >
-          {value === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động'}
-        </span>
+      key: 'organizationUnitName',
+      title: 'Tổ chức',
+      render: (value: Department[keyof Department]): React.ReactNode => String(value) || '--',
+    },
+    {
+      key: 'actions',
+      title: 'Hành động',
+      render: (_: Department[keyof Department], record: Department) => (
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate(`/departments/edit/${record.id}`)}
+            className="p-1 hover:bg-blue-100 rounded transition-colors"
+            title="Chỉnh sửa"
+          >
+            <Edit2 size={16} className="text-blue-600" />
+          </button>
+          <button
+            onClick={() => handleDelete(record.id)}
+            className="p-1 hover:bg-red-100 rounded transition-colors"
+            title="Xóa"
+          >
+            <Trash2 size={16} className="text-red-600" />
+          </button>
+        </div>
       ),
     },
   ];
