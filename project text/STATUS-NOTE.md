@@ -131,3 +131,15 @@ Tao file note nay de tong hop trang thai hien tai cua repo theo tung phan.
 - Cac lop core da co: Discovery, Gateway, Auth, KMS, HR, Docker split compose.
 - Cac lop con dang thieu: compose tong full-stack, Task Service, Project Service, test/verify end-to-end.
 - Trang thai hien tai phu hop voi quy trinh "cot loi truoc, nghiep vu sau", nhung chua phai hoan chinh full microservices.
+
+## 11) Trang thai moi nhat
+
+### Da xac minh
+- Da chay thanh cong `compose.infra.yml` va `compose.iam.yml`.
+- Da sua `REDIS_HOST` ve `redis-server` trong [.env](../.env) de dung service DNS thay vi IP tam thoi.
+- Da xac minh `hr-service` va `auth-service` deu `UP` qua `/actuator/health`.
+- Da chay smoke end-to-end: dang ky `201`, dang nhap `200` va tra ve `access_token` JWT hop le.
+
+### Ghi chu
+- Con cac canh bao compose ve orphan containers/port trung lap khi chay full stack; khong chan smoke pass hien tai.
+- Neu muon mo rong tiep, buoc tiep theo hop ly nhat la doc duong di API Gateway -> Frontend va mo rong smoke sang Project/Task service.

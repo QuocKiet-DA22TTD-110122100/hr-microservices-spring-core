@@ -6,10 +6,10 @@ COPY mvnw.cmd .
 COPY .mvn .mvn
 COPY pom.xml .
 RUN chmod +x ./mvnw
-RUN ./mvnw -B -DskipTests dependency:go-offline
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -DskipTests dependency:go-offline
 
 COPY src ./src
-RUN ./mvnw -B -DskipTests package
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -DskipTests package
 
 FROM eclipse-temurin:21-jre-alpine
 

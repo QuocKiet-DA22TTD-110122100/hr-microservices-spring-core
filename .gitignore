@@ -34,3 +34,5 @@ frontend/node_modules/
 target/
 logs/
 test-reports/
+node_modules/
+external/

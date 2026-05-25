@@ -1,6 +1,8 @@
 package com.hrservice.hr.entity;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
 public class Employee {
@@ -20,6 +22,11 @@ public class Employee {
 
     private String name;
     private String position;
+
+    private BigDecimal baseSalary;
+    private String currency;
+    private String jobLevel;
+    private LocalDate hireDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
@@ -45,8 +52,24 @@ public class Employee {
         return position;
     }
 
+    public BigDecimal getBaseSalary() {
+        return baseSalary;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
     public String getDid() {
         return did;
+    }
+
+    public String getJobLevel() {
+        return jobLevel;
+    }
+
+    public LocalDate getHireDate() {
+        return hireDate;
     }
 
     public Department getDepartment() {
@@ -73,8 +96,24 @@ public class Employee {
         this.position = position;
     }
 
+    public void setBaseSalary(BigDecimal baseSalary) {
+        this.baseSalary = baseSalary;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
     public void setDid(String did) {
         this.did = did;
+    }
+
+    public void setJobLevel(String jobLevel) {
+        this.jobLevel = jobLevel;
+    }
+
+    public void setHireDate(LocalDate hireDate) {
+        this.hireDate = hireDate;
     }
 
     public void setDepartment(Department department) {

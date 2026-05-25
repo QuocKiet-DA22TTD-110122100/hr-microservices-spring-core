@@ -1,4 +1,4 @@
-
+                                                
 # Module M06 - Event-Driven Messaging (RabbitMQ)
 
 ## Overview

@@ -383,7 +383,7 @@ public class AuthService {
 
     private KmsSignResponse signByKms(String payloadToSign) {
         KmsSignResponse response = kmsSignerClient.post()
-            .uri("/kms/sign")
+              .uri("/quan-ly-khoa/internal/sign")
             .contentType(Objects.requireNonNull(MediaType.APPLICATION_JSON))
             .body(new KmsSignRequest(payloadToSign))
             .retrieve()
@@ -537,7 +537,7 @@ public class AuthService {
             }
 
             JwksResponse response = kmsSignerClient.get()
-                .uri("/kms/.well-known/jwks.json")
+                    .uri("/quan-ly-khoa/.well-known/jwks.json")
                 .retrieve()
                 .body(JwksResponse.class);
 

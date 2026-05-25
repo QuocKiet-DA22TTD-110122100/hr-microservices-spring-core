@@ -9,12 +9,14 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: project_db
+      MYSQL_USER: ${BUSINESS_DB_USERNAME}
+      MYSQL_PASSWORD: ${BUSINESS_DB_PASSWORD}
     volumes:
       - business-mysql-data:/var/lib/mysql
     networks:
       - microservices-network
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 1g
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 15s
@@ -32,8 +34,13 @@ services:
     environment:
       SERVER_PORT: "8084"
       SPRING_DATASOURCE_URL: jdbc:mysql://business-mysql:3306/project_db?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_DATASOURCE_USERNAME: ${BUSINESS_DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${BUSINESS_DB_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_VHOST: /
       REDIS_HOST: redis-server
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
@@ -64,8 +71,13 @@ services:
     environment:
       SERVER_PORT: "8087"
       SPRING_DATASOURCE_URL: jdbc:mysql://business-mysql:3306/task_db?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_DATASOURCE_USERNAME: ${BUSINESS_DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${BUSINESS_DB_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_VHOST: /
       REDIS_HOST: redis-server
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}

@@ -1,0 +1,37 @@
+# Agent Configuration for HR Microservices
+
+agents:
+  - name: hr-domain-expert
+    description: Expert on HR business workflows
+    language: java
+    targets: [hr-service, auth-service]
+    skills: [payroll-patterns, employee-lifecycle, compliance-audit]
+
+  - name: spring-reviewer
+    description: Spring Boot code reviewer
+    language: java
+    targets: [auth-service, hr-service, project-service, task-service, api-gateway]
+    skills: [springboot-patterns]
+
+  - name: database-expert
+    description: Database design & query optimization
+    language: sql
+    targets: [hr-service]
+    skills: [query-optimization, schema-design]
+
+skills:
+  - id: payroll-patterns
+    name: Payroll Pattern Recognition
+    path: skills/payroll-patterns/
+
+  - id: employee-lifecycle
+    name: Employee Lifecycle Management
+    path: skills/employee-lifecycle/
+
+  - id: compliance-audit
+    name: Compliance Auditing
+    path: skills/compliance-audit/
+
+  - id: springboot-patterns
+    name: Spring Boot Best Practices
+    path: skills/springboot-patterns/
