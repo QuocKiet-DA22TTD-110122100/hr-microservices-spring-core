@@ -1,0 +1,60 @@
+server:
+  port: ${SERVER_PORT:8762}
+
+spring:
+  application:
+    name: eureka-server
+  security:
+    user:
+      name: ${EUREKA_USERNAME}
+      password: ${EUREKA_PASSWORD}
+
+# Eureka peer 2 configuration
+eureka:
+  instance:
+    hostname: eureka-peer2
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+    
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    disable-delta: true
+    eureka-server-connect-timeout-seconds: 10
+    eureka-server-read-timeout-seconds: 60
+    service-url:
+      defaultZone: http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer3:${EUREKA_PEER3_PORT}/eureka/
+      
+  server:
+    enable-self-preservation: false
+    eviction-interval-timer-in-ms: 10000
+    renewal-percent-threshold: 0.49
+    peer-node-connect-timeout-ms: 10000
+    peer-node-read-timeout-ms: 60000
+    peer-eureka-nodes-update-interval-ms: 600000
+    response-cache-auto-expiration-in-seconds: 180
+    response-cache-update-interval-ms: 30000
+
+# Management and monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+# Logging configuration
+logging:
+  level:
+    "[com.eureka]": INFO
+    "[org.springframework.cloud.netflix.eureka]": INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+

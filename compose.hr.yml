@@ -1,0 +1,71 @@
+x-eureka-default-zone: &eureka_default_zone http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/
+x-java-opts: &java_opts -Xmx256m -Xms128m
+x-logging-level: &logging_level WARN
+
+services:
+  hr-mysql:
+    image: mysql:8.0
+    container_name: hr-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - hr-mysql-data:/var/lib/mysql
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  hr-service:
+    build:
+      context: ./hr-service
+      dockerfile: Dockerfile
+    container_name: hr-service
+    ports:
+      - "8085:8082"
+    environment:
+      SERVER_PORT: "8082"
+      SPRING_APPLICATION_NAME: hr-service
+      SPRING_DATASOURCE_URL: jdbc:mysql://hr-mysql:3306/${MYSQL_DATABASE}?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${HR_DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${HR_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      REDIS_HOST: redis-server
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      EUREKA_CLIENT_ENABLED: "true"
+      EUREKA_REGISTER_WITH_EUREKA: "true"
+      EUREKA_FETCH_REGISTRY: "true"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
+      LOGGING_LEVEL_ROOT: *logging_level
+      JAVA_OPTS: *java_opts
+    depends_on:
+      hr-mysql:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: on-failure
+    mem_limit: 300m
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8082/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+networks:
+  microservices-network:
+    name: microservices-network
+    external: true
+
+volumes:
+  hr-mysql-data:
+    name: hr-mysql-data

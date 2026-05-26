@@ -1,0 +1,38 @@
+# Root secrets and local runtime config
+.env
+.env.*
+!.env.example
+
+# Optional local outputs
+auth-logs.txt
+kms-test.json
+login-payload.json
+payload.json
+*.log
+*.zip
+
+# TLS certificates - Team tự generate
+certs/eureka.pem
+certs/keystore.p12
+*.pem
+*.key
+*.p12
+*.jks
+*.crt
+**/keystore.p12
+
+# Frontend local dependencies
+frontend/node_modules/
+
+# IDE & Tools
+.idea/
+.vscode/
+.kiro/
+.qodo/
+
+# Build outputs
+target/
+logs/
+test-reports/
+node_modules/
+external/

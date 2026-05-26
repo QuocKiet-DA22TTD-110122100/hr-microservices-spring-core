@@ -1,0 +1,223 @@
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+    whitelabel:
+      enabled: false
+
+# JWT Configuration - must be at root level
+app:
+  jwt:
+    jwks-uri: ${JWT_JWKS_URI:http://kms/kms/.well-known/jwks.json}
+    jwks-cache-seconds: ${JWT_JWKS_CACHE_SECONDS:300}
+  security:
+    token-blacklist:
+      l1:
+        max-size: ${TOKEN_BLACKLIST_L1_MAX_SIZE:10000}
+        ttl-seconds: ${TOKEN_BLACKLIST_L1_TTL_SECONDS:30}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    prometheus:
+      access: unrestricted
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${MANAGEMENT_ZIPKIN_TRACING_ENDPOINT:http://jaeger:9411/api/v2/spans}
+spring:
+  application:
+    name: api-gateway
+  threads:
+    virtual:
+      enabled: true
+  cloud:
+    gateway:
+      server:
+        webflux:
+          # Eureka Discovery Routes
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+
+          # Default filters
+          default-filters:
+            - name: AddRequestHeader
+              args:
+                name: X-Internal-Secret
+                value: "${INTERNAL_SECRET}"
+            - name: DedupeResponseHeader
+              args:
+                strategy: RETAIN_FIRST
+                headers:
+                  - Access-Control-Allow-Origin
+                  - Access-Control-Allow-Credentials
+
+          # Routes configuration
+          routes:
+            # Actuator health - public, no auth needed
+            - id: actuator-health-route
+              uri: http://localhost:8080
+              predicates:
+                - Path=/actuator/health
+              metadata:
+                requires-jwt: false
+
+            # Eureka Dashboard Route - Forward to HAProxy load balancer
+            - id: eureka-dashboard-route
+              uri: http://localhost:8760
+              predicates:
+                - Path=/eureka/**
+              metadata:
+                requires-jwt: false
+
+            # KMS Service Route
+            - id: kms-service-route
+              uri: lb://kms
+              predicates:
+                - Path=/quan-ly-khoa/**
+              filters:
+                - StripPrefix=1
+              metadata:
+                requires-jwt: false
+
+            # Public IAM endpoints - no JWT required
+            - id: auth-public-route
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/xac-thuc/dang-nhap,/api/xac-thuc/dang-ky,/api/xac-thuc/dang-xuat,/api/xac-thuc/oauth2/token,/api/xac-thuc/2fa/**
+              filters:
+                - StripPrefix=1
+              metadata:
+                requires-jwt: false
+
+            # Protected IAM endpoints - JWT required
+            - id: auth-protected-route
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/xac-thuc/kiem-tra,/api/xac-thuc/doi-mat-khau,/api/xac-thuc/quan-tri/**,/api/xac-thuc/trang-thai-dong-bo/**,/api/xac-thuc/thu-lai-dong-bo/**
+              filters:
+                - StripPrefix=1
+              metadata:
+                requires-jwt: true
+
+            # HR Service Routes - Employee
+            - id: hr-employee-route
+              uri: lb://hr-service
+              predicates:
+                - Path=/api/nhan-vien/**
+              filters:
+                - StripPrefix=2
+              metadata:
+                requires-jwt: true
+
+            # HR Service Routes - Department
+            - id: hr-department-route
+              uri: lb://hr-service
+              predicates:
+                - Path=/api/phong-ban/**
+              filters:
+                - StripPrefix=2
+              metadata:
+                requires-jwt: true
+
+            # HR Service Routes - Organization Unit
+            - id: hr-org-unit-route
+              uri: lb://hr-service
+              predicates:
+                - Path=/api/don-vi-to-chuc/**
+              filters:
+                - StripPrefix=2
+              metadata:
+                requires-jwt: true
+
+            # Project Service Routes
+            - id: project-service-route
+              uri: lb://project-service
+              predicates:
+                - Path=/api/du-an/**
+              filters:
+                - RewritePath=/api/du-an/(?<segment>.*), /api/projects/$\{segment}
+              metadata:
+                requires-jwt: true
+
+            # Task Service Routes
+            - id: task-service-route
+              uri: lb://task-service
+              predicates:
+                - Path=/api/cong-viec/**
+              filters:
+                - RewritePath=/api/cong-viec/(?<segment>.*), /api/tasks/$\{segment}
+              metadata:
+                requires-jwt: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${JWT_JWKS_URI:http://kms/kms/.well-known/jwks.json}
+
+---
+# Docker Profile Configuration
+spring:
+  config:
+    activate:
+      on-profile: docker
+  data:
+    redis:
+      host: ${REDIS_HOST:redis-server}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+# Eureka Client Configuration
+eureka:
+  client:
+    enabled: true
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer2:${EUREKA_PEER2_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer3:${EUREKA_PEER3_PORT}/eureka/}
+    registry-fetch-interval-seconds: 30
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+    metadata-map:
+      zone: us-east-1a
+      version: 1.0.0
+      description: API Gateway for microservices
+
+app:
+  jwt:
+    jwks-uri: ${JWT_JWKS_URI:http://kms-service:8083/kms/.well-known/jwks.json}
+    jwks-cache-seconds: ${JWT_JWKS_CACHE_SECONDS:300}
+
+logging:
+  level:
+    "[org.springframework.cloud.gateway]": INFO
+    "[reactor.netty.http.server]": INFO
+    "[com.netflix.eureka]": INFO
+    "[com.netflix.discovery]": INFO
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

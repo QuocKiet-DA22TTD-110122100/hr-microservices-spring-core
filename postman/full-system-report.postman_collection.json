@@ -1,0 +1,719 @@
+{
+  "info": {
+    "name": "HR Microservices - Full System Report Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Full functional test for all components: Gateway, Auth, HR, KMS, Eureka, Prometheus, Grafana."
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const suffix = Date.now().toString().slice(-6);",
+          "pm.environment.set('run_suffix', suffix);",
+          "const adminBase = pm.environment.get('admin_username_base') || 'admin_report';",
+          "const userBase = pm.environment.get('user_username_base') || 'user_report';",
+          "pm.environment.set('admin_username', adminBase + '_' + suffix);",
+          "pm.environment.set('user_username', userBase + '_' + suffix);"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Infrastructure and Health",
+      "item": [
+        {
+          "name": "Gateway Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{gateway_url}}/actuator/health"
+          }
+        },
+        {
+          "name": "Auth Service Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{auth_service_url}}/actuator/health"
+          }
+        },
+        {
+          "name": "HR Service Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+            ],
+            "url": "{{hr_service_url}}/actuator/health"
+          }
+        },
+        {
+          "name": "KMS Service Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{kms_service_url}}/kms/health"
+          }
+        },
+        {
+          "name": "Eureka Health (Basic Auth)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Basic {{eureka_basic_auth}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{eureka_url}}/actuator/health"
+          }
+        },
+        {
+          "name": "Prometheus Healthy",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{prometheus_url}}/-/healthy"
+          }
+        },
+        {
+          "name": "Grafana Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{grafana_url}}/api/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 - Auth APIs via Gateway",
+      "item": [
+        {
+          "name": "Register Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\",\n  \"role\": \"ADMIN\"\n}"
+            },
+            "url": "{{gateway_url}}/api/iam/register"
+          }
+        },
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+            },
+            "url": "{{gateway_url}}/api/iam/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const token = json.token || (json.data && (json.data.token || json.data.accessToken));",
+                  "if (token) pm.environment.set('admin_token', token);",
+                  "pm.test('admin token captured', function () { pm.expect(pm.environment.get('admin_token')).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify Admin Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{admin_token}}\"\n}"
+            },
+            "url": "{{gateway_url}}/api/iam/verify"
+          }
+        },
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{user_username}}\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"USER\"\n}"
+            },
+            "url": "{{gateway_url}}/api/iam/register"
+          }
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{user_username}}\",\n  \"password\": \"{{user_password}}\"\n}"
+            },
+            "url": "{{gateway_url}}/api/iam/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const token = json.token || (json.data && (json.data.token || json.data.accessToken));",
+                  "if (token) pm.environment.set('user_token', token);",
+                  "pm.test('user token captured', function () { pm.expect(pm.environment.get('user_token')).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify User Token and Save UserId",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{user_token}}" },
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{user_token}}\"\n}"
+            },
+            "url": "{{gateway_url}}/api/iam/verify"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const claims = json.claims || {};",
+                  "const uid = claims.userId || claims.sub || '';",
+                  "if (uid) pm.environment.set('user_id', uid);",
+                  "pm.test('user_id captured', function () { pm.expect(pm.environment.get('user_id')).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sync Status by UserId",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+            ],
+            "url": "{{gateway_url}}/api/iam/sync-status/{{user_id}}"
+          }
+        },
+        {
+          "name": "Sync Retry by UserId (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+            ],
+            "url": "{{gateway_url}}/api/iam/sync-retry/{{user_id}}"
+          }
+        },
+        {
+          "name": "Admin Lock Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{user_username}}\"\n}"
+            },
+            "url": "{{gateway_url}}/api/iam/admin/lock-account"
+          }
+        },
+        {
+          "name": "Admin Unlock Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{user_username}}\"\n}"
+            },
+            "url": "{{gateway_url}}/api/iam/admin/unlock-account"
+          }
+        },
+        {
+          "name": "Change Password (User)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{user_token}}" },
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{user_username}}\",\n  \"oldPassword\": \"{{user_password}}\",\n  \"newPassword\": \"{{user_new_password}}\"\n}"
+            },
+            "url": "{{gateway_url}}/api/iam/change-password"
+          }
+        },
+        {
+          "name": "Logout User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{user_token}}\"\n}"
+            },
+            "url": "{{gateway_url}}/api/iam/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - HR APIs via Gateway (JWT)",
+      "item": [
+        {
+          "name": "Create Organization Unit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Corp {{run_suffix}}\",\n  \"code\": \"CORP-{{run_suffix}}\",\n  \"level\": \"CORPORATION\"\n}"
+            },
+            "url": "{{gateway_url}}/api/hr/organization-units"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.id) pm.environment.set('organization_unit_id', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Organization Units",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{gateway_url}}/api/hr/organization-units"
+          }
+        },
+        {
+          "name": "Get Organization Tree",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{gateway_url}}/api/hr/organization-units/tree"
+          }
+        },
+        {
+          "name": "Create Department",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"IT {{run_suffix}}\",\n  \"code\": \"IT-{{run_suffix}}\",\n  \"organizationUnitId\": {{organization_unit_id}}\n}"
+            },
+            "url": "{{gateway_url}}/api/hr/departments"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.id) pm.environment.set('department_id', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Departments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{gateway_url}}/api/hr/departments"
+          }
+        },
+        {
+          "name": "Get Departments by OrganizationUnitId",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{gateway_url}}/api/hr/departments?organizationUnitId={{organization_unit_id}}"
+          }
+        },
+        {
+          "name": "Get Department by Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{gateway_url}}/api/hr/departments/{{department_id}}"
+          }
+        },
+        {
+          "name": "Create Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Employee {{run_suffix}}\",\n  \"position\": \"QA\",\n  \"did\": \"did:example:{{run_suffix}}\",\n  \"departmentId\": {{department_id}}\n}"
+            },
+            "url": "{{gateway_url}}/api/hr/employees"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.id) pm.environment.set('employee_id', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Employees",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{gateway_url}}/api/hr/employees"
+          }
+        },
+        {
+          "name": "Get Employees by DepartmentId",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{gateway_url}}/api/hr/employees?departmentId={{department_id}}"
+          }
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Employee Updated {{run_suffix}}\",\n  \"position\": \"Senior QA\",\n  \"did\": \"did:example:{{run_suffix}}\",\n  \"departmentId\": {{department_id}}\n}"
+            },
+            "url": "{{gateway_url}}/api/hr/employees/{{employee_id}}"
+          }
+        },
+        {
+          "name": "Delete Employee",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{gateway_url}}/api/hr/employees/{{employee_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - HR Internal APIs (Direct with Secret and Role Headers)",
+      "item": [
+        {
+          "name": "Sync User to HR Internal",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" },
+              { "key": "X-Auth-Role", "value": "ADMIN" },
+              { "key": "X-Auth-Roles", "value": "ADMIN,USER" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"evt-{{run_suffix}}\",\n  \"userId\": \"{{user_id}}\",\n  \"username\": \"{{user_username}}\",\n  \"did\": \"did:example:user-{{run_suffix}}\",\n  \"role\": \"USER\",\n  \"retryCount\": 0,\n  \"createdAt\": \"2026-04-07T00:00:00Z\"\n}"
+            },
+            "url": "{{hr_service_url}}/employees/internal/users/sync"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - KMS Service APIs (Direct)",
+      "item": [
+        {
+          "name": "KMS Home",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{kms_service_url}}/kms/"
+          }
+        },
+        {
+          "name": "KMS Info",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{kms_service_url}}/kms/info"
+          }
+        },
+        {
+          "name": "KMS Keys",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{kms_service_url}}/kms/keys"
+          }
+        },
+        {
+          "name": "KMS Sign",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": \"sample-payload-{{run_suffix}}\"\n}"
+            },
+            "url": "{{kms_service_url}}/kms/sign"
+          }
+        },
+        {
+          "name": "KMS Internal Sign",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": \"sample-internal-payload-{{run_suffix}}\"\n}"
+            },
+            "url": "{{kms_service_url}}/kms/internal/sign"
+          }
+        },
+        {
+          "name": "KMS Internal JWKS",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{kms_service_url}}/kms/internal/.well-known/jwks.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Auth Service KMS APIs (Direct)",
+      "item": [
+        {
+          "name": "Auth KMS Create Key (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{auth_service_url}}/kms/keys"
+          }
+        },
+        {
+          "name": "Auth KMS Rotate Key (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{auth_service_url}}/kms/rotate"
+          }
+        },
+        {
+          "name": "Auth KMS Sign",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": \"auth-kms-sign-{{run_suffix}}\"\n}"
+            },
+            "url": "{{auth_service_url}}/kms/sign"
+          }
+        },
+        {
+          "name": "Auth KMS Internal Sign",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": \"auth-kms-internal-sign-{{run_suffix}}\"\n}"
+            },
+            "url": "{{auth_service_url}}/kms/internal/sign"
+          }
+        },
+        {
+          "name": "Auth JWKS Public",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{auth_service_url}}/.well-known/jwks.json"
+          }
+        },
+        {
+          "name": "Auth JWKS Internal",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": "{{auth_service_url}}/kms/internal/.well-known/jwks.json"
+          }
+        },
+        {
+          "name": "Auth User Register Alias (/iam/user/register)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"alias_{{run_suffix}}\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"USER\"\n}"
+            },
+            "url": "{{auth_service_url}}/iam/user/register"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Prometheus Queries for Report",
+      "item": [
+        {
+          "name": "Query Services Up",
+          "request": {
+            "method": "GET",
+            "url": "{{prometheus_url}}/api/v1/query?query=sum(up{job=~\"api-gateway|auth-service|hr-service|kms-service\"})"
+          }
+        },
+        {
+          "name": "Query Gateway Request Rate",
+          "request": {
+            "method": "GET",
+            "url": "{{prometheus_url}}/api/v1/query?query=sum(rate(http_server_requests_seconds_count{job=\"api-gateway\"}[5m]))"
+          }
+        },
+        {
+          "name": "Query Gateway 429 Rate",
+          "request": {
+            "method": "GET",
+            "url": "{{prometheus_url}}/api/v1/query?query=sum(rate(http_server_requests_seconds_count{job=\"api-gateway\",status=\"429\"}[5m]))"
+          }
+        }
+      ]
+    }
+  ]
+}

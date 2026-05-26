@@ -1,0 +1,62 @@
+x-eureka-default-zone: &eureka_default_zone http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/
+x-java-opts: &java_opts -Xmx256m -Xms128m
+x-logging-level: &logging_level WARN
+
+services:
+  api-gateway:
+    image: ${API_GATEWAY_IMAGE:-hr-api-gateway:latest}
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      REDIS_HOST: redis-server
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_JWKS_URI: http://kms-service:8083/kms/.well-known/jwks.json
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      AUTH_SERVICE_URL: http://auth-service:8086
+      SPRING_PROFILES_ACTIVE: docker
+      LOGGING_LEVEL_ROOT: *logging_level
+      JAVA_OPTS: *java_opts
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
+    networks:
+      - microservices-network
+    restart: on-failure
+    mem_limit: 300m
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-hr-frontend:latest}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hr-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  microservices-network:
+    name: microservices-network
+    external: true
