@@ -1,0 +1,7 @@
+﻿{
+    "DEDUCTION-001":  "completed",
+    "EMPLOYEE-001":  "in-progress",
+    "PAYROLL-001":  "not-started",
+    "PAYROLL-002":  "not-started",
+    "COMPLIANCE-001":  "not-started"
+}
