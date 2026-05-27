@@ -24,15 +24,18 @@ public class PayrollController {
     private final EmployeeRepository employeeRepository;
     private final SecurityValidator securityValidator;
     private final PayrollService payrollService;
+    private final com.hrservice.hr.service.PayrollEventPublisher payrollEventPublisher;
 
     public PayrollController(PayrollResultRepository payrollResultRepository,
                            EmployeeRepository employeeRepository,
                            SecurityValidator securityValidator,
-                           PayrollService payrollService) {
+                           PayrollService payrollService,
+                           com.hrservice.hr.service.PayrollEventPublisher payrollEventPublisher) {
         this.payrollResultRepository = payrollResultRepository;
         this.employeeRepository = employeeRepository;
         this.securityValidator = securityValidator;
         this.payrollService = payrollService;
+        this.payrollEventPublisher = payrollEventPublisher;
     }
 
     @GetMapping("/{employeeId}/calculate")
@@ -92,6 +95,33 @@ public class PayrollController {
             String approvedBy = request.getOrDefault("approvedBy", "SYSTEM");
             PayrollResult result = payrollService.approvePayroll(payrollId, approvedBy);
             return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @PostMapping("/runs")
+    @PreAuthorize("hasRole('HR_ADMIN')")
+    public ResponseEntity<Map<String, Object>> createPayrollRun(
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
+        securityValidator.enforceGatewayAccess(request);
+
+        try {
+            String yearMonth = body.get("yearMonth");
+            if (yearMonth == null) {
+                throw new IllegalArgumentException("Missing yearMonth in body");
+            }
+            YearMonth ym = YearMonth.parse(yearMonth);
+
+            com.hrservice.hr.events.PayrollRunRequestedEvent ev = new com.hrservice.hr.events.PayrollRunRequestedEvent(
+                    null, ym.getYear(), ym.getMonthValue(), Map.of()
+            );
+
+            payrollEventPublisher.publish(ev);
+
+            Map<String, Object> resp = Map.of("status", "requested", "yearMonth", yearMonth);
+            return ResponseEntity.accepted().body(resp);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
