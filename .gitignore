@@ -36,3 +36,8 @@ logs/
 test-reports/
 node_modules/
 external/
+
+# Debug artifacts created by automation/tools
+.codex/
+pull_requests/
+files.txt
