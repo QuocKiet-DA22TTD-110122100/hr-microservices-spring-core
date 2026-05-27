@@ -2,6 +2,9 @@ package com.hrservice.hr.config;
 
 import com.hrservice.hr.entity.*;
 import com.hrservice.hr.repository.*;
+import com.hrservice.hr.events.PayrollApprovedEvent;
+import com.hrservice.hr.events.PayrollProcessedEvent;
+import com.hrservice.hr.service.PayrollWorkflowEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
@@ -10,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.*;
 
@@ -26,19 +30,22 @@ public class PayrollService {
     private final DeductionTypeRepository deductionTypeRepository;
     private final DeductionInstanceRepository deductionInstanceRepository;
     private final EmployeeRepository employeeRepository;
+    private final PayrollWorkflowEventPublisher payrollWorkflowEventPublisher;
 
     public PayrollService(PayrollResultRepository payrollResultRepository,
                          PayrollHistoryRepository payrollHistoryRepository,
                          TaxConfigRepository taxConfigRepository,
                          DeductionTypeRepository deductionTypeRepository,
                          DeductionInstanceRepository deductionInstanceRepository,
-                         EmployeeRepository employeeRepository) {
+                         EmployeeRepository employeeRepository,
+                         PayrollWorkflowEventPublisher payrollWorkflowEventPublisher) {
         this.payrollResultRepository = payrollResultRepository;
         this.payrollHistoryRepository = payrollHistoryRepository;
         this.taxConfigRepository = taxConfigRepository;
         this.deductionTypeRepository = deductionTypeRepository;
         this.deductionInstanceRepository = deductionInstanceRepository;
         this.employeeRepository = employeeRepository;
+        this.payrollWorkflowEventPublisher = payrollWorkflowEventPublisher;
     }
 
     /**
@@ -185,20 +192,81 @@ public class PayrollService {
     /**
      * Approve payroll (mark as APPROVED)
      */
-    public PayrollResult approvePayroll(Long payrollId, String approvedBy) throws Exception {
+        public PayrollResult approvePayroll(Long payrollId, String approvedBy) throws Exception {
         PayrollResult payroll = payrollResultRepository.findById(payrollId)
                 .orElseThrow(() -> new IllegalArgumentException("Payroll not found: " + payrollId));
+
+        ensurePayrollStatus(payroll, "DRAFT", "Payroll not in DRAFT status");
 
         validatePayrollCompliance(payroll);
 
         payroll.setStatus("APPROVED");
+        payroll.setApprovedBy(normalizeActor(approvedBy));
+        payroll.setApprovedAt(LocalDateTime.now());
         PayrollResult updated = payrollResultRepository.save(payroll);
 
-        recordPayrollHistory(payroll, "APPROVED", approvedBy, "Payroll approved for processing");
+        recordPayrollHistory(updated, "APPROVED", approvedBy, "Payroll approved for processing");
+        payrollWorkflowEventPublisher.publishApproved(new PayrollApprovedEvent(
+            updated.getId(),
+            normalizeActor(approvedBy),
+            updated.getApprovedAt()
+        ));
 
         logger.info("Payroll {} approved by {}", payrollId, approvedBy);
         return updated;
     }
+
+        /**
+         * Reject payroll back to DRAFT.
+         */
+        public PayrollResult rejectPayroll(Long payrollId, String reason, String rejectorEmail) {
+        PayrollResult payroll = payrollResultRepository.findById(payrollId)
+            .orElseThrow(() -> new IllegalArgumentException("Payroll not found: " + payrollId));
+
+        ensurePayrollStatus(payroll, "APPROVED", "Payroll not in APPROVED status");
+
+        String normalizedReason = normalizeReason(reason);
+        payroll.setStatus("DRAFT");
+        payroll.setApprovedBy(null);
+        payroll.setApprovedAt(null);
+        payroll.setProcessedBy(null);
+        payroll.setProcessedAt(null);
+        payroll.setRemarks(normalizedReason);
+
+        PayrollResult updated = payrollResultRepository.save(payroll);
+        recordPayrollHistory(updated, "REJECTED", rejectorEmail, normalizedReason);
+
+        logger.info("Payroll {} rejected by {}", payrollId, rejectorEmail);
+        return updated;
+        }
+
+        /**
+         * Process payroll (mark as PROCESSED and publish event)
+         */
+        public PayrollResult processPayroll(Long payrollId, String processorEmail) {
+        PayrollResult payroll = payrollResultRepository.findById(payrollId)
+            .orElseThrow(() -> new IllegalArgumentException("Payroll not found: " + payrollId));
+
+        ensurePayrollStatus(payroll, "APPROVED", "Payroll not in APPROVED status");
+
+        payroll.setStatus("PROCESSED");
+        payroll.setProcessedBy(normalizeActor(processorEmail));
+        payroll.setProcessedAt(LocalDateTime.now());
+
+        PayrollResult updated = payrollResultRepository.save(payroll);
+        recordPayrollHistory(updated, "PROCESSED", processorEmail, "Payroll finalized and locked");
+        payrollWorkflowEventPublisher.publishProcessed(new PayrollProcessedEvent(
+            updated.getId(),
+            updated.getEmployee().getId(),
+            updated.getGrossPay(),
+            updated.getNetPay(),
+            normalizeActor(processorEmail),
+            updated.getProcessedAt()
+        ));
+
+        logger.info("Payroll {} processed by {}", payrollId, processorEmail);
+        return updated;
+        }
 
     /**
      * Validate payroll compliance
@@ -238,9 +306,35 @@ public class PayrollService {
         history.setEventType(eventType);
         history.setActionBy(actionBy);
         history.setChangeDetails(details);
+        history.setPreviousGross(payroll.getGrossPay());
+        history.setPreviousNet(payroll.getNetPay());
 
         payrollHistoryRepository.save(history);
         logger.info("Recorded history: {} for payroll {}", eventType, payroll.getId());
+    }
+
+    private void ensurePayrollStatus(PayrollResult payroll, String expectedStatus, String errorMessage) {
+        if (!expectedStatus.equals(payroll.getStatus())) {
+            throw new IllegalStateException(errorMessage + ": current status is " + payroll.getStatus());
+        }
+    }
+
+    private String normalizeActor(String value) {
+        if (value == null || value.isBlank()) {
+            return "SYSTEM";
+        }
+        return value.trim();
+    }
+
+    private String normalizeReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("reason is required");
+        }
+        String normalized = reason.trim();
+        if (normalized.length() > 500) {
+            throw new IllegalArgumentException("reason must be 500 characters or less");
+        }
+        return normalized;
     }
 
     /**

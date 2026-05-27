@@ -44,6 +44,18 @@ public class PayrollResult {
     @Column(name = "status", length = 20)
     private String status; // DRAFT, APPROVED, PROCESSED, FAILED
 
+    @Column(name = "approved_by", length = 100)
+    private String approvedBy;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
+    @Column(name = "processed_by", length = 100)
+    private String processedBy;
+
+    @Column(name = "processed_at")
+    private LocalDateTime processedAt;
+
     @Column(name = "remarks", length = 500)
     private String remarks;
 
@@ -152,6 +164,38 @@ public class PayrollResult {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getApprovedBy() {
+        return approvedBy;
+    }
+
+    public void setApprovedBy(String approvedBy) {
+        this.approvedBy = approvedBy;
+    }
+
+    public LocalDateTime getApprovedAt() {
+        return approvedAt;
+    }
+
+    public void setApprovedAt(LocalDateTime approvedAt) {
+        this.approvedAt = approvedAt;
+    }
+
+    public String getProcessedBy() {
+        return processedBy;
+    }
+
+    public void setProcessedBy(String processedBy) {
+        this.processedBy = processedBy;
+    }
+
+    public LocalDateTime getProcessedAt() {
+        return processedAt;
+    }
+
+    public void setProcessedAt(LocalDateTime processedAt) {
+        this.processedAt = processedAt;
     }
 
     public String getRemarks() {

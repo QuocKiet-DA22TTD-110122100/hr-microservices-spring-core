@@ -7,7 +7,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.Statement;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -16,6 +21,7 @@ import java.time.YearMonth;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
+@TestPropertySource(properties = "spring.jpa.hibernate.ddl-auto=create-drop")
 @Import(PayrollService.class)
 public class PayrollServiceTest {
 
@@ -41,13 +47,25 @@ public class PayrollServiceTest {
     private DepartmentRepository departmentRepository;
 
     @Autowired
+    private DataSource dataSource;
+
+    @Autowired
     private PayrollService payrollService;
+
+    @MockBean
+    private com.hrservice.hr.service.PayrollWorkflowEventPublisher payrollWorkflowEventPublisher;
 
     private Employee testEmployee;
     private Department testDepartment;
 
     @BeforeEach
     public void setUp() {
+        // Ensure minimal tables exist in the ephemeral H2 database for legacy repositories
+        try (Connection c = dataSource.getConnection(); Statement s = c.createStatement()) {
+            s.executeUpdate("CREATE TABLE IF NOT EXISTS departments (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(50), name VARCHAR(255), organization_unit_id BIGINT)");
+        } catch (Exception ex) {
+            // ignore; if creation fails, repository will report the error in tests
+        }
         // Create test department
         testDepartment = new Department();
         testDepartment.setName("HR");
