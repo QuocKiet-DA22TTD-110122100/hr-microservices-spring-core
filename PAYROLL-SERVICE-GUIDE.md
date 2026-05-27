@@ -211,6 +211,31 @@ Content-Type: application/json
 
 **Response:** Updated PayrollResult with status=APPROVED
 
+### 5. Start Payroll Run
+```
+POST /api/payroll/runs
+Content-Type: application/json
+
+{
+  "yearMonth": "2026-05",
+  "requestedBy": "HR_ADMIN",
+  "source": "api"
+}
+```
+
+**Response:**
+```json
+{
+  "status": "requested",
+  "payrollRunId": 123,
+  "yearMonth": "2026-05",
+  "periodStart": "2026-05-01",
+  "periodEnd": "2026-05-31"
+}
+```
+
+This endpoint persists the payroll run request and publishes `payroll.run.requested` to RabbitMQ using exchange `payroll.run` and routing key `payroll.run.requested`.
+
 ## Database Schema
 
 ### SQL Migrations

@@ -157,6 +157,43 @@ Queue: task.status.queue
 
 Similar pattern for project events.
 
+### Payroll Service Events
+
+#### PayrollRunRequestedEvent
+Published when an operator requests a payroll run.
+- **Exchange**: `payroll.run` (Direct)
+- **Routing Key**: `payroll.run.requested`
+- **Queue**: downstream payroll workers or schedulers
+- **Payload**:
+  ```json
+  {
+    "payrollRunId": 123,
+    "periodStart": "2026-05-01",
+    "periodEnd": "2026-05-31",
+    "metadata": {
+      "source": "api",
+      "requestedBy": "HR_ADMIN"
+    }
+  }
+  ```
+
+#### Triggering a payroll run
+
+Call the payroll API:
+
+```bash
+POST /api/payroll/runs
+Content-Type: application/json
+
+{
+  "yearMonth": "2026-05",
+  "requestedBy": "HR_ADMIN",
+  "source": "api"
+}
+```
+
+The service persists the run request, then publishes `payroll.run.requested`.
+
 ## Implementation Details
 
 ### Event Publisher (TaskEventPublisher)

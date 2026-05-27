@@ -3,6 +3,7 @@ package com.hrservice.hr.controller;
 import com.hrservice.hr.entity.Department;
 import com.hrservice.hr.entity.Employee;
 import com.hrservice.hr.entity.ProcessedSyncEvent;
+import com.hrservice.hr.events.EmployeeHiredEvent;
 import com.hrservice.hr.mapper.HrDtoMapper;
 import com.hrservice.hr.repository.DepartmentRepository;
 import com.hrservice.hr.repository.EmployeeRepository;
@@ -15,7 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -27,17 +31,20 @@ public class EmployeeController {
     private final ProcessedSyncEventRepository processedSyncEventRepository;
     private final SecurityValidator securityValidator;
     private final HrDtoMapper hrDtoMapper;
+    private final com.hrservice.hr.service.EmployeeEventPublisher employeeEventPublisher;
 
     public EmployeeController(EmployeeRepository employeeRepository,
                               DepartmentRepository departmentRepository,
                               ProcessedSyncEventRepository processedSyncEventRepository,
                               SecurityValidator securityValidator,
-                              HrDtoMapper hrDtoMapper) {
+                              HrDtoMapper hrDtoMapper,
+                              com.hrservice.hr.service.EmployeeEventPublisher employeeEventPublisher) {
         this.employeeRepository = employeeRepository;
         this.departmentRepository = departmentRepository;
         this.processedSyncEventRepository = processedSyncEventRepository;
         this.securityValidator = securityValidator;
         this.hrDtoMapper = hrDtoMapper;
+        this.employeeEventPublisher = employeeEventPublisher;
     }
 
     @GetMapping
@@ -53,15 +60,18 @@ public class EmployeeController {
     }
 
     @PostMapping
-    public EmployeeResponse create(@RequestBody EmployeeUpsertRequest requestBody, HttpServletRequest request) {
+    public EmployeeResponse create(@RequestBody EmployeeCreateRequest requestBody, HttpServletRequest request) {
         securityValidator.enforceGatewayAccess(request);
         securityValidator.enforceAdminRole(request);
 
         Employee employee = new Employee();
-        applyUpsertPayload(requestBody, employee);
-        ensureDidUnique(employee.getDid(), null);
+        applyCreatePayload(requestBody, employee);
+        ensureAuthUserIdUnique(employee.getAuthUserId(), null);
 
-        return hrDtoMapper.toResponse(employeeRepository.save(employee));
+        Employee saved = employeeRepository.save(employee);
+        publishEmployeeHiredEvent(saved);
+
+        return hrDtoMapper.toResponse(saved);
     }
 
     @DeleteMapping("/{id}")
@@ -208,6 +218,65 @@ public class EmployeeController {
         employee.setDepartment(department);
     }
 
+    private void applyCreatePayload(EmployeeCreateRequest requestBody, Employee employee) {
+        if (requestBody == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "request body is required");
+        }
+        if (requestBody.authUserId() == null || requestBody.authUserId().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "authUserId is required");
+        }
+        if (requestBody.name() == null || requestBody.name().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "name is required");
+        }
+        if (requestBody.baseSalary() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "baseSalary is required");
+        }
+        if (requestBody.hireDate() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "hireDate is required");
+        }
+
+        employee.setAuthUserId(requestBody.authUserId().trim());
+        employee.setName(requestBody.name().trim());
+        employee.setPosition(requestBody.position() == null ? null : requestBody.position().trim());
+        employee.setBaseSalary(requestBody.baseSalary());
+        employee.setHireDate(requestBody.hireDate());
+        employee.setDid(requestBody.did() == null || requestBody.did().isBlank() ? null : requestBody.did().trim());
+
+        if (requestBody.departmentId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "departmentId is required");
+        }
+
+        Department department = departmentRepository.findById(requestBody.departmentId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "departmentId does not exist"));
+        employee.setDepartment(department);
+    }
+
+    private void ensureAuthUserIdUnique(String authUserId, Long currentEmployeeId) {
+        if (authUserId == null || authUserId.isBlank()) {
+            return;
+        }
+
+        employeeRepository.findByAuthUserId(authUserId)
+            .filter(existing -> currentEmployeeId == null || !existing.getId().equals(currentEmployeeId))
+            .ifPresent(existing -> {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "authUserId already exists");
+            });
+    }
+
+    private void publishEmployeeHiredEvent(Employee employee) {
+        Long departmentId = employee.getDepartment() == null ? null : employee.getDepartment().getId();
+        employeeEventPublisher.publish(new EmployeeHiredEvent(
+            employee.getId(),
+            employee.getAuthUserId(),
+            employee.getName(),
+            employee.getPosition(),
+            employee.getBaseSalary(),
+            employee.getHireDate(),
+            departmentId,
+            Map.of("source", "employee.create")
+        ));
+    }
+
     private void ensureDidUnique(String did, Long currentEmployeeId) {
         if (did == null || did.isBlank()) {
             return;
@@ -238,6 +307,15 @@ public class EmployeeController {
     }
 
     public record EmployeeUpsertRequest(String name, String position, String did, Long departmentId) {
+    }
+
+    public record EmployeeCreateRequest(String authUserId,
+                                        String name,
+                                        String position,
+                                        BigDecimal baseSalary,
+                                        LocalDate hireDate,
+                                        Long departmentId,
+                                        String did) {
     }
 
     public record EmployeeResponse(Long id,
