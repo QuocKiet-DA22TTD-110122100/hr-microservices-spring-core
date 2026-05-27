@@ -1,31 +1,32 @@
 package com.hrservice.hr.events;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.Map;
 
 public class PayrollRunRequestedEvent implements Serializable {
-    private String id;
-    private int year;
-    private int month;
+    private Long payrollRunId;
+    private LocalDate periodStart;
+    private LocalDate periodEnd;
     private Map<String, Object> metadata;
 
     public PayrollRunRequestedEvent() {}
 
-    public PayrollRunRequestedEvent(String id, int year, int month, Map<String, Object> metadata) {
-        this.id = id;
-        this.year = year;
-        this.month = month;
+    public PayrollRunRequestedEvent(Long payrollRunId, LocalDate periodStart, LocalDate periodEnd, Map<String, Object> metadata) {
+        this.payrollRunId = payrollRunId;
+        this.periodStart = periodStart;
+        this.periodEnd = periodEnd;
         this.metadata = metadata;
     }
 
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public Long getPayrollRunId() { return payrollRunId; }
+    public void setPayrollRunId(Long payrollRunId) { this.payrollRunId = payrollRunId; }
 
-    public int getYear() { return year; }
-    public void setYear(int year) { this.year = year; }
+    public LocalDate getPeriodStart() { return periodStart; }
+    public void setPeriodStart(LocalDate periodStart) { this.periodStart = periodStart; }
 
-    public int getMonth() { return month; }
-    public void setMonth(int month) { this.month = month; }
+    public LocalDate getPeriodEnd() { return periodEnd; }
+    public void setPeriodEnd(LocalDate periodEnd) { this.periodEnd = periodEnd; }
 
     public Map<String, Object> getMetadata() { return metadata; }
     public void setMetadata(Map<String, Object> metadata) { this.metadata = metadata; }
