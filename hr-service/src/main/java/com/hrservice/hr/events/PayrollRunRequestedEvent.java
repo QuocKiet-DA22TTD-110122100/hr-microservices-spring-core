@@ -30,3 +30,4 @@ public class PayrollRunRequestedEvent implements Serializable {
     public Map<String, Object> getMetadata() { return metadata; }
     public void setMetadata(Map<String, Object> metadata) { this.metadata = metadata; }
 }
+// PR: included in feature/PAYROLL-001-payroll-run

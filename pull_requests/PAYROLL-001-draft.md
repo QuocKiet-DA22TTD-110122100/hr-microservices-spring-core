@@ -1,4 +1,24 @@
-Title: PAYROLL-001: Add payroll run kickoff API and publish payroll.run.requested event
+# show payload for sanity
+$payload | Out-File pr_payload.json -Encoding utf8
+Write-Host 'Sending request (verbose)...'
+
+try {
+  Invoke-RestMethod -Method Post `
+    -Uri 'https://api.github.com/repos/QuocKiet-DA22TTD-110122100/hr-microservices-spring-core/pulls' `
+    -Headers @{ Authorization = "token $env:GITHUB_TOKEN"; 'User-Agent' = 'VSCode-Agent' } `
+    -Body (Get-Content -Raw pr_payload.json) -ContentType 'application/json' -Verbose -ErrorAction Stop
+} catch {
+  Write-Host 'REQUEST_FAILED'
+  if ($_.Exception.Response) {
+    Write-Host 'Status:' ([int]$_.Exception.Response.StatusCode)
+    $stream = $_.Exception.Response.GetResponseStream()
+    $reader = New-Object System.IO.StreamReader($stream)
+    Write-Host 'Body:'
+    Write-Host ($reader.ReadToEnd())
+  } else {
+    Write-Host $_.Exception.Message
+  }
+}Title: PAYROLL-001: Add payroll run kickoff API and publish payroll.run.requested event
 
 Body:
 Implement the backend endpoint and event to trigger payroll runs.

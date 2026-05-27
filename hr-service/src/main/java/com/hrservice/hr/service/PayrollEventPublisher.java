@@ -17,3 +17,4 @@ public class PayrollEventPublisher {
         rabbitTemplate.convertAndSend("payroll.run", "payroll.run.requested", event);
     }
 }
+// PR: included in feature/PAYROLL-001-payroll-run
