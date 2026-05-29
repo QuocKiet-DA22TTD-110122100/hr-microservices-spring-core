@@ -1,9 +1,12 @@
 package com.hrservice.hr.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "payroll_result")
@@ -15,15 +18,19 @@ public class PayrollResult {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
+    @NotNull
     private Employee employee;
 
     @Column(name = "period_start_date", nullable = false)
+    @NotNull
     private LocalDate periodStartDate;
 
     @Column(name = "period_end_date", nullable = false)
+    @NotNull
     private LocalDate periodEndDate;
 
     @Column(name = "gross_pay", precision = 12, scale = 2, nullable = false)
+    @NotNull
     private BigDecimal grossPay;
 
     @Column(name = "tax_deduction", precision = 12, scale = 2)
@@ -36,12 +43,15 @@ public class PayrollResult {
     private BigDecimal otherDeduction;
 
     @Column(name = "total_deduction", precision = 12, scale = 2, nullable = false)
+    @NotNull
     private BigDecimal totalDeduction;
 
     @Column(name = "net_pay", precision = 12, scale = 2, nullable = false)
+    @NotNull
     private BigDecimal netPay;
 
     @Column(name = "status", length = 20)
+    @Size(max = 20)
     private String status; // DRAFT, APPROVED, PROCESSED, FAILED
 
     @Column(name = "approved_by", length = 100)
@@ -212,5 +222,18 @@ public class PayrollResult {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PayrollResult)) return false;
+        PayrollResult that = (PayrollResult) o;
+        return id != null && Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }

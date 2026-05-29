@@ -7,22 +7,28 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.context.annotation.Import;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.Statement;
-
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @DataJpaTest
-@TestPropertySource(properties = "spring.jpa.hibernate.ddl-auto=create-drop")
 @Import(PayrollService.class)
+@org.springframework.test.context.TestPropertySource(properties = {
+    "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false",
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
+    "spring.sql.init.mode=never"
+})
 public class PayrollServiceTest {
 
     @Autowired
@@ -47,12 +53,9 @@ public class PayrollServiceTest {
     private DepartmentRepository departmentRepository;
 
     @Autowired
-    private DataSource dataSource;
-
-    @Autowired
     private PayrollService payrollService;
 
-    @MockBean
+    @MockitoBean
     private com.hrservice.hr.service.PayrollWorkflowEventPublisher payrollWorkflowEventPublisher;
 
     private Employee testEmployee;
@@ -60,12 +63,7 @@ public class PayrollServiceTest {
 
     @BeforeEach
     public void setUp() {
-        // Ensure minimal tables exist in the ephemeral H2 database for legacy repositories
-        try (Connection c = dataSource.getConnection(); Statement s = c.createStatement()) {
-            s.executeUpdate("CREATE TABLE IF NOT EXISTS departments (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(50), name VARCHAR(255), organization_unit_id BIGINT)");
-        } catch (Exception ex) {
-            // ignore; if creation fails, repository will report the error in tests
-        }
+        // Spring/Hibernate will create schema automatically for the in-memory H2 database
         // Create test department
         testDepartment = new Department();
         testDepartment.setName("HR");
@@ -145,6 +143,64 @@ public class PayrollServiceTest {
 
         assertEquals("APPROVED", approved.getStatus());
         assertNotNull(approved.getUpdatedAt());
+        assertEquals("HR_ADMIN", approved.getApprovedBy());
+        assertNotNull(approved.getApprovedAt());
+        verify(payrollWorkflowEventPublisher).publishApproved(any());
+
+        List<PayrollHistory> history = payrollHistoryRepository.findByPayrollResultIdOrderByCreatedAtDesc(result.getId());
+        assertTrue(history.stream().anyMatch(entry -> "APPROVED".equals(entry.getEventType())));
+    }
+
+    @Test
+    public void testRejectPayrollReturnsApprovedPayrollToDraft() throws Exception {
+        YearMonth yearMonth = YearMonth.of(2026, 5);
+        PayrollResult result = payrollService.calculatePayroll(testEmployee.getId(), yearMonth);
+        PayrollResult approved = payrollService.approvePayroll(result.getId(), "HR_ADMIN");
+        clearInvocations(payrollWorkflowEventPublisher);
+
+        PayrollResult rejected = payrollService.rejectPayroll(approved.getId(), "Incorrect bonus input", "payroll@example.com");
+
+        assertEquals("DRAFT", rejected.getStatus());
+        assertNull(rejected.getApprovedBy());
+        assertNull(rejected.getApprovedAt());
+        assertNull(rejected.getProcessedBy());
+        assertNull(rejected.getProcessedAt());
+        assertEquals("Incorrect bonus input", rejected.getRemarks());
+
+        List<PayrollHistory> history = payrollHistoryRepository.findByPayrollResultIdOrderByCreatedAtDesc(result.getId());
+        assertTrue(history.stream().anyMatch(entry -> "REJECTED".equals(entry.getEventType())));
+        verifyNoInteractions(payrollWorkflowEventPublisher);
+    }
+
+    @Test
+    public void testProcessPayrollFinalizesApprovedPayroll() throws Exception {
+        YearMonth yearMonth = YearMonth.of(2026, 5);
+        PayrollResult result = payrollService.calculatePayroll(testEmployee.getId(), yearMonth);
+        PayrollResult approved = payrollService.approvePayroll(result.getId(), "HR_ADMIN");
+        clearInvocations(payrollWorkflowEventPublisher);
+
+        PayrollResult processed = payrollService.processPayroll(approved.getId(), "payroll@example.com");
+
+        assertEquals("PROCESSED", processed.getStatus());
+        assertEquals("payroll@example.com", processed.getProcessedBy());
+        assertNotNull(processed.getProcessedAt());
+        verify(payrollWorkflowEventPublisher).publishProcessed(any());
+
+        List<PayrollHistory> history = payrollHistoryRepository.findByPayrollResultIdOrderByCreatedAtDesc(result.getId());
+        assertTrue(history.stream().anyMatch(entry -> "PROCESSED".equals(entry.getEventType())));
+    }
+
+    @Test
+    public void testProcessPayrollRequiresApprovedStatus() throws Exception {
+        YearMonth yearMonth = YearMonth.of(2026, 5);
+        PayrollResult result = payrollService.calculatePayroll(testEmployee.getId(), yearMonth);
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+            payrollService.processPayroll(result.getId(), "payroll@example.com")
+        );
+
+        assertTrue(exception.getMessage().contains("APPROVED"));
+        verifyNoInteractions(payrollWorkflowEventPublisher);
     }
 
     @Test

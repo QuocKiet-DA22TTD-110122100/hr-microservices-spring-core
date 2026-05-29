@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Unit tests for ApplicationController.
  */
 @WebMvcTest(controllers = ApplicationController.class)
-@Import({ApplicationController.class, TestSecurityConfig.class})
+@Import({ApplicationController.class, TestSecurityConfig.class, com.hrservice.eureka.exception.GlobalExceptionHandler.class})
 @ContextConfiguration(classes = EurekaServerApplication.class)
 class ApplicationControllerTest {
 
@@ -45,6 +45,9 @@ class ApplicationControllerTest {
     
     @MockitoBean
     private RegistrationValidator registrationValidator;
+    
+    @MockitoBean
+    private com.hrservice.eureka.infrastructure.peer.PeerClient peerClient;
     
     private ObjectMapper objectMapper;
     private InstanceInfo testInstance;
@@ -78,7 +81,7 @@ class ApplicationControllerTest {
             .content(Objects.requireNonNull(requestBody)))
                 .andExpect(status().isNoContent());
         
-        verify(serviceRegistry).register(any(InstanceInfo.class));
+        verify(serviceRegistry).register(any(InstanceInfo.class), anyInt(), anyBoolean());
     }
     
     @Test
@@ -105,25 +108,25 @@ class ApplicationControllerTest {
     void sendHeartbeatSuccess() throws Exception {
         // Given
         when(serviceRegistry.hasInstance(TEST_APP, TEST_INSTANCE_ID)).thenReturn(true);
-        when(serviceRegistry.renew(TEST_APP, TEST_INSTANCE_ID)).thenReturn(true);
+        when(serviceRegistry.renew(eq(TEST_APP), eq(TEST_INSTANCE_ID), anyBoolean())).thenReturn(true);
         
         // When & Then
         mockMvc.perform(put("/eureka/apps/" + TEST_APP + "/" + TEST_INSTANCE_ID))
                 .andExpect(status().isOk());
         
-        verify(serviceRegistry).renew(TEST_APP, TEST_INSTANCE_ID);
+        verify(serviceRegistry).renew(eq(TEST_APP), eq(TEST_INSTANCE_ID), anyBoolean());
     }
     
     @Test
     void deregisterInstanceSuccess() throws Exception {
         // Given
         when(serviceRegistry.hasInstance(TEST_APP, TEST_INSTANCE_ID)).thenReturn(true);
-        when(serviceRegistry.deregister(TEST_APP, TEST_INSTANCE_ID)).thenReturn(true);
+        when(serviceRegistry.deregister(eq(TEST_APP), eq(TEST_INSTANCE_ID), anyBoolean())).thenReturn(true);
         
         // When & Then
         mockMvc.perform(delete("/eureka/apps/" + TEST_APP + "/" + TEST_INSTANCE_ID))
                 .andExpect(status().isOk());
         
-        verify(serviceRegistry).deregister(TEST_APP, TEST_INSTANCE_ID);
+        verify(serviceRegistry).deregister(eq(TEST_APP), eq(TEST_INSTANCE_ID), anyBoolean());
     }
 }

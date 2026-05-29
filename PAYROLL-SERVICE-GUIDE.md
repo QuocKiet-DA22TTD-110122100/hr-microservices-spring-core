@@ -236,6 +236,41 @@ Content-Type: application/json
 
 This endpoint persists the payroll run request and publishes `payroll.run.requested` to RabbitMQ using exchange `payroll.run` and routing key `payroll.run.requested`.
 
+### 6. Payroll Tax Compliance Report
+```
+GET /api/payroll/compliance/tax-report?periodStart=2026-05-01&periodEnd=2026-05-31
+```
+
+**Authorization:** `COMPLIANCE_OFFICER` or `ADMIN`
+
+Returns only `PROCESSED` payroll records for the requested period, plus aggregate totals for gross pay, tax, deductions, and net pay.
+
+**Response:**
+```json
+{
+  "periodStart": "2026-05-01",
+  "periodEnd": "2026-05-31",
+  "payrollCount": 2,
+  "employeeCount": 2,
+  "totalGrossPay": 18000.00,
+  "totalTaxDeduction": 1800.00,
+  "totalDeductions": 2800.00,
+  "totalNetPay": 15200.00,
+  "entries": [
+    {
+      "payrollId": 1,
+      "employeeId": 10,
+      "employeeName": "John Doe",
+      "grossPay": 10000.00,
+      "taxDeduction": 1000.00,
+      "totalDeduction": 1600.00,
+      "netPay": 8400.00,
+      "processedBy": "payroll@example.com"
+    }
+  ]
+}
+```
+
 ## Database Schema
 
 ### SQL Migrations

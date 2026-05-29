@@ -1,6 +1,10 @@
 package com.hrservice.hr.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+import java.util.Objects;
 
 @Entity
 @Table(name = "organization_units")
@@ -18,13 +22,17 @@ public class OrganizationUnit {
     private Long id;
 
     @Column(nullable = false)
+    @NotNull
+    @Size(max = 200)
     private String name;
 
     @Column(unique = true)
+    @Size(max = 50)
     private String code;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
+    @NotNull
     private OrgLevel level;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -69,5 +77,18 @@ public class OrganizationUnit {
 
     public void setParent(OrganizationUnit parent) {
         this.parent = parent;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OrganizationUnit that = (OrganizationUnit) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

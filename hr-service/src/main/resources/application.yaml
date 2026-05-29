@@ -4,9 +4,6 @@ server:
 spring:
   application:
     name: hr-service
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3307/hr_db?createDatabaseIfNotExist=true}
     username: ${SPRING_DATASOURCE_USERNAME}
