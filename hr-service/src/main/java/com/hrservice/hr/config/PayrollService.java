@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.*;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -168,8 +169,12 @@ public class PayrollService {
         BigDecimal other = BigDecimal.ZERO;
 
         for (DeductionInstance deduction : deductions) {
+            if (deduction == null || deduction.getDeductionType() == null || deduction.getRate() == null) {
+                continue;
+            }
             BigDecimal amount;
-            if (deduction.getDeductionType().getIsPercentage()) {
+            Boolean isPercentage = deduction.getDeductionType().getIsPercentage();
+            if (Boolean.TRUE.equals(isPercentage)) {
                 amount = grossPay.multiply(deduction.getRate())
                         .divide(new BigDecimal(100), SCALE, RoundingMode.HALF_UP);
             } else {
@@ -177,7 +182,7 @@ public class PayrollService {
             }
 
             String category = deduction.getDeductionType().getCategory();
-            if ("INSURANCE".equals(category)) {
+            if ("INSURANCE".equalsIgnoreCase(String.valueOf(category))) {
                 insurance = insurance.add(amount);
             } else {
                 other = other.add(amount);
@@ -272,8 +277,13 @@ public class PayrollService {
      * Validate payroll compliance
      */
     public void validatePayrollCompliance(PayrollResult payroll) throws Exception {
+        Objects.requireNonNull(payroll, "payroll is required");
         BigDecimal netPay = payroll.getNetPay();
         BigDecimal grossPay = payroll.getGrossPay();
+
+        if (netPay == null || grossPay == null) {
+            throw new IllegalArgumentException("Gross and net pay must be present for compliance checks");
+        }
 
         if (netPay.compareTo(grossPay) > 0) {
             throw new IllegalArgumentException("Net pay cannot exceed gross pay");
@@ -284,12 +294,13 @@ public class PayrollService {
             logger.warn("Warning: Net pay < 50% of gross. Payroll ID: {}", payroll.getId());
         }
 
-        if (payroll.getTaxDeduction().compareTo(BigDecimal.ZERO) < 0) {
+        BigDecimal taxDeduction = payroll.getTaxDeduction() == null ? BigDecimal.ZERO : payroll.getTaxDeduction();
+        if (taxDeduction.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Tax deduction cannot be negative");
         }
 
         BigDecimal maxTax = grossPay.multiply(new BigDecimal("0.40"));
-        if (payroll.getTaxDeduction().compareTo(maxTax) > 0) {
+        if (taxDeduction.compareTo(maxTax) > 0) {
             logger.warn("Warning: Tax > 40% of gross. Payroll ID: {}", payroll.getId());
         }
 
