@@ -138,7 +138,7 @@ public class RegistrationValidator {
         try {
             new java.net.URI(url).toURL();
             return true;
-        } catch (MalformedURLException | java.net.URISyntaxException e) {
+        } catch (MalformedURLException | java.net.URISyntaxException | IllegalArgumentException e) {
             return false;
         }
     }

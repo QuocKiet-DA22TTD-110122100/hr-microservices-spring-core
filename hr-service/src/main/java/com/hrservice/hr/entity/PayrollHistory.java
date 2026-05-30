@@ -1,12 +1,17 @@
 package com.hrservice.hr.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
-@Table(name = "payroll_history")
+@Table(name = "payroll_history", indexes = {
+    @Index(name = "idx_ph_payroll_result_created", columnList = "payroll_result_id, created_at")
+})
 public class PayrollHistory {
 
     @Id
@@ -15,19 +20,25 @@ public class PayrollHistory {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payroll_result_id", nullable = false)
+    @NotNull
     private PayrollResult payrollResult;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
+    @NotNull
     private Employee employee;
 
     @Column(name = "event_type", length = 50, nullable = false)
+    @NotNull
+    @Size(max = 50)
     private String eventType; // CREATED, APPROVED, PROCESSED, REJECTED, MODIFIED
 
     @Column(name = "action_by", length = 100)
+    @Size(max = 100)
     private String actionBy; // HR admin who performed action
 
     @Column(name = "change_details", length = 1000)
+    @Size(max = 1000)
     private String changeDetails; // JSON-like description of changes
 
     @Column(name = "previous_gross", precision = 12, scale = 2)
@@ -111,5 +122,18 @@ public class PayrollHistory {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PayrollHistory)) return false;
+        PayrollHistory that = (PayrollHistory) o;
+        return id != null && Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }

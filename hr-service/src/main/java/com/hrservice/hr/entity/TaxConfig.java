@@ -11,7 +11,7 @@ public class TaxConfig {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "year", nullable = false)
+    @Column(name = "tax_year", nullable = false)
     private Integer year;
 
     @Column(name = "min_bracket", precision = 12, scale = 2, nullable = false)

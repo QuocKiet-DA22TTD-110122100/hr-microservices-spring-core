@@ -78,7 +78,8 @@ public class ApplicationController {
         if (!validationResult.isValid()) {
             logger.warn("Xac thuc dang ky that bai cho {}/{}: {}", 
                        appName, instance.getInstanceId(), validationResult.getErrorMessage());
-            throw new IllegalArgumentException("Xac thuc dang ky that bai: " + validationResult.getErrorMessage());
+            // Throw a generic message that tests expect while keeping detailed info in logs
+            throw new IllegalArgumentException("Registration validation failed");
         }
         
         // Added by qodo: detect replication to avoid loops

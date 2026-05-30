@@ -68,3 +68,16 @@ logging:
   level:
     root: WARN
     '[com.hrservice.task]': INFO
+
+task:
+  reassign:
+    defaultPoolAssigneeId: ${TASK_REASSIGN_DEFAULT_POOL_ASSIGNEE_ID:0}
+  notification:
+    provider: ${TASK_NOTIFICATION_PROVIDER:log}
+    snsRegion: ${TASK_NOTIFICATION_SNS_REGION:ap-southeast-1}
+    emailFrom: ${TASK_NOTIFICATION_EMAIL_FROM:no-reply@hr.local}
+    assigneeDomain: ${TASK_NOTIFICATION_EMAIL_ASSIGNEE_DOMAIN:hr.local}
+    snsTopicArn: ${TASK_NOTIFICATION_SNS_TOPIC_ARN:}
+    assigneeEmailMap:
+      "1001": manager.one@hr.local
+      "1002": manager.two@hr.local

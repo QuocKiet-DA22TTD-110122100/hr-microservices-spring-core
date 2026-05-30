@@ -28,4 +28,7 @@ public interface PayrollResultRepository extends JpaRepository<PayrollResult, Lo
     List<PayrollResult> findByStatusOrderByCreatedAtDesc(String status);
 
     List<PayrollResult> findByPeriodStartDateBetween(LocalDate startDate, LocalDate endDate);
+
+    List<PayrollResult> findByStatusAndPeriodStartDateBetweenOrderByPeriodStartDateAsc(
+            String status, LocalDate startDate, LocalDate endDate);
 }

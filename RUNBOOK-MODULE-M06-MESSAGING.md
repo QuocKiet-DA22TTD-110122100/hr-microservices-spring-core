@@ -177,6 +177,43 @@ Published when an operator requests a payroll run.
   }
   ```
 
+#### PayrollApprovedEvent
+Published when a payroll result moves from `DRAFT` to `APPROVED`.
+- **Exchange**: `payroll.workflow` (Direct)
+- **Routing Key**: `payroll.approved`
+- **Producer**: `PayrollWorkflowEventPublisher`
+- **Trigger**: `PUT /api/chi-tra/{payrollId}/phe-duyet`
+- **Payload**:
+  ```json
+  {
+    "eventId": "uuid",
+    "eventType": "payroll.approved",
+    "payrollId": 123,
+    "approvedBy": "payroll@example.com",
+    "approvedAt": "2026-05-27T09:30:00"
+  }
+  ```
+
+#### PayrollProcessedEvent
+Published when a payroll result moves from `APPROVED` to `PROCESSED`.
+- **Exchange**: `payroll.workflow` (Direct)
+- **Routing Key**: `payroll.processed`
+- **Producer**: `PayrollWorkflowEventPublisher`
+- **Trigger**: `PUT /api/chi-tra/{payrollId}/xu-ly`
+- **Payload**:
+  ```json
+  {
+    "eventId": "uuid",
+    "eventType": "payroll.processed",
+    "payrollId": 123,
+    "employeeId": 456,
+    "grossPay": 10000.00,
+    "netPay": 8400.00,
+    "processedBy": "payroll@example.com",
+    "processedAt": "2026-05-27T10:00:00"
+  }
+  ```
+
 #### Triggering a payroll run
 
 Call the payroll API:
@@ -193,6 +230,28 @@ Content-Type: application/json
 ```
 
 The service persists the run request, then publishes `payroll.run.requested`.
+
+#### Payroll workflow transitions
+
+Approve a calculated payroll:
+
+```bash
+PUT /api/chi-tra/123/phe-duyet
+X-Internal-Secret: <internal-secret>
+X-Auth-Role: PAYROLL_OFFICER
+X-Auth-Email: payroll@example.com
+```
+
+Process an approved payroll:
+
+```bash
+PUT /api/chi-tra/123/xu-ly
+X-Internal-Secret: <internal-secret>
+X-Auth-Role: PAYROLL_OFFICER
+X-Auth-Email: payroll@example.com
+```
+
+Both endpoints record immutable payroll history entries before publishing workflow events.
 
 ## Implementation Details
 
@@ -277,6 +336,9 @@ Events are logged at INFO level with event metadata:
 [TASK-EVENT] Publishing TaskStatusChangedEvent: taskId=1, status=OPEN->IN_PROGRESS
 [PROJECT-EVENT] Publishing ProjectCreatedEvent: projectId=1, name=Q2 Development
 [PROJECT-EVENT] Publishing ProjectStatusChangedEvent: projectId=1, status=ACTIVE->COMPLETED
+[PAYROLL-EVENT] Publishing PayrollRunRequestedEvent: payrollRunId=123, period=2026-05
+[PAYROLL-EVENT] Publishing PayrollApprovedEvent: payrollId=123
+[PAYROLL-EVENT] Publishing PayrollProcessedEvent: payrollId=123, employeeId=456
 ```
 
 ## Testing Event Publishing
