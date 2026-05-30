@@ -20,7 +20,7 @@ public class PayrollEventPublisher {
         try {
             rabbitTemplate.convertAndSend("payroll.run", "payroll.run.requested", event);
         } catch (Exception ex) {
-            logger.warn("Failed to publish PayrollRunRequestedEvent, continuing: {}", ex.getMessage());
+            logger.warn("Failed to publish PayrollRunRequestedEvent, continuing", ex);
         }
     }
 }

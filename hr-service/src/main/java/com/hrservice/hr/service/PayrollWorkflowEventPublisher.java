@@ -20,7 +20,7 @@ public class PayrollWorkflowEventPublisher {
         try {
             rabbitTemplate.convertAndSend("payroll.workflow", "payroll.approved", event);
         } catch (Exception ex) {
-            logger.warn("Failed to publish payroll.approved event: {}", ex.getMessage());
+            logger.warn("Failed to publish payroll.approved event", ex);
         }
     }
 
@@ -28,7 +28,7 @@ public class PayrollWorkflowEventPublisher {
         try {
             rabbitTemplate.convertAndSend("payroll.workflow", "payroll.processed", event);
         } catch (Exception ex) {
-            logger.warn("Failed to publish payroll.processed event: {}", ex.getMessage());
+            logger.warn("Failed to publish payroll.processed event", ex);
         }
     }
 }

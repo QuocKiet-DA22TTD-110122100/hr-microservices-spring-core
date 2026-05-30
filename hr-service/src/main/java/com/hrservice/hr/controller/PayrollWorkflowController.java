@@ -50,13 +50,16 @@ public class PayrollWorkflowController {
     @PreAuthorize("hasAnyRole('PAYROLL_OFFICER', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> rejectPayroll(
             @PathVariable Long payrollId,
-            @RequestBody Map<String, String> body,
+            @RequestBody(required = false) Map<String, String> body,
             HttpServletRequest request) {
         securityValidator.enforceGatewayAccess(request);
         securityValidator.enforcePayrollOfficerOrAdmin(request);
 
         try {
-            String reason = body.get("reason");
+            String reason = body == null ? null : body.get("reason");
+            if (reason == null || reason.isBlank()) {
+                reason = "No reason provided";
+            }
             String actor = resolveActor(request);
             PayrollResult result = payrollService.rejectPayroll(payrollId, reason, actor);
             return ResponseEntity.ok(Map.of(
@@ -85,11 +88,12 @@ public class PayrollWorkflowController {
         try {
             String actor = resolveActor(request);
             PayrollResult result = payrollService.processPayroll(payrollId, actor);
+            String processedAt = result.getProcessedAt() == null ? null : result.getProcessedAt().toString();
             return ResponseEntity.ok(Map.of(
                     "payrollId", result.getId(),
                     "status", result.getStatus(),
                     "processedBy", actor,
-                    "processedAt", result.getProcessedAt().toString(),
+                    "processedAt", processedAt,
                     "message", "Payroll finalized. Immutable. Event published to downstream systems."
             ));
         } catch (IllegalArgumentException e) {
@@ -100,12 +104,13 @@ public class PayrollWorkflowController {
     }
 
     private Map<String, Object> buildApprovalResponse(PayrollResult result) {
+        String approvedAt = result.getApprovedAt() == null ? null : result.getApprovedAt().toString();
         return Map.of(
-                "payrollId", result.getId(),
-                "status", result.getStatus(),
-                "approvedBy", result.getApprovedBy(),
-                "approvedAt", result.getApprovedAt().toString(),
-                "message", "Payroll approved. Cannot be edited. Ready for processing."
+            "payrollId", result.getId(),
+            "status", result.getStatus(),
+            "approvedBy", result.getApprovedBy(),
+            "approvedAt", approvedAt,
+            "message", "Payroll approved. Cannot be edited. Ready for processing."
         );
     }
 
