@@ -28,12 +28,16 @@ public class ProjectEventPublisher {
         event.setTimestamp(LocalDateTime.now());
         event.setEventType("PROJECT_CREATED");
 
-        log.info("[PROJECT-EVENT] Publishing ProjectCreatedEvent: projectId={}, name={}", projectId, name);
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.PROJECT_CREATED_EXCHANGE,
-                RabbitMQConfig.PROJECT_CREATED_ROUTING_KEY,
-                event
-        );
+                log.info("[PROJECT-EVENT] Publishing ProjectCreatedEvent: projectId={}, name={}", projectId, name);
+                try {
+                        rabbitTemplate.convertAndSend(
+                                        RabbitMQConfig.PROJECT_CREATED_EXCHANGE,
+                                        RabbitMQConfig.PROJECT_CREATED_ROUTING_KEY,
+                                        event
+                        );
+                } catch (Exception ex) {
+                        log.warn("[PROJECT-EVENT] Failed to publish ProjectCreatedEvent for projectId={}. Continuing without failing the request.", projectId, ex);
+                }
     }
 
     public void publishProjectStatusChangedEvent(Long projectId, 
@@ -51,10 +55,14 @@ public class ProjectEventPublisher {
 
         log.info("[PROJECT-EVENT] Publishing ProjectStatusChangedEvent: projectId={}, status={}->{}", 
                 projectId, oldStatus, newStatus);
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.PROJECT_STATUS_EXCHANGE,
-                "project.status." + newStatus.name().toLowerCase(),
-                event
-        );
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.PROJECT_STATUS_EXCHANGE,
+                    "project.status." + newStatus.name().toLowerCase(),
+                    event
+            );
+        } catch (Exception ex) {
+            log.warn("[PROJECT-EVENT] Failed to publish ProjectStatusChangedEvent for projectId={} status={}->{}. Continuing.", projectId, oldStatus + "->" + newStatus, ex);
+        }
     }
 }
