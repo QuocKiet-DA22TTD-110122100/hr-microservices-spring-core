@@ -68,3 +68,7 @@ logging:
   level:
     root: WARN
     '[com.hrservice.task]': INFO
+
+task:
+  reassign:
+    defaultPoolAssigneeId: ${TASK_REASSIGN_DEFAULT_POOL_ASSIGNEE_ID:0}

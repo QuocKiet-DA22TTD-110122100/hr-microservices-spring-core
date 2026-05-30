@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.hrservice.task.repository.TaskRepository;
 import com.hrservice.task.repository.TaskHistoryRepository;
 import com.hrservice.task.entity.Task;
+import org.springframework.beans.factory.annotation.Value;
 import com.hrservice.task.service.NotificationService;
 
 import java.util.List;
@@ -26,6 +27,9 @@ public class ProjectEventListener {
     private final NotificationService notificationService;
 
     // Currently keep handlers lightweight: log and perform minimal reconciliation.
+
+    @Value("${task.reassign.defaultPoolAssigneeId:0}")
+    private Long defaultPoolAssigneeId;
 
     @RabbitListener(queues = "project.created.queue")
     public void onProjectCreated(ProjectCreatedEvent event) {
@@ -82,7 +86,7 @@ public class ProjectEventListener {
             } else if ("PAUSED".equalsIgnoreCase(newStatus)) {
                 // Reassign tasks to project lead or to default pool
                 Long leadId = event.getLeadId();
-                Long defaultPool = 0L; // convention: 0 means unassigned/pool
+                Long defaultPool = defaultPoolAssigneeId != null ? defaultPoolAssigneeId : 0L; // configurable default pool
                 List<Task> toReassign = taskRepository.findByProjectId(projectId);
                 toReassign.stream()
                         .filter(t -> t.getStatus() == Task.TaskStatus.OPEN || t.getStatus() == Task.TaskStatus.IN_PROGRESS)
