@@ -20,12 +20,18 @@ class ProjectEventListenerTest {
     @Mock
     private TaskRepository taskRepository;
 
+    @Mock
+    private com.hrservice.task.repository.TaskHistoryRepository taskHistoryRepository;
+
+    @Mock
+    private com.hrservice.task.event.TaskEventPublisher taskEventPublisher;
+
     private ProjectEventListener listener;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        listener = new ProjectEventListener(taskRepository);
+        listener = new ProjectEventListener(taskRepository, taskHistoryRepository, taskEventPublisher);
     }
 
     @Test
@@ -49,6 +55,9 @@ class ProjectEventListenerTest {
         List<Task> saved = captor.getValue();
         assertEquals(2, saved.size());
         assertTrue(saved.stream().allMatch(t -> t.getStatus() == Task.TaskStatus.COMPLETED));
+        // verify history and event published
+        verify(taskHistoryRepository, atLeastOnce()).save(any());
+        verify(taskEventPublisher, atLeastOnce()).publishTaskStatusChangedEvent(anyLong(), anyLong(), any(), any(), anyLong());
     }
 
     @Test
@@ -75,5 +84,7 @@ class ProjectEventListenerTest {
         assertEquals(Task.TaskStatus.CANCELLED, saved.get(0).getStatus());
         assertEquals(Task.TaskStatus.COMPLETED, saved.get(1).getStatus());
         assertEquals(Task.TaskStatus.CANCELLED, saved.get(2).getStatus());
+        verify(taskHistoryRepository, atLeastOnce()).save(any());
+        verify(taskEventPublisher, atLeastOnce()).publishTaskStatusChangedEvent(anyLong(), anyLong(), any(), any(), anyLong());
     }
 }

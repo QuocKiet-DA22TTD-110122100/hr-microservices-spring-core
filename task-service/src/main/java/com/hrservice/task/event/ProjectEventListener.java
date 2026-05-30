@@ -8,6 +8,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hrservice.task.repository.TaskRepository;
+import com.hrservice.task.repository.TaskHistoryRepository;
 import com.hrservice.task.entity.Task;
 
 import java.util.List;
@@ -19,6 +20,8 @@ import java.util.List;
 public class ProjectEventListener {
 
     private final TaskRepository taskRepository;
+    private final TaskHistoryRepository taskHistoryRepository;
+    private final TaskEventPublisher taskEventPublisher;
 
     // Currently keep handlers lightweight: log and perform minimal reconciliation.
 
@@ -50,14 +53,28 @@ public class ProjectEventListener {
                 // mark OPEN or IN_PROGRESS tasks as COMPLETED
                 tasks.stream()
                         .filter(t -> t.getStatus() == Task.TaskStatus.OPEN || t.getStatus() == Task.TaskStatus.IN_PROGRESS)
-                        .forEach(t -> t.setStatus(Task.TaskStatus.COMPLETED));
+                        .forEach(t -> {
+                            Task.TaskStatus prev = t.getStatus();
+                            t.setStatus(Task.TaskStatus.COMPLETED);
+                            // audit entry
+                            var hist = new com.hrservice.task.entity.TaskHistory(null, t.getId(), projectId, prev.name(), Task.TaskStatus.COMPLETED.name(), "Project completed, auto-complete tasks", java.time.LocalDateTime.now(), null);
+                            taskHistoryRepository.save(hist);
+                            // publish task status change event
+                            taskEventPublisher.publishTaskStatusChangedEvent(t.getId(), projectId, prev, Task.TaskStatus.COMPLETED, t.getAssigneeId());
+                        });
                 taskRepository.saveAll(tasks);
                 log.info("[PROJECT-LISTENER] Marked tasks as COMPLETED for projectId={}", projectId);
             } else if ("ARCHIVED".equalsIgnoreCase(newStatus)) {
                 // mark remaining active tasks as CANCELLED
                 tasks.stream()
                         .filter(t -> t.getStatus() != Task.TaskStatus.COMPLETED && t.getStatus() != Task.TaskStatus.CANCELLED)
-                        .forEach(t -> t.setStatus(Task.TaskStatus.CANCELLED));
+                        .forEach(t -> {
+                            Task.TaskStatus prev = t.getStatus();
+                            t.setStatus(Task.TaskStatus.CANCELLED);
+                            var hist = new com.hrservice.task.entity.TaskHistory(null, t.getId(), projectId, prev.name(), Task.TaskStatus.CANCELLED.name(), "Project archived, auto-cancel tasks", java.time.LocalDateTime.now(), null);
+                            taskHistoryRepository.save(hist);
+                            taskEventPublisher.publishTaskStatusChangedEvent(t.getId(), projectId, prev, Task.TaskStatus.CANCELLED, t.getAssigneeId());
+                        });
                 taskRepository.saveAll(tasks);
                 log.info("[PROJECT-LISTENER] Marked tasks as CANCELLED for projectId={}", projectId);
             }
