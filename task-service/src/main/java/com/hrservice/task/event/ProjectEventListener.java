@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.hrservice.task.repository.TaskRepository;
 import com.hrservice.task.repository.TaskHistoryRepository;
 import com.hrservice.task.entity.Task;
+import com.hrservice.task.service.NotificationService;
 
 import java.util.List;
 
@@ -22,6 +23,7 @@ public class ProjectEventListener {
     private final TaskRepository taskRepository;
     private final TaskHistoryRepository taskHistoryRepository;
     private final TaskEventPublisher taskEventPublisher;
+    private final NotificationService notificationService;
 
     // Currently keep handlers lightweight: log and perform minimal reconciliation.
 
@@ -77,6 +79,24 @@ public class ProjectEventListener {
                         });
                 taskRepository.saveAll(tasks);
                 log.info("[PROJECT-LISTENER] Marked tasks as CANCELLED for projectId={}", projectId);
+            } else if ("PAUSED".equalsIgnoreCase(newStatus)) {
+                // Reassign tasks to project lead or to default pool
+                Long leadId = event.getLeadId();
+                Long defaultPool = 0L; // convention: 0 means unassigned/pool
+                List<Task> toReassign = taskRepository.findByProjectId(projectId);
+                toReassign.stream()
+                        .filter(t -> t.getStatus() == Task.TaskStatus.OPEN || t.getStatus() == Task.TaskStatus.IN_PROGRESS)
+                        .forEach(t -> {
+                            Long prevAssignee = t.getAssigneeId();
+                            Long newAssignee = (leadId != null && leadId > 0) ? leadId : defaultPool;
+                            t.setAssigneeId(newAssignee);
+                            var hist = new com.hrservice.task.entity.TaskHistory(null, t.getId(), projectId, String.valueOf(prevAssignee), String.valueOf(newAssignee), "Project paused, auto-reassign", java.time.LocalDateTime.now(), null);
+                            taskHistoryRepository.save(hist);
+                            taskEventPublisher.publishTaskAssignedEvent(t.getId(), projectId, prevAssignee, newAssignee);
+                            notificationService.notifyAssigneeChange(t.getId(), prevAssignee, newAssignee, "Project paused — task reassigned");
+                        });
+                taskRepository.saveAll(toReassign);
+                log.info("[PROJECT-LISTENER] Reassigned tasks for projectId={} due to PAUSED", projectId);
             }
         } catch (Exception ex) {
             log.warn("[PROJECT-LISTENER] Error reconciling tasks for project status change: {}", ex.getMessage(), ex);

@@ -59,4 +59,26 @@ public class TaskEventPublisher {
                 event
         );
     }
+
+    public void publishTaskAssignedEvent(Long taskId, Long projectId, Long previousAssignee, Long newAssignee) {
+        TaskAssignedEvent event = new TaskAssignedEvent();
+        event.setEventId(java.util.UUID.randomUUID().toString());
+        event.setTaskId(taskId);
+        event.setProjectId(projectId);
+        event.setPreviousAssignee(previousAssignee);
+        event.setNewAssignee(newAssignee);
+        event.setTimestamp(java.time.LocalDateTime.now());
+        event.setEventType("TASK_ASSIGNED");
+
+        log.info("[TASK-EVENT] Publishing TaskAssignedEvent: taskId={}, from={} to={}", taskId, previousAssignee, newAssignee);
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.TASK_STATUS_EXCHANGE,
+                    "task.assigned",
+                    event
+            );
+        } catch (Exception ex) {
+            log.warn("[TASK-EVENT] Failed to publish TaskAssignedEvent for taskId={}", taskId, ex);
+        }
+    }
 }

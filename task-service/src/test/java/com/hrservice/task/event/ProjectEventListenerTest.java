@@ -31,7 +31,37 @@ class ProjectEventListenerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        listener = new ProjectEventListener(taskRepository, taskHistoryRepository, taskEventPublisher);
+        listener = new ProjectEventListener(taskRepository, taskHistoryRepository, taskEventPublisher, new com.hrservice.task.service.NotificationService() {
+            @Override
+            public void notifyAssigneeChange(Long taskId, Long previousAssignee, Long newAssignee, String message) {
+                // no-op for test
+            }
+        });
+    }
+
+    @Test
+    void onProjectStatusChanged_reassignsTasks_whenProjectPaused() {
+        Task t1 = new Task(1L, "T1", "d", Task.TaskStatus.OPEN, 5L, 300L, java.time.LocalDateTime.now(), java.time.LocalDateTime.now());
+        Task t2 = new Task(2L, "T2", "d", Task.TaskStatus.IN_PROGRESS, 6L, 300L, java.time.LocalDateTime.now(), java.time.LocalDateTime.now());
+        List<Task> tasks = Arrays.asList(t1, t2);
+
+        when(taskRepository.findByProjectId(300L)).thenReturn(tasks);
+
+        ProjectStatusChangedEvent evt = new ProjectStatusChangedEvent();
+        evt.setProjectId(300L);
+        evt.setOldStatus("ACTIVE");
+        evt.setNewStatus("PAUSED");
+        evt.setLeadId(99L);
+
+        listener.onProjectStatusChanged(evt);
+
+        ArgumentCaptor<List<Task>> captor = ArgumentCaptor.forClass((Class) List.class);
+        verify(taskRepository, times(1)).saveAll(captor.capture());
+        List<Task> saved = captor.getValue();
+        assertEquals(99L, saved.get(0).getAssigneeId());
+        assertEquals(99L, saved.get(1).getAssigneeId());
+        verify(taskHistoryRepository, atLeastOnce()).save(any());
+        verify(taskEventPublisher, atLeastOnce()).publishTaskAssignedEvent(anyLong(), anyLong(), anyLong(), anyLong());
     }
 
     @Test
