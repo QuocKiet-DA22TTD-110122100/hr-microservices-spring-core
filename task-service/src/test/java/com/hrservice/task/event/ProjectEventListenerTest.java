@@ -31,12 +31,14 @@ class ProjectEventListenerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        com.hrservice.task.config.TaskReassignProperties props = new com.hrservice.task.config.TaskReassignProperties();
+        props.setDefaultPoolAssigneeId(0L);
         listener = new ProjectEventListener(taskRepository, taskHistoryRepository, taskEventPublisher, new com.hrservice.task.service.NotificationService() {
             @Override
             public void notifyAssigneeChange(Long taskId, Long previousAssignee, Long newAssignee, String message) {
                 // no-op for test
             }
-        });
+        }, props);
     }
 
     @Test
