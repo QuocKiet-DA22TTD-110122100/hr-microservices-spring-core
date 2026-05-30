@@ -9,7 +9,9 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
-@Table(name = "payroll_history")
+@Table(name = "payroll_history", indexes = {
+    @Index(name = "idx_ph_payroll_result_created", columnList = "payroll_result_id, created_at")
+})
 public class PayrollHistory {
 
     @Id

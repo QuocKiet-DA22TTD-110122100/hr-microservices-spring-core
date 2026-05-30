@@ -1,6 +1,7 @@
 package com.hrservice.hr.entity;
 
 import jakarta.persistence.*;
+import jakarta.persistence.Index;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
@@ -9,7 +10,9 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
-@Table(name = "payroll_result")
+@Table(name = "payroll_result", indexes = {
+    @Index(name = "idx_pr_employee_period", columnList = "employee_id, period_start_date")
+})
 public class PayrollResult {
 
     @Id
@@ -74,6 +77,10 @@ public class PayrollResult {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
 
     @PrePersist
     protected void onCreate() {
@@ -222,6 +229,10 @@ public class PayrollResult {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public Long getVersion() {
+        return version;
     }
 
     @Override
