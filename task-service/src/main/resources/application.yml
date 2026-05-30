@@ -75,8 +75,9 @@ task:
   notification:
     provider: ${TASK_NOTIFICATION_PROVIDER:log}
     snsRegion: ${TASK_NOTIFICATION_SNS_REGION:ap-southeast-1}
-    email:
-      from: ${TASK_NOTIFICATION_EMAIL_FROM:no-reply@hr.local}
-      assigneeDomain: ${TASK_NOTIFICATION_EMAIL_ASSIGNEE_DOMAIN:hr.local}
-    sns:
-      topicArn: ${TASK_NOTIFICATION_SNS_TOPIC_ARN:}
+    emailFrom: ${TASK_NOTIFICATION_EMAIL_FROM:no-reply@hr.local}
+    assigneeDomain: ${TASK_NOTIFICATION_EMAIL_ASSIGNEE_DOMAIN:hr.local}
+    snsTopicArn: ${TASK_NOTIFICATION_SNS_TOPIC_ARN:}
+    assigneeEmailMap:
+      "1001": manager.one@hr.local
+      "1002": manager.two@hr.local

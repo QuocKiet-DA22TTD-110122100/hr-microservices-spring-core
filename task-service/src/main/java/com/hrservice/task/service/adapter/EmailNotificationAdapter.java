@@ -1,9 +1,9 @@
 package com.hrservice.task.service.adapter;
 
+import com.hrservice.task.config.TaskNotificationProperties;
 import com.hrservice.task.event.TaskNotificationEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -16,19 +16,19 @@ import org.springframework.stereotype.Service;
 public class EmailNotificationAdapter implements NotificationAdapter {
 
     private final JavaMailSender mailSender;
-
-    @Value("${task.notification.email.from:no-reply@hr.local}")
-    private String from;
-
-    @Value("${task.notification.email.assigneeDomain:hr.local}")
-    private String assigneeDomain;
+    private final AssigneeEmailResolver assigneeEmailResolver;
+    private final TaskNotificationProperties properties;
 
     @Override
     public void send(TaskNotificationEvent event, Long previousAssignee) {
-        String to = event.getAssigneeId() + "@" + assigneeDomain;
+        String to = assigneeEmailResolver.resolve(event.getAssigneeId());
+        if (to == null || to.isBlank()) {
+            log.warn("[NOTIFICATION][EMAIL] Cannot resolve email for assigneeId={}, skip", event.getAssigneeId());
+            return;
+        }
 
         SimpleMailMessage msg = new SimpleMailMessage();
-        msg.setFrom(from);
+        msg.setFrom(properties.getEmailFrom());
         msg.setTo(to);
         msg.setSubject("Task reassigned: " + event.getTaskId());
         msg.setText("Task " + event.getTaskId() + " was reassigned from " + previousAssignee + " to " + event.getAssigneeId() + ". " + event.getMessage());
