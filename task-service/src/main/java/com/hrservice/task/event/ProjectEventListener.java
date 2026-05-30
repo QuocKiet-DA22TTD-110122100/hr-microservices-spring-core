@@ -5,6 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.hrservice.task.repository.TaskRepository;
+import com.hrservice.task.entity.Task;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -12,21 +18,51 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 @ConditionalOnProperty(name = "spring.rabbitmq.host")
 public class ProjectEventListener {
 
-    // Currently keep handlers lightweight: log and leave room for reconciliation logic.
+    private final TaskRepository taskRepository;
+
+    // Currently keep handlers lightweight: log and perform minimal reconciliation.
 
     @RabbitListener(queues = "project.created.queue")
     public void onProjectCreated(ProjectCreatedEvent event) {
         log.info("[PROJECT-LISTENER] Received ProjectCreatedEvent: projectId={}, name={}, leadId={}",
                 event.getProjectId(), event.getName(), event.getLeadId());
 
-        // TODO: reconcile tasks/assignments for the new project if needed
+        // No immediate reconciliation on creation for now.
     }
 
     @RabbitListener(queues = "project.status.queue")
+    @Transactional
     public void onProjectStatusChanged(ProjectStatusChangedEvent event) {
         log.info("[PROJECT-LISTENER] Received ProjectStatusChangedEvent: projectId={}, status={}->{}, leadId={}",
                 event.getProjectId(), event.getOldStatus(), event.getNewStatus(), event.getLeadId());
 
-        // TODO: if project closed -> mark related tasks; if reopened -> reassign
+        if (event.getNewStatus() == null) return;
+
+        String newStatus = event.getNewStatus().toString();
+
+        try {
+            Long projectId = event.getProjectId();
+            if (projectId == null) return;
+
+            List<Task> tasks = taskRepository.findByProjectId(projectId);
+
+            if ("COMPLETED".equalsIgnoreCase(newStatus)) {
+                // mark OPEN or IN_PROGRESS tasks as COMPLETED
+                tasks.stream()
+                        .filter(t -> t.getStatus() == Task.TaskStatus.OPEN || t.getStatus() == Task.TaskStatus.IN_PROGRESS)
+                        .forEach(t -> t.setStatus(Task.TaskStatus.COMPLETED));
+                taskRepository.saveAll(tasks);
+                log.info("[PROJECT-LISTENER] Marked tasks as COMPLETED for projectId={}", projectId);
+            } else if ("ARCHIVED".equalsIgnoreCase(newStatus)) {
+                // mark remaining active tasks as CANCELLED
+                tasks.stream()
+                        .filter(t -> t.getStatus() != Task.TaskStatus.COMPLETED && t.getStatus() != Task.TaskStatus.CANCELLED)
+                        .forEach(t -> t.setStatus(Task.TaskStatus.CANCELLED));
+                taskRepository.saveAll(tasks);
+                log.info("[PROJECT-LISTENER] Marked tasks as CANCELLED for projectId={}", projectId);
+            }
+        } catch (Exception ex) {
+            log.warn("[PROJECT-LISTENER] Error reconciling tasks for project status change: {}", ex.getMessage(), ex);
+        }
     }
 }
