@@ -72,3 +72,11 @@ logging:
 task:
   reassign:
     defaultPoolAssigneeId: ${TASK_REASSIGN_DEFAULT_POOL_ASSIGNEE_ID:0}
+  notification:
+    provider: ${TASK_NOTIFICATION_PROVIDER:log}
+    snsRegion: ${TASK_NOTIFICATION_SNS_REGION:ap-southeast-1}
+    email:
+      from: ${TASK_NOTIFICATION_EMAIL_FROM:no-reply@hr.local}
+      assigneeDomain: ${TASK_NOTIFICATION_EMAIL_ASSIGNEE_DOMAIN:hr.local}
+    sns:
+      topicArn: ${TASK_NOTIFICATION_SNS_TOPIC_ARN:}
