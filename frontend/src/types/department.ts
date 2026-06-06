@@ -4,6 +4,7 @@ export interface Department extends Record<string, unknown> {
   code?: string;
   organizationUnitId?: number;
   organizationUnitName?: string;
+  employeeCount?: number;
 }
 
 export interface CreateDepartmentRequest {

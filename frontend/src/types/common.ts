@@ -5,6 +5,8 @@ export interface ApiResponse<T> {
   timestamp: string;
 }
 
+export type RoleApiResult<T> = ApiResponse<T>;
+
 export interface PaginatedResponse<T> {
   content: T[];
   page: number;

@@ -29,7 +29,7 @@ export const getPasswordExpiryWarning = (expiryDate: string): string | null => {
   const days = getDaysUntilPasswordExpiry(expiryDate);
   
   if (days < 0) {
-    return 'Mật khẩu đã hết hạn. Vui lòng đổi mật khẩu.';
+    return 'Mật khẩu đã hết hạn. Vui lòng đãi mật khẩu.';
   }
   
   if (days <= 7) {

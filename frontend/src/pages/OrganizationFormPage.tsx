@@ -201,7 +201,7 @@ export const OrganizationFormPage = () => {
 
               <Input
                 label="Mã tổ chức"
-                placeholder="Nhập mã tổ chức (tuỳ chọn)"
+                placeholder="Nhập mã tổ chức (tùy chọn)"
                 error={errors.code?.message}
                 {...register('code')}
               />

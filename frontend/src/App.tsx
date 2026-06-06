@@ -1,178 +1,273 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuthStore } from './store/authStore';
-import { useUIStore } from './store/uiStore';
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
-import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { EmployeeListPage } from './pages/EmployeeListPage';
-import { EmployeeFormPage } from './pages/EmployeeFormPage';
-import { EmployeeDetailPage } from './pages/EmployeeDetailPage';
-import { DepartmentListPage } from './pages/DepartmentListPage';
-import { DepartmentFormPage } from './pages/DepartmentFormPage';
-import { OrganizationListPage } from './pages/OrganizationListPage';
-import { OrganizationFormPage } from './pages/OrganizationFormPage';
-import { UserManagementPage } from './pages/UserManagementPage';
-import { RoleManagementPage } from './pages/RoleManagementPage';
-import { ChangePasswordPage } from './pages/ChangePasswordPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { getNotificationClasses } from './utils/notificationClasses';
-import { X } from 'lucide-react';
+import { GlobalErrorUI } from './components/UI/GlobalErrorUI';
+import { ProtectedRoute, UnauthorizedPage } from './components/Auth/ProtectedRoute';
+import { PERMISSIONS } from './utils/permissions';
 
-const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuthStore();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
-};
+// Loading fallback component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="text-center">
+      <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent mb-4"></div>
+      <p className="text-gray-600">Đang tải...</p>
+    </div>
+  </div>
+);
+
+// Lazy load pages - improves initial bundle size and load time
+const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('./pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const EmployeeListPage = lazy(() => import('./pages/EmployeeListPage').then(m => ({ default: m.EmployeeListPage })));
+const EmployeeFormPage = lazy(() => import('./pages/EmployeeFormPage').then(m => ({ default: m.EmployeeFormPage })));
+const EmployeeDetailPage = lazy(() => import('./pages/EmployeeDetailPage').then(m => ({ default: m.EmployeeDetailPage })));
+const DepartmentListPage = lazy(() => import('./pages/DepartmentListPage').then(m => ({ default: m.DepartmentListPage })));
+const DepartmentFormPage = lazy(() => import('./pages/DepartmentFormPage').then(m => ({ default: m.DepartmentFormPage })));
+const OrganizationListPage = lazy(() => import('./pages/OrganizationListPage').then(m => ({ default: m.OrganizationListPage })));
+const OrganizationFormPage = lazy(() => import('./pages/OrganizationFormPage').then(m => ({ default: m.OrganizationFormPage })));
+const ProjectListPage = lazy(() => import('./pages/ProjectListPage').then(m => ({ default: m.ProjectListPage })));
+const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage').then(m => ({ default: m.ProjectDetailPage })));
+const ProjectFormPage = lazy(() => import('./pages/ProjectFormPage').then(m => ({ default: m.ProjectFormPage })));
+const TaskListPage = lazy(() => import('./pages/TaskListPage').then(m => ({ default: m.TaskListPage })));
+const TaskDetailPage = lazy(() => import('./pages/TaskDetailPage').then(m => ({ default: m.TaskDetailPage })));
+const TaskFormPage = lazy(() => import('./pages/TaskFormPage').then(m => ({ default: m.TaskFormPage })));
+const UserManagementPage = lazy(() => import('./pages/UserManagementPage').then(m => ({ default: m.UserManagementPage })));
+const RoleManagementPage = lazy(() => import('./pages/RoleManagementPage').then(m => ({ default: m.RoleManagementPage })));
+const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage').then(m => ({ default: m.ChangePasswordPage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const RoleWorkspacePage = lazy(() => import('./pages/RoleWorkspacePage').then(m => ({ default: m.RoleWorkspacePage })));
 
 function App() {
-  const { notifications, removeNotification } = useUIStore();
-
   return (
     <BrowserRouter>
-      {/* Notification Container */}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
-        {notifications.map((notification) => (
-          <div
-            key={notification.id}
-            className={`flex items-center gap-3 p-4 rounded-lg shadow-lg min-w-[300px] ${getNotificationClasses(notification.type)}`}
-          >
-            <p className="flex-1">{notification.message}</p>
-            <button
-              onClick={() => removeNotification(notification.id)}
-              className="p-1 hover:bg-white/50 rounded"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        ))}
-      </div>
+      {/* Global Error UI - Toast Notifications & Error Modal */}
+      <GlobalErrorUI />
 
-      <Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+        {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        
+        {/* Dashboard - Authenticated users only */}
         <Route
           path="/"
           element={
-            <PrivateRoute>
+            <ProtectedRoute>
               <DashboardPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
+        
+        {/* Employee Routes - Requires employee:view permission */}
         <Route
           path="/employees"
           element={
-            <PrivateRoute>
+            <ProtectedRoute permission={PERMISSIONS.EMPLOYEE_VIEW}>
               <EmployeeListPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/employees/add"
           element={
-            <PrivateRoute>
+            <ProtectedRoute permission={PERMISSIONS.EMPLOYEE_CREATE}>
               <EmployeeFormPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/employees/edit/:id"
           element={
-            <PrivateRoute>
+            <ProtectedRoute permission={PERMISSIONS.EMPLOYEE_UPDATE}>
               <EmployeeFormPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/employees/:id"
           element={
-            <PrivateRoute>
+            <ProtectedRoute permission={PERMISSIONS.EMPLOYEE_VIEW}>
               <EmployeeDetailPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
+        
+        {/* Department Routes - Requires department:view permission */}
         <Route
           path="/departments"
           element={
-            <PrivateRoute>
+            <ProtectedRoute permission={PERMISSIONS.DEPARTMENT_VIEW}>
               <DepartmentListPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/departments/add"
           element={
-            <PrivateRoute>
+            <ProtectedRoute permission={PERMISSIONS.DEPARTMENT_CREATE}>
               <DepartmentFormPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/departments/edit/:id"
           element={
-            <PrivateRoute>
+            <ProtectedRoute permission={PERMISSIONS.DEPARTMENT_UPDATE}>
               <DepartmentFormPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
+        
+        {/* Organization Routes - Requires organization:view permission */}
         <Route
           path="/organizations"
           element={
-            <PrivateRoute>
+            <ProtectedRoute permission={PERMISSIONS.ORGANIZATION_VIEW}>
               <OrganizationListPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/organizations/add"
           element={
-            <PrivateRoute>
+            <ProtectedRoute permission={PERMISSIONS.ORGANIZATION_CREATE}>
               <OrganizationFormPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/organizations/edit/:id"
           element={
-            <PrivateRoute>
+            <ProtectedRoute permission={PERMISSIONS.ORGANIZATION_UPDATE}>
               <OrganizationFormPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
+
+        {/* Project Routes */}
+        <Route
+          path="/projects"
+          element={
+            <ProtectedRoute permission={PERMISSIONS.PROJECT_VIEW}>
+              <ProjectListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/add"
+          element={
+            <ProtectedRoute permission={PERMISSIONS.PROJECT_CREATE}>
+              <ProjectFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/edit/:id"
+          element={
+            <ProtectedRoute permission={PERMISSIONS.PROJECT_UPDATE}>
+              <ProjectFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:id"
+          element={
+            <ProtectedRoute permission={PERMISSIONS.PROJECT_VIEW}>
+              <ProjectDetailPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Task Routes */}
+        <Route
+          path="/tasks"
+          element={
+            <ProtectedRoute permission={PERMISSIONS.TASK_VIEW}>
+              <TaskListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tasks/add"
+          element={
+            <ProtectedRoute permission={PERMISSIONS.TASK_CREATE}>
+              <TaskFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tasks/edit/:id"
+          element={
+            <ProtectedRoute permission={PERMISSIONS.TASK_UPDATE}>
+              <TaskFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tasks/:id"
+          element={
+            <ProtectedRoute permission={PERMISSIONS.TASK_VIEW}>
+              <TaskDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* User Management - Admin only (requires user:view permission) */}
         <Route
           path="/users"
           element={
-            <PrivateRoute>
+            <ProtectedRoute permission={PERMISSIONS.USER_VIEW}>
               <UserManagementPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
+        
+        {/* Role Management - Admin only (requires role:view permission) */}
         <Route
           path="/roles"
           element={
-            <PrivateRoute>
+            <ProtectedRoute permission={PERMISSIONS.ROLE_VIEW}>
               <RoleManagementPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
+        
+        {/* Profile & Password - Authenticated users only */}
         <Route
           path="/change-password"
           element={
-            <PrivateRoute>
+            <ProtectedRoute>
               <ChangePasswordPage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/profile"
           element={
-            <PrivateRoute>
+            <ProtectedRoute>
               <ProfilePage />
-            </PrivateRoute>
+            </ProtectedRoute>
           }
         />
+
+        {/* Role workspace routes - workspace page validates role-specific access */}
+        <Route
+          path="/workspace/:slug"
+          element={
+            <ProtectedRoute>
+              <RoleWorkspacePage />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

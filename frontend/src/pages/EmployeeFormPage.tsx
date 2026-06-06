@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { Input } from '@/components/UI/Input';
 import { Button } from '@/components/UI/Button';
+import { Card, CardContent } from '@/components/UI/Card';
+import { PageHeader } from '@/components/UI/PageHeader';
 import { useUIStore } from '@/store/uiStore';
 import { organizationApi } from '@/api/organization.api';
 import { departmentApi } from '@/api/department.api';
@@ -11,11 +13,22 @@ import { employeeApi } from '@/api/employee.api';
 import { OrganizationUnit } from '@/types/organization';
 import { Department } from '@/types/department';
 import { getApiErrorMessage } from '@/utils/error';
-import { ArrowLeft, Loader } from 'lucide-react';
+import { 
+  mapBackendValidationErrors, 
+  validateRequired, 
+  validateEmail,
+  validateMinLength,
+  validateMaxLength 
+} from '@/utils/formValidation';
+import { usePermissions } from '@/hooks/usePermissions';
+import { PERMISSIONS } from '@/utils/permissions';
+import { ArrowLeft, Loader, Shield, Users } from 'lucide-react';
 
 interface EmployeeFormData {
   name: string;
+  email?: string;
   position?: string;
+  phone?: string;
   departmentId?: number;
 }
 
@@ -28,16 +41,26 @@ export const EmployeeFormPage = () => {
   const [organizations, setOrganizations] = useState<OrganizationUnit[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<number | undefined>();
+  
+  // Permission hooks
+  const { can } = usePermissions();
+  
+  // Check permissions
+  const canCreate = can(PERMISSIONS.EMPLOYEE_CREATE);
+  const canUpdate = can(PERMISSIONS.EMPLOYEE_UPDATE);
 
   const {
     register,
     handleSubmit,
     setValue,
+    setError,
     formState: { errors },
   } = useForm<EmployeeFormData>({
     defaultValues: {
       name: '',
+      email: '',
       position: '',
+      phone: '',
       departmentId: undefined,
     },
   });
@@ -147,6 +170,17 @@ export const EmployeeFormPage = () => {
       }
       navigate('/employees');
     } catch (error: unknown) {
+      // Map backend validation errors to form fields
+      if (mapBackendValidationErrors(error, setError)) {
+        addNotification({
+          type: 'error',
+          message: 'Vui lòng kiểm tra các trường bị lỗi',
+          duration: 3000,
+        });
+        return;
+      }
+
+      // Handle other errors
       addNotification({
         type: 'error',
         message: getApiErrorMessage(
@@ -169,41 +203,90 @@ export const EmployeeFormPage = () => {
     );
   }
 
+  // Check if user has permission to submit
+  const hasSubmitPermission = id ? canUpdate : canCreate;
+
   return (
     <MainLayout>
       <div className="space-y-5">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/employees')}
-            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-800">
-              {id ? 'Chỉnh sửa nhân viên' : 'Thêm nhân viên mới'}
-            </h1>
-            <p className="text-gray-600 text-sm mt-1">
-              {id ? 'Cập nhật thông tin nhân viên' : 'Nhập thông tin nhân viên mới'}
-            </p>
+        <PageHeader
+          icon={Users}
+          title={id ? 'Chỉnh sửa nhân viên' : 'Thêm nhân viên mới'}
+          description={id ? 'Cập nhật thông tin nhân viên' : 'Nhập thông tin nhân viên mới'}
+          actions={
+            <Button type="button" variant="secondary" onClick={() => navigate('/employees')}>
+              <ArrowLeft size={18} />
+              Quay lại
+            </Button>
+          }
+        />
+
+        {/* Permission warning */}
+        {!hasSubmitPermission && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 flex items-start gap-3">
+            <Shield size={20} className="text-yellow-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-yellow-800">Chế độ chỉ xem</p>
+              <p className="text-sm text-yellow-700 mt-1">
+                Bạn không có quyền {id ? 'chỉnh sửa' : 'thêm'} nhân viên. Biểu mẫu này chỉ hiển thị để xem.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="bg-white rounded-lg border shadow-sm p-6">
+          <Card>
+            <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <Input
                 label="Tên nhân viên"
                 placeholder="Nhập tên nhân viên"
                 error={errors.name?.message}
-                {...register('name', { required: 'Vui lòng nhập tên nhân viên' })}
+                helperText="Tên đầy đủ của nhân viên"
+                {...register('name', { 
+                  validate: {
+                    required: validateRequired('Tên nhân viên'),
+                    minLength: validateMinLength(2, 'Tên nhân viên'),
+                    maxLength: validateMaxLength(100, 'Tên nhân viên'),
+                  }
+                })}
+              />
+
+              <Input
+                label="Email"
+                type="email"
+                placeholder="email@example.com"
+                error={errors.email?.message}
+                helperText="Email để liên hệ với nhân viên"
+                {...register('email', { 
+                  validate: validateEmail
+                })}
+              />
+
+              <Input
+                label="Số điện thoại"
+                type="tel"
+                placeholder="0912345678"
+                error={errors.phone?.message}
+                helperText="Số điện thoại di động"
+                {...register('phone', {
+                  pattern: {
+                    value: /^(0|\+84)(3|5|7|8|9)\d{8}$/,
+                    message: 'Số điện thoại không hợp lệ (VD: 0912345678)'
+                  }
+                })}
               />
 
               <Input
                 label="Chức vụ"
-                placeholder="Nhập chức vụ (tuỳ chọn)"
+                placeholder="Nhập chức vụ"
                 error={errors.position?.message}
-                {...register('position')}
+                helperText="Chức danh công việc"
+                {...register('position', {
+                  validate: {
+                    maxLength: validateMaxLength(100, 'Chức vụ'),
+                  }
+                })}
               />
 
               <div>
@@ -251,8 +334,13 @@ export const EmployeeFormPage = () => {
             </div>
 
             <div className="flex gap-3 mt-8">
-              <Button type="submit" disabled={isLoading}>
+              <Button 
+                type="submit" 
+                disabled={isLoading || !hasSubmitPermission}
+                title={!hasSubmitPermission ? 'Bạn không có quyền thực hiện thao tác này' : undefined}
+              >
                 {isLoading && <Loader size={18} className="mr-2 animate-spin" />}
+                {!hasSubmitPermission && <Shield size={14} className="mr-2" />}
                 {id ? 'Cập nhật' : 'Thêm nhân viên'}
               </Button>
               <button
@@ -260,10 +348,11 @@ export const EmployeeFormPage = () => {
                 onClick={() => navigate('/employees')}
                 className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Hủy
+                {hasSubmitPermission ? 'Hủy' : 'Đóng'}
               </button>
             </div>
-          </div>
+            </CardContent>
+          </Card>
         </form>
       </div>
     </MainLayout>

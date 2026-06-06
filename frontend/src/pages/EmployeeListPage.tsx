@@ -1,15 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MainLayout } from '@/components/Layout/MainLayout';
-import { Table } from '@/components/UI/Table';
-import { Button } from '@/components/UI/Button';
-import { Input } from '@/components/UI/Input';
+import { Plus, Search, Users } from 'lucide-react';
 import { employeeApi } from '@/api/employee.api';
-import { Employee } from '@/types/employee';
-import { formatDate } from '@/utils/format';
-import { getApiErrorMessage } from '@/utils/error';
+import { PermissionGate } from '@/components/Auth/PermissionGate';
+import { Badge } from '@/components/UI/Badge';
+import { Button } from '@/components/UI/Button';
+import { DataListPage } from '@/components/UI/DataListPage';
+import { Input } from '@/components/UI/Input';
+import { type Column } from '@/components/UI/Table';
 import { useUIStore } from '@/store/uiStore';
-import { Plus, Search } from 'lucide-react';
+import { Employee } from '@/types/employee';
+import { getApiErrorMessage } from '@/utils/error';
+import { formatDate } from '@/utils/format';
+import { PERMISSIONS } from '@/utils/permissions';
+
+type EmployeeStatusVariant = 'success' | 'danger' | 'warning';
 
 export const EmployeeListPage = () => {
   const navigate = useNavigate();
@@ -21,19 +26,19 @@ export const EmployeeListPage = () => {
   const [totalPages, setTotalPages] = useState(0);
   const lastSearchAtRef = useRef(0);
 
-  const getStatusClass = (status: string) => {
-    if (status === 'ACTIVE') return 'bg-green-100 text-green-800';
-    if (status === 'INACTIVE') return 'bg-red-100 text-red-800';
-    return 'bg-yellow-100 text-yellow-800';
-  };
+  const getStatusVariant = useCallback((status: string): EmployeeStatusVariant => {
+    if (status === 'ACTIVE') return 'success';
+    if (status === 'INACTIVE') return 'danger';
+    return 'warning';
+  }, []);
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = useCallback((status: string) => {
     if (status === 'ACTIVE') return 'Đang làm';
     if (status === 'INACTIVE') return 'Nghỉ việc';
     return 'Nghỉ phép';
-  };
+  }, []);
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     setLoading(true);
     try {
       const response = await employeeApi.getAll({ page, size: 10 });
@@ -47,18 +52,15 @@ export const EmployeeListPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, addNotification]);
 
   useEffect(() => {
     fetchEmployees();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [fetchEmployees]);
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     const now = Date.now();
-    if (now - lastSearchAtRef.current < 1000) {
-      return;
-    }
+    if (now - lastSearchAtRef.current < 1000) return;
 
     lastSearchAtRef.current = now;
 
@@ -80,101 +82,81 @@ export const EmployeeListPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchKeyword, page, fetchEmployees, addNotification]);
 
-  const columns: Array<{
-    key: string;
-    title: string;
-    render?: (value: Employee[keyof Employee], record: Employee) => React.ReactNode;
-  }> = [
-    { key: 'employeeCode', title: 'Mã NV' },
-    { key: 'fullName', title: 'Họ và tên' },
-    { key: 'email', title: 'Email' },
-    { key: 'phone', title: 'Số điện thoại' },
-    { key: 'position', title: 'Chức vụ' },
-    { key: 'departmentName', title: 'Phòng ban' },
-    {
-      key: 'status',
-      title: 'Trạng thái',
-      render: (value: Employee[keyof Employee]) => (
-        <span
-          className={`px-2 py-1 rounded text-xs font-medium ${getStatusClass(String(value))}`}
-        >
-          {getStatusLabel(String(value))}
-        </span>
-      ),
+  const handleRowClick = useCallback(
+    (record: Employee) => {
+      navigate(`/employees/${record.id}`);
     },
-    {
-      key: 'hireDate',
-      title: 'Ngày vào làm',
-      render: (value: Employee[keyof Employee]) => formatDate(value as string),
-    },
-  ];
+    [navigate]
+  );
+
+  const columns = useMemo<Column<Employee>[]>(
+    () => [
+      { key: 'employeeCode', title: 'Mã NV' },
+      { key: 'fullName', title: 'Họ và tên' },
+      { key: 'email', title: 'Email' },
+      { key: 'phone', title: 'Số điện thoại' },
+      { key: 'position', title: 'Chức vụ' },
+      { key: 'departmentName', title: 'Phòng ban' },
+      {
+        key: 'status',
+        title: 'Trạng thái',
+        render: (value: Employee[keyof Employee]) => (
+          <Badge variant={getStatusVariant(String(value))}>{getStatusLabel(String(value))}</Badge>
+        ),
+      },
+      {
+        key: 'hireDate',
+        title: 'Ngày vào làm',
+        render: (value: Employee[keyof Employee]) => formatDate(value as string),
+      },
+    ],
+    [getStatusVariant, getStatusLabel]
+  );
 
   return (
-    <MainLayout>
-      <div className="space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-800">Quản lý Nhân viên</h1>
-            <p className="text-gray-600 text-sm mt-1">Danh sách nhân viên trong hệ thống</p>
-          </div>
+    <DataListPage
+      icon={Users}
+      title="Quản lý nhân viên"
+      description="Tra c?u hồ sơ nhân viên, trạng thái làm việc và phòng ban trong hệ thống."
+      actions={
+        <PermissionGate permission={PERMISSIONS.EMPLOYEE_CREATE}>
           <Button onClick={() => navigate('/employees/add')}>
-            <Plus size={18} className="mr-2" />
+            <Plus size={18} />
             Thêm nhân viên
           </Button>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg border shadow-sm">
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <Input
-                placeholder="Tìm kiếm theo tên, email, mã nhân viên..."
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              />
-            </div>
-            <Button onClick={handleSearch} isLoading={loading}>
-              <Search size={18} className="mr-2" />
-              Tìm kiếm
-            </Button>
+        </PermissionGate>
+      }
+      filters={
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex-1">
+            <Input
+              placeholder="Tìm kiếm theo tên, email, mã nhân viên..."
+              value={searchKeyword}
+              onChange={(event) => setSearchKeyword(event.target.value)}
+              onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
+            />
           </div>
+          <Button onClick={handleSearch} isLoading={loading}>
+            <Search size={18} />
+            Tìm kiếm
+          </Button>
         </div>
-
-        <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-          <Table 
-            columns={columns} 
-            data={employees} 
-            loading={loading}
-            onRowClick={(record) => navigate(`/employees/${record.id}`)}
-          />
-
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-3 p-4 border-t bg-gray-50">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page === 0}
-                onClick={() => setPage(page - 1)}
-              >
-                Trước
-              </Button>
-              <span className="text-sm text-gray-600">
-                Trang {page + 1} / {totalPages}
-              </span>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage(page + 1)}
-              >
-                Sau
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-    </MainLayout>
+      }
+      columns={columns}
+      data={employees}
+      loading={loading}
+      onRowClick={handleRowClick}
+      pagination={
+        totalPages > 1
+          ? {
+              currentPage: page + 1,
+              totalPages,
+              onPageChange: (nextPage) => setPage(nextPage - 1),
+            }
+          : undefined
+      }
+    />
   );
 };

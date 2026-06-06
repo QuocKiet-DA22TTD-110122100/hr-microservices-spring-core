@@ -1,111 +1,46 @@
-import { useEffect, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MainLayout } from '@/components/Layout/MainLayout';
-import { Button } from '@/components/UI/Button';
+import { Edit2, Layers, Plus, Search, Trash2 } from 'lucide-react';
 import { organizationApi } from '@/api/organization.api';
-import { OrganizationUnitTreeNode } from '@/types/organization';
-import { Plus, ChevronDown, ChevronRight, Edit2, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/UI/Badge';
+import { Button } from '@/components/UI/Button';
+import { DataListPage } from '@/components/UI/DataListPage';
+import { Input } from '@/components/UI/Input';
+import { RowActions } from '@/components/UI/RowActions';
+import { type Column } from '@/components/UI/Table';
 import { useUIStore } from '@/store/uiStore';
+import { OrganizationUnitTreeNode } from '@/types/organization';
 import { getApiErrorMessage } from '@/utils/error';
 
-interface TreeNodeProps {
-  node: OrganizationUnitTreeNode;
-  level?: number;
-  expandedNodes: Set<number>;
-  onToggleExpand: (id: number) => void;
-  onDelete: (id: number, name: string) => void;
-  onEdit: (id: number) => void;
-}
-
-const TreeNode = ({
-  node,
-  level = 0,
-  expandedNodes,
-  onToggleExpand,
-  onDelete,
-  onEdit,
-}: TreeNodeProps) => {
-  const isExpanded = expandedNodes.has(node.id);
-  const hasChildren = node.children && node.children.length > 0;
-
-  return (
-    <div key={node.id}>
-      <div
-        className="flex items-center justify-between p-3 bg-white border rounded-lg mb-2"
-        style={{ marginLeft: `${level * 20}px` }}
-      >
-        <div className="flex items-center gap-3 flex-1">
-          {hasChildren ? (
-            <button
-              onClick={() => onToggleExpand(node.id)}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
-            >
-              {isExpanded ? (
-                <ChevronDown size={18} className="text-gray-600" />
-              ) : (
-                <ChevronRight size={18} className="text-gray-600" />
-              )}
-            </button>
-          ) : (
-            <div className="w-6" />
-          )}
-
-          <div>
-            <div className="font-medium text-gray-800">{node.name}</div>
-            <div className="text-xs text-gray-500">
-              {node.code && <span>{node.code} • </span>}
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                {node.level}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onEdit(node.id)}
-            className="p-2 hover:bg-blue-50 text-blue-600 rounded transition-colors"
-            title="Chỉnh sửa"
-          >
-            <Edit2 size={18} />
-          </button>
-          <button
-            onClick={() => onDelete(node.id, node.name)}
-            className="p-2 hover:bg-red-50 text-red-600 rounded transition-colors"
-            title="Xóa"
-          >
-            <Trash2 size={18} />
-          </button>
-        </div>
-      </div>
-
-      {hasChildren && isExpanded && (
-        <div>
-          {node.children.map((child) => (
-            <TreeNode
-              key={child.id}
-              node={child}
-              level={level + 1}
-              expandedNodes={expandedNodes}
-              onToggleExpand={onToggleExpand}
-              onDelete={onDelete}
-              onEdit={onEdit}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+type OrganizationRow = OrganizationUnitTreeNode & {
+  parentNameText: string;
+  childCount: number;
+  actions: string;
 };
+
+const flattenOrganizationTree = (
+  nodes: OrganizationUnitTreeNode[],
+  parentNameText = '--'
+): OrganizationRow[] =>
+  nodes.flatMap((node) => {
+    const row: OrganizationRow = {
+      ...node,
+      parentNameText,
+      childCount: node.children.length,
+      actions: 'actions',
+    };
+
+    return [row, ...flattenOrganizationTree(node.children, node.name)];
+  });
 
 export const OrganizationListPage = () => {
   const navigate = useNavigate();
   const { addNotification } = useUIStore();
   const [treeData, setTreeData] = useState<OrganizationUnitTreeNode[]>([]);
   const [loading, setLoading] = useState(false);
-  const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set());
+  const [searchKeyword, setSearchKeyword] = useState('');
 
-  const fetchOrganizations = async () => {
+  const fetchOrganizations = useCallback(async () => {
     setLoading(true);
     try {
       const response = await organizationApi.getTree();
@@ -118,30 +53,21 @@ export const OrganizationListPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [addNotification]);
 
   useEffect(() => {
     fetchOrganizations();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchOrganizations]);
 
-  const toggleExpand = (id: number) => {
-    const newExpanded = new Set(expandedNodes);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedNodes(newExpanded);
-  };
+  const handleDelete = useCallback(
+    async (id: number, name: string) => {
+      if (!globalThis.confirm(`Bạn có chắc chắn muốn xóa tổ chức "${name}"?`)) return;
 
-  const handleDelete = async (id: number, name: string) => {
-    if (globalThis.confirm(`Bạn có chắc chắn muốn xóa tổ chức "${name}"?`)) {
       try {
         await organizationApi.delete(id);
         addNotification({
           type: 'success',
-          message: 'Xóa tổ chức thành công!',
+          message: 'Xóa tổ chức thành công.',
         });
         fetchOrganizations();
       } catch (error: unknown) {
@@ -150,64 +76,85 @@ export const OrganizationListPage = () => {
           message: getApiErrorMessage(error, 'Lỗi khi xóa tổ chức.'),
         });
       }
-    }
-  };
+    },
+    [addNotification, fetchOrganizations]
+  );
 
-  const handleEdit = (id: number) => {
-    navigate(`/organizations/edit/${id}`);
-  };
+  const tableData = useMemo(() => flattenOrganizationTree(treeData), [treeData]);
 
-  const renderContent = () => {
-    if (loading) {
-      return (
-        <div className="flex justify-center items-center py-12">
-          <div className="text-gray-500">Đang tải...</div>
-        </div>
-      );
-    }
+  const filteredData = useMemo(() => {
+    const keyword = searchKeyword.trim().toLowerCase();
+    if (!keyword) return tableData;
 
-    if (treeData.length === 0) {
-      return (
-        <div className="flex justify-center items-center py-12">
-          <div className="text-gray-500">Không có dữ liệu tổ chức</div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-2">
-        {treeData.map((node) => (
-          <TreeNode
-            key={node.id}
-            node={node}
-            expandedNodes={expandedNodes}
-            onToggleExpand={toggleExpand}
-            onDelete={handleDelete}
-            onEdit={handleEdit}
-          />
-        ))}
-      </div>
+    return tableData.filter((node) =>
+      [node.name, node.code, node.level, node.parentNameText]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(keyword))
     );
-  };
+  }, [searchKeyword, tableData]);
+
+  const columns = useMemo<Column<OrganizationRow>[]>(
+    () => [
+      { key: 'code', title: 'Mã tổ chức', render: (value): ReactNode => String(value || '--') },
+      { key: 'name', title: 'Tên tổ chức' },
+      {
+        key: 'level',
+        title: 'Cấp',
+        render: (value): ReactNode => <Badge variant="info">{String(value)}</Badge>,
+      },
+      { key: 'parentNameText', title: 'Tổ chức cha' },
+      { key: 'childCount', title: 'Đơn vị con' },
+      {
+        key: 'actions',
+        title: 'Thao tác',
+        render: (_: OrganizationRow[keyof OrganizationRow], record: OrganizationRow): ReactNode => (
+          <RowActions
+            label="Thao tác tổ chức"
+            actions={[
+              {
+                icon: <Edit2 size={16} />,
+                label: 'Chỉnh sửa',
+                onClick: () => navigate(`/organizations/edit/${record.id}`),
+              },
+              {
+                icon: <Trash2 size={16} />,
+                label: 'Xóa',
+                onClick: () => handleDelete(record.id, record.name),
+              },
+            ]}
+          />
+        ),
+      },
+    ],
+    [handleDelete, navigate]
+  );
 
   return (
-    <MainLayout>
-      <div className="space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-800">Quản lý Tổ chức</h1>
-            <p className="text-gray-600 text-sm mt-1">Cấu trúc tổ chức phân cấp</p>
-          </div>
-          <Button onClick={() => navigate('/organizations/add')}>
-            <Plus size={18} className="mr-2" />
-            Thêm tổ chức
-          </Button>
+    <DataListPage
+      icon={Layers}
+      title="Quản lý tổ chức"
+      description="Quản lý cấu trúc tổ chức phân cấp từ công ty đến phòng ban."
+      actions={
+        <Button onClick={() => navigate('/organizations/add')}>
+          <Plus size={18} />
+          Thêm tổ chức
+        </Button>
+      }
+      filters={
+        <div className="relative">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+          <Input
+            placeholder="Tìm theo tên, mã, cấp hoặc tổ chức cha..."
+            value={searchKeyword}
+            onChange={(event) => setSearchKeyword(event.target.value)}
+            className="pl-10"
+          />
         </div>
-
-        <div className="bg-white rounded-lg border shadow-sm p-6">
-          {renderContent()}
-        </div>
-      </div>
-    </MainLayout>
+      }
+      columns={columns}
+      data={filteredData}
+      loading={loading}
+      onRowClick={(record) => navigate(`/organizations/edit/${record.id}`)}
+    />
   );
 };

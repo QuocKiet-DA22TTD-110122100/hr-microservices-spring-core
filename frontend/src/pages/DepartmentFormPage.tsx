@@ -147,7 +147,7 @@ export const DepartmentFormPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <Input
                 label="Mã phòng ban"
-                placeholder="Nhập mã phòng ban (tuỳ chọn)"
+                placeholder="Nhập mã phòng ban (tùy chọn)"
                 error={errors.code?.message}
                 {...register('code')}
               />

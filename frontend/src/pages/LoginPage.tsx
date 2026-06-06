@@ -1,56 +1,20 @@
 import { useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { LockKeyhole, UserRound } from 'lucide-react';
+import { authApi } from '@/api/auth.api';
+import { AuthShell } from '@/components/Auth/AuthShell';
+import { Button } from '@/components/UI/Button';
+import { Input } from '@/components/UI/Input';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
-import { Input } from '@/components/UI/Input';
-import { Button } from '@/components/UI/Button';
-import { LoginRequest, User } from '@/types/auth';
-import { authApi } from '@/api/auth.api';
+import { LoginRequest } from '@/types/auth';
+import { mapClaimsToUser } from '@/utils/authSession';
 import { getApiErrorMessage } from '@/utils/error';
-
-const toStringArray = (value: unknown): string[] => {
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item).trim()).filter(Boolean);
-  }
-
-  if (typeof value === 'string') {
-    return value
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-
-  return [];
-};
-
-const toStringClaim = (value: unknown, fallback: string): string => {
-  return typeof value === 'string' && value.trim() ? value : fallback;
-};
-
-const mapClaimsToUser = (claims: Record<string, unknown>, fallbackUsername: string): User => {
-  const username = toStringClaim(claims.username ?? claims.sub, fallbackUsername);
-  const roles = toStringArray(claims.roles);
-  const permissions = toStringArray(claims.permissions);
-  const expiresAt = typeof claims.exp === 'number'
-    ? new Date(claims.exp * 1000).toISOString()
-    : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
-
-  return {
-    id: toStringClaim(claims.userId ?? claims.sub, username),
-    username,
-    email: toStringClaim(claims.email, `${username}@company.com`),
-    fullName: toStringClaim(claims.fullName, username),
-    roles,
-    permissions,
-    passwordExpiresAt: expiresAt,
-    isLocked: false,
-  };
-};
 
 export const LoginPage = () => {
   const navigate = useNavigate();
-  const { setUser, setTokens } = useAuthStore();
+  const { setTokens, setUser } = useAuthStore();
   const { addNotification } = useUIStore();
   const [isLoading, setIsLoading] = useState(false);
   const lastSubmitAtRef = useRef(0);
@@ -63,9 +27,7 @@ export const LoginPage = () => {
 
   const onSubmit = async (data: LoginRequest) => {
     const now = Date.now();
-    if (now - lastSubmitAtRef.current < 1000) {
-      return;
-    }
+    if (now - lastSubmitAtRef.current < 1000) return;
 
     lastSubmitAtRef.current = now;
     setIsLoading(true);
@@ -79,20 +41,18 @@ export const LoginPage = () => {
         throw new Error('Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.');
       }
 
-      const user = mapClaimsToUser(profile.claims as Record<string, unknown>, data.username);
-      setUser(user);
+      setUser(mapClaimsToUser(profile.claims, data.username));
 
       addNotification({
         type: 'success',
-        message: 'Đăng nhập thành công!',
+        message: 'đăng nhập thành công.',
       });
 
       navigate('/');
     } catch (error: unknown) {
-      const message = getApiErrorMessage(error, 'Đăng nhập thất bại. Vui lòng thử lại.');
       addNotification({
         type: 'error',
-        message,
+        message: getApiErrorMessage(error, 'đăng nhập thất bại. Vui lòng thử lại.'),
       });
     } finally {
       setIsLoading(false);
@@ -100,60 +60,49 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Hệ thống Quản lý Nhân sự</h1>
-          <p className="text-gray-600">Đăng nhập để tiếp tục</p>
+    <AuthShell
+      title="đăng nhập"
+      description="Sử dụng tài khoản nội bộ để tiếp tục vào hệ thống HR Core."
+      icon={LockKeyhole}
+      footer={
+        <div className="flex items-center justify-between gap-3 text-sm">
+          <Link to="/forgot-password" className="font-semibold text-cyan-700 hover:text-cyan-800">
+            Quên mật khẩu?
+          </Link>
+          <Link to="/register" className="inline-flex items-center gap-2 font-semibold text-slate-600 hover:text-slate-900">
+            <UserRound size={16} />
+            Tạo tài khoản
+          </Link>
         </div>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <Input
+          label="Tên đăng nhập"
+          type="text"
+          autoComplete="username"
+          placeholder="admin hoặc mã nhân viên"
+          error={errors.username?.message}
+          {...register('username', {
+            required: 'Vui lòng nhập tên đăng nhập.',
+          })}
+        />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input
-            label="Username"
-            type="text"
-            placeholder="Nhập tên đăng nhập"
-            error={errors.username?.message}
-            {...register('username', {
-              required: 'Vui lòng nhập tên đăng nhập',
-            })}
-          />
+        <Input
+          label="Mật khẩu"
+          type="password"
+          autoComplete="current-password"
+          placeholder="Nhập mật khẩu"
+          error={errors.password?.message}
+          {...register('password', {
+            required: 'Vui lòng nhập mật khẩu.',
+          })}
+        />
 
-          <Input
-            label="Password"
-            type="password"
-            placeholder="Nhập mật khẩu"
-            error={errors.password?.message}
-            {...register('password', {
-              required: 'Vui lòng nhập mật khẩu',
-            })}
-          />
-
-          <Button type="submit" className="w-full" isLoading={isLoading}>
-            Đăng nhập
-          </Button>
-        </form>
-
-        <div className="mt-6 space-y-3">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Hoặc</span>
-            </div>
-          </div>
-
-          <div className="text-center">
-            <span className="text-sm text-gray-600">Chưa có tài khoản? </span>
-            <Link
-              to="/register"
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Đăng ký ngay
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
+        <Button type="submit" className="w-full" isLoading={isLoading}>
+          đăng nhập
+        </Button>
+      </form>
+    </AuthShell>
   );
 };
