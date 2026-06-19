@@ -1,0 +1,136 @@
+name: Docker Build
+
+concurrency:
+  group: docker-build-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'api-gateway/**'
+      - 'auth-service/**'
+      - 'eureka-server/**'
+      - 'frontend/**'
+      - 'hr-service/**'
+      - 'kms/**'
+      - 'project-service/**'
+      - 'task-service/**'
+      - 'compose*.yml'
+      - 'docker-compose.yml'
+      - '.github/workflows/docker-build.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'api-gateway/**'
+      - 'auth-service/**'
+      - 'eureka-server/**'
+      - 'frontend/**'
+      - 'hr-service/**'
+      - 'kms/**'
+      - 'project-service/**'
+      - 'task-service/**'
+      - 'compose*.yml'
+      - 'docker-compose.yml'
+      - '.github/workflows/docker-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build-images:
+    name: Build ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - image: api-gateway
+            context: ./api-gateway
+            dockerfile: ./api-gateway/Dockerfile
+          - image: auth-service
+            context: ./auth-service
+            dockerfile: ./auth-service/Dockerfile
+          - image: eureka-server
+            context: ./eureka-server
+            dockerfile: ./eureka-server/dockerfile
+          - image: frontend
+            context: ./frontend
+            dockerfile: ./frontend/Dockerfile
+          - image: hr-service
+            context: ./hr-service
+            dockerfile: ./hr-service/Dockerfile
+          - image: kms-service
+            context: ./kms
+            dockerfile: ./kms/Dockerfile
+          - image: project-service
+            context: ./project-service
+            dockerfile: ./project-service/Dockerfile
+          - image: task-service
+            context: ./task-service
+            dockerfile: ./task-service/Dockerfile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          tags: hr-${{ matrix.image }}:${{ github.sha }}
+          push: false
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  validate-compose:
+    name: Validate compose files
+    runs-on: ubuntu-latest
+
+    env:
+      API_GATEWAY_IMAGE: hr-api-gateway:ci
+      AUTH_DB_PASSWORD: auth_ci_password
+      AUTH_DB_USERNAME: auth_ci
+      BUSINESS_DB_PASSWORD: business_ci_password
+      BUSINESS_DB_USERNAME: business_ci
+      EUREKA_PASSWORD: eureka_ci_password
+      EUREKA_PEER1_PORT: '8761'
+      EUREKA_PEER2_PORT: '8762'
+      EUREKA_PEER3_PORT: '8763'
+      EUREKA_USERNAME: eureka
+      FRONTEND_IMAGE: hr-frontend:ci
+      HR_DB_PASSWORD: hr_ci_password
+      HR_DB_USERNAME: hr_ci
+      INTERNAL_SECRET: ci-internal-secret
+      JWT_SECRET: ci-jwt-secret
+      MYSQL_DATABASE: hr_db
+      MYSQL_ROOT_PASSWORD: root_ci_password
+      POSTGRES_DB: auth_db
+      POSTGRES_PASSWORD: postgres_ci_password
+      POSTGRES_USER: auth_ci
+      REDIS_PASSWORD: redis_ci_password
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate infra compose
+        run: docker compose -f compose.infra.yml config
+
+      - name: Validate messaging compose
+        run: docker compose -f compose.messaging.yml config
+
+      - name: Validate IAM compose
+        run: docker compose -f compose.iam.yml config
+
+      - name: Validate HR compose
+        run: docker compose -f compose.hr.yml config
+
+      - name: Validate business compose
+        run: docker compose -f compose.business.yml config
+
+      - name: Validate edge compose
+        run: docker compose -f compose.edge.yml config
