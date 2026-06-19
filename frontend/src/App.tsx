@@ -6,10 +6,13 @@ import { PERMISSIONS } from './utils/permissions';
 
 // Loading fallback component
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="text-center">
-      <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent mb-4"></div>
-      <p className="text-gray-600">Đang tải...</p>
+  <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
+    <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 text-center shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
+      <div className="mx-auto mb-4 h-2 w-32 overflow-hidden rounded-full bg-slate-100">
+        <div className="h-full w-16 animate-shimmer rounded-full bg-gradient-to-r from-cyan-700 via-cyan-400 to-cyan-700 bg-[length:200%_100%]" />
+      </div>
+      <p className="text-sm font-semibold text-slate-800">Đang tải workspace</p>
+      <p className="mt-1 text-sm text-slate-500">Chuẩn bị dữ liệu và quyền truy cập.</p>
     </div>
   </div>
 );
@@ -32,11 +35,13 @@ const ProjectFormPage = lazy(() => import('./pages/ProjectFormPage').then(m => (
 const TaskListPage = lazy(() => import('./pages/TaskListPage').then(m => ({ default: m.TaskListPage })));
 const TaskDetailPage = lazy(() => import('./pages/TaskDetailPage').then(m => ({ default: m.TaskDetailPage })));
 const TaskFormPage = lazy(() => import('./pages/TaskFormPage').then(m => ({ default: m.TaskFormPage })));
+const PayrollPage = lazy(() => import('./pages/PayrollPage').then(m => ({ default: m.PayrollPage })));
 const UserManagementPage = lazy(() => import('./pages/UserManagementPage').then(m => ({ default: m.UserManagementPage })));
 const RoleManagementPage = lazy(() => import('./pages/RoleManagementPage').then(m => ({ default: m.RoleManagementPage })));
 const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage').then(m => ({ default: m.ChangePasswordPage })));
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const RoleWorkspacePage = lazy(() => import('./pages/RoleWorkspacePage').then(m => ({ default: m.RoleWorkspacePage })));
+const WorkManagementPage = lazy(() => import('./pages/WorkManagementPage').then(m => ({ default: m.WorkManagementPage })));
 
 function App() {
   return (
@@ -215,6 +220,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Payroll Routes */}
+        <Route
+          path="/payroll"
+          element={
+            <ProtectedRoute permission={PERMISSIONS.PAYROLL_VIEW}>
+              <PayrollPage />
+            </ProtectedRoute>
+          }
+        />
         
         {/* User Management - Admin only (requires user:view permission) */}
         <Route
@@ -255,6 +270,23 @@ function App() {
         />
 
         {/* Role workspace routes - workspace page validates role-specific access */}
+        <Route
+          path="/work"
+          element={
+            <ProtectedRoute permission={PERMISSIONS.TASK_VIEW}>
+              <WorkManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/work/:section"
+          element={
+            <ProtectedRoute permission={PERMISSIONS.TASK_VIEW}>
+              <WorkManagementPage />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/workspace/:slug"
           element={

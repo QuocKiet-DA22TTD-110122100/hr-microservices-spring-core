@@ -23,14 +23,14 @@ public class TaskController {
     private final TaskService taskService;
 
     @GetMapping
-    @RequireRoles({"USER", "ADMIN"})
+    @RequireRoles({"ADMIN", "HR_MANAGER", "DEPARTMENT_HEAD", "MANAGER", "EMPLOYEE"})
     public ResponseEntity<List<Task>> getAllTasks() {
         log.info("[TASK-CONTROLLER] GET /api/tasks");
         return ResponseEntity.ok(taskService.getAllTasks());
     }
 
     @GetMapping("/{id}")
-    @RequireRoles({"USER", "ADMIN"})
+    @RequireRoles({"ADMIN", "HR_MANAGER", "DEPARTMENT_HEAD", "MANAGER", "EMPLOYEE"})
     public ResponseEntity<Task> getTaskById(@PathVariable Long id) {
         log.info("[TASK-CONTROLLER] GET /api/tasks/{}", id);
         return taskService.getTaskById(id)
@@ -39,13 +39,14 @@ public class TaskController {
     }
 
     @PostMapping
-    @RequireRoles({"ADMIN"})
+    @RequireRoles({"ADMIN", "MANAGER"})
     public ResponseEntity<Task> createTask(@Valid @RequestBody TaskRequest request) {
         log.info("[TASK-CONTROLLER] POST /api/tasks - title: {}", request.title());
         Task task = new Task();
         task.setTitle(request.title());
         task.setDescription(request.description());
         task.setStatus(request.status() == null ? Task.TaskStatus.OPEN : request.status());
+        task.setPriority(request.priority() == null ? Task.TaskPriority.MEDIUM : request.priority());
         task.setAssigneeId(request.assigneeId());
         task.setProjectId(request.projectId());
         task.setCreatedAt(LocalDateTime.now());
@@ -54,13 +55,14 @@ public class TaskController {
     }
 
     @PutMapping("/{id}")
-    @RequireRoles({"ADMIN"})
+    @RequireRoles({"ADMIN", "MANAGER"})
     public ResponseEntity<Task> updateTask(@PathVariable Long id, @Valid @RequestBody TaskRequest request) {
         log.info("[TASK-CONTROLLER] PUT /api/tasks/{}", id);
         Task task = new Task();
         task.setTitle(request.title());
         task.setDescription(request.description());
         task.setStatus(request.status());
+        task.setPriority(request.priority());
         task.setAssigneeId(request.assigneeId());
         task.setProjectId(request.projectId());
         task.setUpdatedAt(LocalDateTime.now());
@@ -83,21 +85,21 @@ public class TaskController {
     }
 
     @GetMapping("/project/{projectId}")
-    @RequireRoles({"USER", "ADMIN"})
+    @RequireRoles({"ADMIN", "HR_MANAGER", "DEPARTMENT_HEAD", "MANAGER", "EMPLOYEE"})
     public ResponseEntity<List<Task>> getTasksByProject(@PathVariable Long projectId) {
         log.info("[TASK-CONTROLLER] GET /api/tasks/project/{}", projectId);
         return ResponseEntity.ok(taskService.getTasksByProject(projectId));
     }
 
     @GetMapping("/assignee/{assigneeId}")
-    @RequireRoles({"USER", "ADMIN"})
+    @RequireRoles({"ADMIN", "HR_MANAGER", "DEPARTMENT_HEAD", "MANAGER", "EMPLOYEE"})
     public ResponseEntity<List<Task>> getTasksByAssignee(@PathVariable Long assigneeId) {
         log.info("[TASK-CONTROLLER] GET /api/tasks/assignee/{}", assigneeId);
         return ResponseEntity.ok(taskService.getTasksByAssignee(assigneeId));
     }
 
     @GetMapping("/status/{status}")
-    @RequireRoles({"USER", "ADMIN"})
+    @RequireRoles({"ADMIN", "HR_MANAGER", "DEPARTMENT_HEAD", "MANAGER", "EMPLOYEE"})
     public ResponseEntity<List<Task>> getTasksByStatus(@PathVariable Task.TaskStatus status) {
         log.info("[TASK-CONTROLLER] GET /api/tasks/status/{}", status);
         return ResponseEntity.ok(taskService.getTasksByStatus(status));

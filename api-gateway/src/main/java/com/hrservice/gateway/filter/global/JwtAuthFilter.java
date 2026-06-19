@@ -150,11 +150,24 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     @SuppressWarnings("null")
     private boolean shouldAuthenticate(ServerWebExchange exchange) {
+        String path = exchange.getRequest().getURI().getPath();
+        if (path.startsWith("/api/xac-thuc/")) {
+            return !isPublicIamPath(path);
+        }
+
         Route route = exchange.getAttribute(ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR);
         if (route == null) return false;
         return Boolean.parseBoolean(
                 Objects.toString(route.getMetadata().getOrDefault("requires-jwt", "false"), "false")
         );
+    }
+
+    private boolean isPublicIamPath(String path) {
+        return path.equals("/api/xac-thuc/dang-nhap")
+                || path.equals("/api/xac-thuc/dang-ky")
+                || path.equals("/api/xac-thuc/dang-xuat")
+                || path.equals("/api/xac-thuc/oauth2/token")
+                || path.startsWith("/api/xac-thuc/2fa/");
     }
 
     @SuppressWarnings("null")

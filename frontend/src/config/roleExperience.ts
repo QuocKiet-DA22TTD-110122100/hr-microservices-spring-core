@@ -1,15 +1,20 @@
 import {
   BarChart3,
+  Bell,
+  Bot,
   Briefcase,
   Building2,
   CalendarCheck,
   ClipboardCheck,
   Clock3,
   FileCheck2,
+  FileText,
   FolderKanban,
+  History,
   Home,
   Key,
   Layers,
+  LayoutDashboard,
   ListChecks,
   LucideIcon,
   ShieldCheck,
@@ -17,10 +22,14 @@ import {
   UserCog,
   Users,
   WalletCards,
+  MessageSquareText,
+  PlugZap,
+  Smartphone,
+  Workflow,
 } from 'lucide-react';
 import { PERMISSIONS } from '@/utils/permissions';
 
-export type WorkspaceRole = 'admin' | 'hr' | 'departmentHead' | 'manager' | 'employee' | 'user';
+export type WorkspaceRole = 'admin' | 'hr' | 'payroll' | 'departmentHead' | 'manager' | 'employee' | 'user';
 
 export interface NavigationItem {
   icon: LucideIcon;
@@ -59,13 +68,14 @@ export interface RoleProfile {
 const roleAliases: Record<WorkspaceRole, string[]> = {
   admin: ['ADMIN', 'SUPER_ADMIN'],
   hr: ['HR_MANAGER', 'HR', 'HR_ADMIN'],
+  payroll: ['PAYROLL_OFFICER', 'PAYROLL', 'PAYROLL_ADMIN'],
   departmentHead: ['DEPARTMENT_HEAD', 'HEAD_OF_DEPARTMENT', 'TRUONG_PHONG', 'TRUONGPHONG'],
   manager: ['MANAGER', 'QUAN_LY', 'TEAM_LEAD', 'LEAD'],
   employee: ['EMPLOYEE', 'NHAN_VIEN', 'STAFF'],
   user: ['USER', 'PORTAL_USER', 'NORMAL_USER', 'GUEST_USER'],
 };
 
-const rolePriority: WorkspaceRole[] = ['admin', 'hr', 'departmentHead', 'manager', 'employee', 'user'];
+const rolePriority: WorkspaceRole[] = ['admin', 'payroll', 'hr', 'departmentHead', 'manager', 'employee', 'user'];
 
 export const resolveWorkspaceRole = (roles: string[] = []): WorkspaceRole => {
   const normalizedRoles = roles.map((role) => role.trim().toUpperCase());
@@ -78,6 +88,125 @@ export const resolveWorkspaceRole = (roles: string[] = []): WorkspaceRole => {
 
 export const workspaceNavigation: NavigationItem[] = [
   { icon: Home, label: 'Trang chủ', path: '/' },
+  {
+    icon: LayoutDashboard,
+    label: 'My Dashboard',
+    path: '/work',
+    permission: PERMISSIONS.TASK_VIEW,
+    roles: ['employee', 'manager', 'departmentHead', 'admin'],
+  },
+  {
+    icon: ListChecks,
+    label: 'My Tasks',
+    path: '/work/my-tasks',
+    permission: PERMISSIONS.TASK_VIEW,
+    roles: ['employee', 'manager', 'departmentHead'],
+  },
+  {
+    icon: FolderKanban,
+    label: 'Project Board',
+    path: '/work/board',
+    permission: PERMISSIONS.PROJECT_VIEW,
+    roles: ['employee', 'manager', 'departmentHead', 'admin'],
+  },
+  {
+    icon: ClipboardCheck,
+    label: 'Task Management',
+    path: '/work/manage',
+    permission: PERMISSIONS.TASK_CREATE,
+    roles: ['manager', 'admin'],
+  },
+  {
+    icon: FileCheck2,
+    label: 'Approvals',
+    path: '/work/approvals',
+    permission: PERMISSIONS.TASK_VIEW,
+    roles: ['manager', 'departmentHead', 'admin'],
+  },
+  {
+    icon: Bell,
+    label: 'Notifications',
+    path: '/work/notifications',
+    permission: PERMISSIONS.TASK_VIEW,
+    roles: ['employee', 'manager', 'departmentHead', 'admin'],
+  },
+  {
+    icon: MessageSquareText,
+    label: 'Discussions',
+    path: '/work/discussions',
+    permission: PERMISSIONS.TASK_VIEW,
+    roles: ['employee', 'manager', 'departmentHead', 'admin'],
+  },
+  {
+    icon: FileText,
+    label: 'Files',
+    path: '/work/files',
+    permission: PERMISSIONS.TASK_VIEW,
+    roles: ['employee', 'manager', 'departmentHead', 'admin'],
+  },
+  {
+    icon: History,
+    label: 'Activity Log',
+    path: '/work/activity',
+    permission: PERMISSIONS.TASK_VIEW,
+    roles: ['employee', 'manager', 'departmentHead', 'admin'],
+  },
+  {
+    icon: User,
+    label: 'Profile Settings',
+    path: '/work/settings',
+    permission: PERMISSIONS.TASK_VIEW,
+    roles: ['employee', 'manager', 'departmentHead', 'admin'],
+  },
+  {
+    icon: BarChart3,
+    label: 'Analytics',
+    path: '/work/analytics',
+    permission: PERMISSIONS.TASK_VIEW,
+    roles: ['manager', 'departmentHead', 'admin'],
+  },
+  {
+    icon: CalendarCheck,
+    label: 'Timeline',
+    path: '/work/timeline',
+    permission: PERMISSIONS.TASK_VIEW,
+    roles: ['manager', 'departmentHead', 'admin'],
+  },
+  {
+    icon: Bot,
+    label: 'AI Suggestions',
+    path: '/work/ai',
+    permission: PERMISSIONS.TASK_VIEW,
+    roles: ['manager', 'departmentHead', 'admin'],
+  },
+  {
+    icon: Workflow,
+    label: 'Automation',
+    path: '/work/automation',
+    permission: PERMISSIONS.TASK_UPDATE,
+    roles: ['manager', 'admin'],
+  },
+  {
+    icon: PlugZap,
+    label: 'Integrations',
+    path: '/work/integrations',
+    permission: PERMISSIONS.TASK_VIEW,
+    roles: ['manager', 'departmentHead', 'admin'],
+  },
+  {
+    icon: Smartphone,
+    label: 'I18n & Mobile',
+    path: '/work/mobile',
+    permission: PERMISSIONS.TASK_VIEW,
+    roles: ['employee', 'manager', 'departmentHead', 'admin'],
+  },
+  {
+    icon: UserCog,
+    label: 'Identity & Access',
+    path: '/work/admin',
+    permission: PERMISSIONS.USER_VIEW,
+    roles: ['admin'],
+  },
   {
     icon: Layers,
     label: 'Tổ chức',
@@ -98,6 +227,13 @@ export const workspaceNavigation: NavigationItem[] = [
     path: '/departments',
     permission: PERMISSIONS.DEPARTMENT_VIEW,
     roles: ['admin', 'hr', 'departmentHead', 'manager'],
+  },
+  {
+    icon: WalletCards,
+    label: 'Bang luong',
+    path: '/payroll',
+    permission: PERMISSIONS.PAYROLL_VIEW,
+    roles: ['admin', 'payroll', 'hr'],
   },
   {
     icon: FolderKanban,
@@ -166,7 +302,7 @@ export const workspaceNavigation: NavigationItem[] = [
   {
     icon: FileCheck2,
     label: 'Phê duyệt phòng ban',
-    path: '/workspace/department-approvals',
+    path: '/workspace/approvals',
     roles: ['departmentHead'],
   },
   {
@@ -174,6 +310,12 @@ export const workspaceNavigation: NavigationItem[] = [
     label: 'Báo cáo phòng ban',
     path: '/workspace/department-reports',
     roles: ['departmentHead'],
+  },
+  {
+    icon: Users,
+    label: 'Hồ sơ nhân sự',
+    path: '/workspace/hr-records',
+    roles: ['hr'],
   },
   {
     icon: WalletCards,
@@ -215,11 +357,10 @@ export const roleProfiles: Record<WorkspaceRole, RoleProfile> = {
         status: 'ready',
       },
       {
-        title: 'Cấu trúc tổ chức',
-        description: 'Quản lý công ty, phòng ban và đơn vị trực thuộc.',
-        icon: Layers,
-        href: '/organizations',
-        permission: PERMISSIONS.ORGANIZATION_VIEW,
+        title: 'Audit và phân quyền',
+        description: 'Theo dõi thay đổi tài khoản, role và sự kiện nhạy cảm.',
+        icon: ShieldCheck,
+        href: '/workspace/audit',
         status: 'ready',
       },
     ],
@@ -236,14 +377,13 @@ export const roleProfiles: Record<WorkspaceRole, RoleProfile> = {
       { label: 'Phúc lợi', value: 'Benefit', hint: 'Bảo hiểm, phụ cấp và dữ liệu payroll', icon: WalletCards },
       { label: 'Lifecycle', value: 'Vận hành', hint: 'Onboard, transfer, offboard', icon: FileCheck2 },
     ],
-    focusAreas: ['Hồ sơ nhân sự chính xác', 'Dữ liệu phúc lợi để trước kỳ lương', 'Điều phối thay Đổi phòng ban'],
+    focusAreas: ['Hồ sơ nhân sự chính xác', 'Dữ liệu phúc lợi trước kỳ lương', 'Điều phối thay đổi phòng ban'],
     actions: [
       {
         title: 'Hồ sơ nhân sự',
         description: 'Tra cứu, thêm mới và cập nhật hồ sơ nhân viên.',
         icon: Users,
-        href: '/employees',
-        permission: PERMISSIONS.EMPLOYEE_VIEW,
+        href: '/workspace/hr-records',
         status: 'ready',
       },
       {
@@ -263,6 +403,46 @@ export const roleProfiles: Record<WorkspaceRole, RoleProfile> = {
       },
     ],
   },
+  payroll: {
+    role: 'payroll',
+    label: 'Payroll',
+    badge: 'PAYROLL_OFFICER',
+    headline: 'Khong gian bang luong',
+    description: 'Tap trung vao ky luong, tinh luong, phe duyet va lich su chi tra theo dung pham vi payroll.',
+    toneClass: 'from-slate-950 via-indigo-900 to-cyan-700',
+    statCards: [
+      { label: 'Bang luong', value: 'Payroll', hint: 'Tinh va doi soat luong theo thang', icon: WalletCards },
+      { label: 'Workflow', value: 'Duyet', hint: 'Draft, approved va processed', icon: ClipboardCheck },
+      { label: 'Audit', value: 'Khoa so', hint: 'Du lieu processed dung cho ban giao', icon: ShieldCheck },
+    ],
+    focusAreas: ['Ky luong dang xu ly', 'Bang luong can phe duyet', 'Lich su chi tra va audit'],
+    actions: [
+      {
+        title: 'Quan ly bang luong',
+        description: 'Tao ky, tinh luong, phe duyet va xu ly chi tra.',
+        icon: WalletCards,
+        href: '/payroll',
+        permission: PERMISSIONS.PAYROLL_VIEW,
+        status: 'ready',
+      },
+      {
+        title: 'Ho so nhan vien',
+        description: 'Xem thong tin nhan vien de doi soat payroll.',
+        icon: Users,
+        href: '/employees',
+        permission: PERMISSIONS.EMPLOYEE_VIEW,
+        status: 'ready',
+      },
+      {
+        title: 'Bao cao payroll',
+        description: 'Theo doi cac ky luong da xu ly.',
+        icon: ClipboardCheck,
+        href: '/payroll',
+        permission: PERMISSIONS.PAYROLL_VIEW,
+        status: 'ready',
+      },
+    ],
+  },
   departmentHead: {
     role: 'departmentHead',
     label: 'Trưởng phòng',
@@ -272,16 +452,16 @@ export const roleProfiles: Record<WorkspaceRole, RoleProfile> = {
     toneClass: 'from-sky-900 via-blue-800 to-emerald-700',
     statCards: [
       { label: 'Báo cáo', value: 'Phòng ban', hint: 'KPI, headcount và tải công việc', icon: BarChart3 },
-      { label: 'Phê duyệt', value: 'Cấp phòng', hint: 'Nghỉ phép, phân bổ, Điều chuyển', icon: ClipboardCheck },
+      { label: 'Phê duyệt', value: 'Cấp phòng', hint: 'Nghỉ phép, phân bổ, điều chuyển', icon: ClipboardCheck },
       { label: 'Nhân sự', value: 'Phạm vi', hint: 'Nhân viên và quản lý trực thuộc', icon: Users },
     ],
     focusAreas: ['Báo cáo phòng ban', 'Phê duyệt cấp phòng', 'Rủi ro tải công việc'],
     actions: [
       {
         title: 'Phê duyệt phòng ban',
-        description: 'Gom các yêu cầu nghỉ phép, Điều chuyển và phân bổ nhân sự.',
+        description: 'Gom yêu cầu nghỉ phép, điều chuyển và phân bổ nhân sự.',
         icon: ClipboardCheck,
-        href: '/workspace/department-approvals',
+        href: '/workspace/approvals',
         status: 'ready',
       },
       {
@@ -293,7 +473,7 @@ export const roleProfiles: Record<WorkspaceRole, RoleProfile> = {
       },
       {
         title: 'Task nhóm',
-        description: 'Theo dõi task nhóm và các đểu việc cần can thiệp.',
+        description: 'Theo dõi task nhóm và các đầu việc cần can thiệp.',
         icon: Briefcase,
         href: '/workspace/team-tasks',
         status: 'ready',
@@ -316,7 +496,7 @@ export const roleProfiles: Record<WorkspaceRole, RoleProfile> = {
     actions: [
       {
         title: 'Duyệt timesheet',
-        description: 'Xác nhận bạng công, OT và các ngoại lệ cần quản lý xử lý.',
+        description: 'Xác nhận bảng công, OT và các ngoại lệ cần quản lý xử lý.',
         icon: Clock3,
         href: '/workspace/timesheet-approval',
         status: 'ready',
@@ -385,20 +565,20 @@ export const roleProfiles: Record<WorkspaceRole, RoleProfile> = {
     statCards: [
       { label: 'Tài khoản', value: 'Cá nhân', hint: 'Thông tin đăng nhập và liên hệ', icon: User },
       { label: 'Bảo mật', value: 'Mật khẩu', hint: 'Đổi mật khẩu và hạn bảo mật', icon: Key },
-      { label: 'Quyền truy cập', value: 'Giời h?n', hint: 'Ch? m? các khu vực được cấp quyền', icon: ShieldCheck },
+      { label: 'Quyền truy cập', value: 'Giới hạn', hint: 'Chỉ mở các khu vực được cấp quyền', icon: ShieldCheck },
     ],
     focusAreas: ['Thông tin tài khoản', 'Bảo mật cá nhân', 'Quyền truy cập hiện tại'],
     actions: [
       {
         title: 'Hồ sơ tài khoản',
-        description: 'Xem tháng tin người dùng, email, vai trò và trạng thái tài khoản.',
+        description: 'Xem thông tin người dùng, email, vai trò và trạng thái tài khoản.',
         icon: User,
         href: '/profile',
         status: 'ready',
       },
       {
         title: 'Đổi mật khẩu',
-        description: 'Cập nhật mật khẩu đã b?o v? tài khoản đăng nhập.',
+        description: 'Cập nhật mật khẩu để bảo vệ tài khoản đăng nhập.',
         icon: Key,
         href: '/change-password',
         status: 'ready',

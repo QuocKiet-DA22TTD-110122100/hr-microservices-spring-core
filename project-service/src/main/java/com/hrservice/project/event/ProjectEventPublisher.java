@@ -1,22 +1,29 @@
 package com.hrservice.project.event;
 
 import com.hrservice.project.config.RabbitMQConfig;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "spring.rabbitmq.host")
 public class ProjectEventPublisher {
 
     private final RabbitTemplate rabbitTemplate;
+
+    @Autowired
+    public ProjectEventPublisher(ObjectProvider<RabbitTemplate> rabbitTemplateProvider) {
+        this.rabbitTemplate = rabbitTemplateProvider.getIfAvailable();
+    }
+
+    ProjectEventPublisher(RabbitTemplate rabbitTemplate) {
+        this.rabbitTemplate = rabbitTemplate;
+    }
 
     public void publishProjectCreatedEvent(Long projectId, String name, String description, Long leadId) {
         ProjectCreatedEvent event = new ProjectCreatedEvent();
@@ -28,16 +35,21 @@ public class ProjectEventPublisher {
         event.setTimestamp(LocalDateTime.now());
         event.setEventType("PROJECT_CREATED");
 
-                log.info("[PROJECT-EVENT] Publishing ProjectCreatedEvent: projectId={}, name={}", projectId, name);
-                try {
-                        rabbitTemplate.convertAndSend(
-                                        RabbitMQConfig.PROJECT_CREATED_EXCHANGE,
-                                        RabbitMQConfig.PROJECT_CREATED_ROUTING_KEY,
-                                        event
-                        );
-                } catch (Exception ex) {
-                        log.warn("[PROJECT-EVENT] Failed to publish ProjectCreatedEvent for projectId={}. Continuing without failing the request.", projectId, ex);
-                }
+        if (rabbitTemplate == null) {
+            log.debug("[PROJECT-EVENT] RabbitMQ disabled; skipped ProjectCreatedEvent for projectId={}", projectId);
+            return;
+        }
+
+        log.info("[PROJECT-EVENT] Publishing ProjectCreatedEvent: projectId={}, name={}", projectId, name);
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.PROJECT_CREATED_EXCHANGE,
+                    RabbitMQConfig.PROJECT_CREATED_ROUTING_KEY,
+                    event
+            );
+        } catch (Exception ex) {
+            log.warn("[PROJECT-EVENT] Failed to publish ProjectCreatedEvent for projectId={}. Continuing without failing the request.", projectId, ex);
+        }
     }
 
     public void publishProjectStatusChangedEvent(Long projectId, 
@@ -55,6 +67,11 @@ public class ProjectEventPublisher {
 
         log.info("[PROJECT-EVENT] Publishing ProjectStatusChangedEvent: projectId={}, status={}->{}", 
                 projectId, oldStatus, newStatus);
+        if (rabbitTemplate == null) {
+            log.debug("[PROJECT-EVENT] RabbitMQ disabled; skipped ProjectStatusChangedEvent for projectId={}", projectId);
+            return;
+        }
+
         try {
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.PROJECT_STATUS_EXCHANGE,

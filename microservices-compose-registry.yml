@@ -17,7 +17,7 @@ x-logging-level: &logging_level WARN
 services:
   redis:
     image: redis:7-alpine
-    container_name: redis-server
+    container_name: redis
     command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis-data:/data
@@ -134,7 +134,7 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: *eureka_default_zone
       EUREKA_INSTANCE_HOSTNAME: api-gateway
       SERVER_PORT: 8080
-      REDIS_HOST: redis-server
+      REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       LOGGING_LEVEL_ROOT: *logging_level
@@ -223,7 +223,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_KMS_DB}
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
-      REDIS_HOST: redis-server
+      REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate

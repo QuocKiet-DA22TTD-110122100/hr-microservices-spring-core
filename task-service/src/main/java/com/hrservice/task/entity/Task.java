@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 // Đây là lớp thực thể đại diện cho một Task trong hệ thống, chứa các thông tin cơ bản về Task như tiêu đề, mô tả, trạng thái, người được giao, và dự án liên quan
 @Entity
@@ -12,7 +13,8 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Task {
+public class Task implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,6 +30,10 @@ public class Task {
     @Enumerated(EnumType.STRING)
     private TaskStatus status = TaskStatus.OPEN;
 
+    @Column(nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    private TaskPriority priority = TaskPriority.MEDIUM;
+
     @Column(nullable = false)
     private Long assigneeId;
 
@@ -39,6 +45,11 @@ public class Task {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public Task(Long id, String title, String description, TaskStatus status, Long assigneeId, Long projectId,
+                LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this(id, title, description, status, TaskPriority.MEDIUM, assigneeId, projectId, createdAt, updatedAt);
+    }
 
     @PrePersist
     protected void onCreate() {
@@ -54,5 +65,9 @@ public class Task {
 
     public enum TaskStatus {
         OPEN, IN_PROGRESS, COMPLETED, CANCELLED
+    }
+
+    public enum TaskPriority {
+        LOW, MEDIUM, HIGH, URGENT
     }
 }

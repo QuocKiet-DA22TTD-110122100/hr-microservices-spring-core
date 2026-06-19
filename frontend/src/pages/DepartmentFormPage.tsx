@@ -4,12 +4,14 @@ import { useForm } from 'react-hook-form';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { Input } from '@/components/UI/Input';
 import { Button } from '@/components/UI/Button';
+import { Card, CardContent } from '@/components/UI/Card';
+import { PageHeader } from '@/components/UI/PageHeader';
 import { useUIStore } from '@/store/uiStore';
 import { organizationApi } from '@/api/organization.api';
 import { departmentApi } from '@/api/department.api';
 import { OrganizationUnit } from '@/types/organization';
 import { getApiErrorMessage } from '@/utils/error';
-import { ArrowLeft, Loader } from 'lucide-react';
+import { ArrowLeft, Building2, Loader } from 'lucide-react';
 
 interface DepartmentFormData {
   code?: string;
@@ -116,7 +118,7 @@ export const DepartmentFormPage = () => {
     return (
       <MainLayout>
         <div className="flex justify-center items-center py-12">
-          <Loader size={32} className="animate-spin text-blue-600" />
+          <Loader size={32} className="animate-spin text-cyan-600" />
         </div>
       </MainLayout>
     );
@@ -125,25 +127,21 @@ export const DepartmentFormPage = () => {
   return (
     <MainLayout>
       <div className="space-y-5">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/departments')}
-            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-800">
-              {id ? 'Chỉnh sửa phòng ban' : 'Thêm phòng ban mới'}
-            </h1>
-            <p className="text-gray-600 text-sm mt-1">
-              {id ? 'Cập nhật thông tin phòng ban' : 'Nhập thông tin phòng ban mới'}
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          icon={Building2}
+          title={id ? 'Chỉnh sửa phòng ban' : 'Thêm phòng ban mới'}
+          description={id ? 'Cập nhật mã, tên và tổ chức quản lý của phòng ban.' : 'Tạo phòng ban mới và gắn vào đúng đơn vị tổ chức.'}
+          actions={
+            <Button type="button" variant="outline" onClick={() => navigate('/departments')}>
+              <ArrowLeft size={18} />
+              Quay lại
+            </Button>
+          }
+        />
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="bg-white rounded-lg border shadow-sm p-6">
+          <Card>
+            <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <Input
                 label="Mã phòng ban"
@@ -160,12 +158,12 @@ export const DepartmentFormPage = () => {
               />
 
               <div>
-                <label htmlFor="organizationUnitId" className="block text-sm font-medium text-gray-700 mb-1">
-                  Tổ chức <span className="text-red-500">*</span>
+                <label htmlFor="organizationUnitId" className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  Tổ chức <span className="text-rose-500">*</span>
                 </label>
                 <select
                   id="organizationUnitId"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-[0_1px_1px_rgba(15,23,42,0.04)] transition hover:border-slate-500 focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-700/15"
                   {...register('organizationUnitId')}
                 >
                   <option value="">Chọn tổ chức</option>
@@ -178,20 +176,16 @@ export const DepartmentFormPage = () => {
               </div>
             </div>
 
-            <div className="flex gap-3 mt-8">
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <Loader size={18} className="mr-2 animate-spin" />}
+            <div className="mt-8 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+              <Button type="button" variant="secondary" onClick={() => navigate('/departments')} disabled={isLoading}>
+                Hủy
+              </Button>
+              <Button type="submit" disabled={isLoading} isLoading={isLoading}>
                 {id ? 'Cập nhật' : 'Thêm phòng ban'}
               </Button>
-              <button
-                type="button"
-                onClick={() => navigate('/departments')}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Hủy
-              </button>
             </div>
-          </div>
+            </CardContent>
+          </Card>
         </form>
       </div>
     </MainLayout>

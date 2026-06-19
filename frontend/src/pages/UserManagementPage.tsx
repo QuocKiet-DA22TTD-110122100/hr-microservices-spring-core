@@ -5,7 +5,7 @@ import { Card } from '@/components/UI/Card';
 import { Input } from '@/components/UI/Input';
 import { Modal } from '@/components/UI/Modal';
 import { DataListPage } from '@/components/UI/DataListPage';
-import { Plus, Search, Lock, Unlock, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Shield, CheckSquare, Square, MinusSquare } from 'lucide-react';
+import { Plus, Search, Lock, Unlock, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Shield, CheckSquare, Square, MinusSquare, Edit, Trash2 } from 'lucide-react';
 import { userApi, UserAccount } from '@/api/user.api';
 import { roleApi } from '@/api/role.api';
 import { getApiErrorMessage } from '@/utils/error';
@@ -63,6 +63,7 @@ export const UserManagementPage = () => {
   const [availableRoles, setAvailableRoles] = useState<string[]>([
     'ADMIN',
     'HR_MANAGER',
+    'PAYROLL_OFFICER',
     'DEPARTMENT_HEAD',
     'MANAGER',
     'EMPLOYEE',
@@ -82,12 +83,12 @@ export const UserManagementPage = () => {
   // Memoize sort icon component to prevent recreation
   const SortIcon = useCallback(({ field }: { field: SortField }) => {
     if (sortField !== field) {
-      return <ArrowUpDown size={14} className="text-gray-400" />;
+      return <ArrowUpDown size={14} className="text-slate-400" />;
     }
     return sortOrder === 'asc' ? (
-      <ArrowUp size={14} className="text-blue-600" />
+      <ArrowUp size={14} className="text-cyan-700" />
     ) : (
-      <ArrowDown size={14} className="text-blue-600" />
+      <ArrowDown size={14} className="text-cyan-700" />
     );
   }, [sortField, sortOrder]);
 
@@ -98,7 +99,7 @@ export const UserManagementPage = () => {
 
     if (isUnknown) {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800 border border-gray-300">
+        <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-sm">
           Không xác định
         </span>
       );
@@ -106,7 +107,7 @@ export const UserManagementPage = () => {
 
     if (isLocked) {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+        <span className="inline-flex items-center rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 shadow-sm">
           <Lock size={12} className="mr-1" />
           Bị khóa
         </span>
@@ -114,7 +115,7 @@ export const UserManagementPage = () => {
     }
 
     return (
-      <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+      <span className="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 shadow-sm">
         <Unlock size={12} className="mr-1" />
         Hoạt động
       </span>
@@ -690,18 +691,19 @@ export const UserManagementPage = () => {
       key: 'id',
       title: 'Thao tác',
       render: (_value, record) => (
-        <div className="flex gap-2" role="group" aria-label={`Thao tác cho tài khoản ${record.username}`}>
+        <div className="flex flex-wrap gap-2" role="group" aria-label={`Thao tác cho tài khoản ${record.username}`}>
           <PermissionGate permission={PERMISSIONS.USER_UPDATE}>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 openEditModal(record);
               }}
-              className="p-1 hover:bg-gray-100 rounded"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 active:translate-y-px"
               title="Chỉnh sửa"
               aria-label={`Chỉnh sửa tài khoản ${record.username}`}
             >
-              <span className="text-blue-600 text-sm font-medium">Sửa</span>
+              <Edit size={14} aria-hidden="true" />
+              Sửa
             </button>
           </PermissionGate>
           
@@ -711,11 +713,12 @@ export const UserManagementPage = () => {
                 e.stopPropagation();
                 openDeleteModal(record.id);
               }}
-              className="p-1 hover:bg-gray-100 rounded"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-2.5 text-sm font-semibold text-rose-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 active:translate-y-px"
               title="Xóa"
               aria-label={`Xóa tài khoản ${record.username}`}
             >
-              <span className="text-red-600 text-sm font-medium">Xóa</span>
+              <Trash2 size={14} aria-hidden="true" />
+              Xóa
             </button>
           </PermissionGate>
           
@@ -725,14 +728,24 @@ export const UserManagementPage = () => {
                 e.stopPropagation();
                 handleToggleLock(record.id);
               }}
-              className="p-1 hover:bg-gray-100 rounded"
+              className={`inline-flex h-8 items-center gap-1.5 rounded-lg border bg-white px-2.5 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-2 active:translate-y-px ${
+                record.locked
+                  ? 'border-emerald-200 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 focus:ring-emerald-500'
+                  : 'border-amber-200 text-amber-700 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-800 focus:ring-amber-500'
+              }`}
               title={record.locked ? 'Mở khóa' : 'Khóa tài khoản'}
               aria-label={`${record.locked ? 'Mở khóa' : 'Khóa'} tài khoản ${record.username}`}
             >
               {record.locked ? (
-                <Unlock size={16} className="text-green-600" aria-hidden="true" />
+                <>
+                  <Unlock size={14} aria-hidden="true" />
+                  Mở khóa
+                </>
               ) : (
-                <Lock size={16} className="text-red-600" aria-hidden="true" />
+                <>
+                  <Lock size={14} aria-hidden="true" />
+                  Khóa
+                </>
               )}
             </button>
           </PermissionGate>
@@ -847,8 +860,8 @@ export const UserManagementPage = () => {
             aria-required="true"
           />
           <div>
-            <label htmlFor="add-user-role" className="block text-sm font-medium text-gray-700 mb-2">
-              Vai trò <span className="text-red-500">*</span>
+            <label htmlFor="add-user-role" className="mb-2 block text-sm font-semibold text-slate-700">
+              Vai trò <span className="text-rose-500">*</span>
             </label>
             <div role="group" aria-labelledby="add-user-role" aria-required="true" className="flex flex-wrap gap-2">
               {availableRoles.map((role) => (
@@ -858,11 +871,11 @@ export const UserManagementPage = () => {
                   onClick={() => setNewRole(role)}
                   aria-pressed={newRole === role}
                   aria-label={`Chọn vai trò ${role}`}
-                  className={`px-3 py-2 rounded-lg border transition ${
-                    newRole === role
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                  }`}
+                    className={`rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 active:translate-y-px ${
+                      newRole === role
+                        ? 'border-cyan-700 bg-cyan-800 text-white'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-900'
+                    }`}
                 >
                   {role}
                 </button>
@@ -892,7 +905,7 @@ export const UserManagementPage = () => {
         </form>
       </Modal>
 
-      <Modal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); resetEditUserForm(); }} title="Chỉnh sửa tài khoản">
+      <Modal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); resetEditUserForm(); }} title="Chỉnh sửa tài khoản" size="xl">
         <form className="space-y-4" onSubmit={handleUpdateUser} aria-label="Form chỉnh sửa tài khoản">
           <Input
             label="Username"
@@ -901,8 +914,8 @@ export const UserManagementPage = () => {
             disabled
           />
           <div>
-            <label htmlFor="edit-user-role" className="block text-sm font-medium text-gray-700 mb-2">
-              Vai trò <span className="text-red-500">*</span>
+            <label htmlFor="edit-user-role" className="mb-2 block text-sm font-semibold text-slate-700">
+              Vai trò <span className="text-rose-500">*</span>
             </label>
             <div role="group" aria-labelledby="edit-user-role" aria-required="true" className="flex flex-wrap gap-2">
               {availableRoles.map((role) => (
@@ -918,10 +931,10 @@ export const UserManagementPage = () => {
                   disabled={isUpdating}
                   aria-pressed={editRole === role}
                   aria-label={`Chọn vai trò ${role}`}
-                  className={`px-3 py-2 rounded-lg border transition ${
+                  className={`rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 active:translate-y-px ${
                     editRole === role
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                      ? 'border-cyan-700 bg-cyan-800 text-white'
+                      : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-900'
                   } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {role}
@@ -929,13 +942,13 @@ export const UserManagementPage = () => {
               ))}
             </div>
             {editRoleError && (
-              <p className="mt-1 text-sm text-red-500" role="alert" aria-live="polite">{editRoleError}</p>
+              <p className="mt-1 text-sm text-rose-600" role="alert" aria-live="polite">{editRoleError}</p>
             )}
           </div>
 
           <div>
-            <span id="edit-user-status" className="block text-sm font-medium text-gray-700 mb-2">
-              Trạng thái <span className="text-red-500">*</span>
+            <span id="edit-user-status" className="mb-2 block text-sm font-semibold text-slate-700">
+              Trạng thái <span className="text-rose-500">*</span>
             </span>
             <div role="group" aria-labelledby="edit-user-status" aria-required="true" className="flex gap-3">
               <button
@@ -944,11 +957,11 @@ export const UserManagementPage = () => {
                 disabled={isUpdating}
                 aria-pressed={!editLocked}
                 aria-label="Đặt trạng thái hoạt động"
-                className={`px-3 py-2 rounded-lg border transition ${
+                className={`rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 active:translate-y-px ${
                   editLocked
-                    ? 'bg-white text-gray-700 border-gray-300'
-                    : 'bg-blue-600 text-white border-blue-600'
-                } ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'hover:border-blue-400'}`}
+                    ? 'border-slate-200 bg-white text-slate-700'
+                    : 'border-emerald-700 bg-emerald-700 text-white'
+                } ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800'}`}
               >
                 Hoạt động
               </button>
@@ -957,12 +970,12 @@ export const UserManagementPage = () => {
                 onClick={() => setEditLocked(true)}
                 disabled={isUpdating}
                 aria-pressed={editLocked}
-                aria-label="Đặt trạng thái b? khóa"
-                className={`px-3 py-2 rounded-lg border transition ${
+                aria-label="Đặt trạng thái bị khóa"
+                className={`rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 active:translate-y-px ${
                   editLocked
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-300'
-                } ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'hover:border-blue-400'}`}
+                    ? 'border-rose-700 bg-rose-700 text-white'
+                    : 'border-slate-200 bg-white text-slate-700'
+                } ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800'}`}
               >
                 Bị khóa
               </button>
@@ -972,21 +985,21 @@ export const UserManagementPage = () => {
           {/* Permission Matrix UI */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Shield size={18} className="text-blue-600" aria-hidden="true" />
-              <span id="permission-matrix-heading" className="block text-sm font-medium text-gray-700">
+              <Shield size={18} className="text-cyan-700" aria-hidden="true" />
+              <span id="permission-matrix-heading" className="block text-sm font-semibold text-slate-700">
                 Ma trận phân quyền
               </span>
             </div>
             
             <div 
-              className="border border-gray-200 rounded-lg overflow-hidden"
+              className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
               role="region"
               aria-labelledby="permission-matrix-heading"
             >
               {permissionGroups.map((group, groupIndex) => (
-                <div key={group.category} className={groupIndex !== 0 ? 'border-t border-gray-200' : ''}>
+                <div key={group.category} className={groupIndex !== 0 ? 'border-t border-slate-200' : ''}>
                   {/* Group Header */}
-                  <div className="bg-gray-50 px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center justify-between bg-slate-50/90 px-4 py-3">
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -998,20 +1011,20 @@ export const UserManagementPage = () => {
                           }
                         }}
                         aria-label={`${isGroupFullySelected(group) ? 'Bỏ chọn' : 'Chọn'} tất cả quyền trong nhóm ${group.category}`}
-                        className="focus:outline-none hover:text-blue-600 transition"
+                        className="rounded-md transition hover:text-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
                         disabled={isUpdating || group.permissions.every(p => p.inherited)}
                       >
                         {isGroupFullySelected(group) ? (
-                          <CheckSquare size={18} className="text-blue-600" aria-hidden="true" />
+                          <CheckSquare size={18} className="text-cyan-700" aria-hidden="true" />
                         ) : isGroupPartiallySelected(group) ? (
-                          <MinusSquare size={18} className="text-blue-400" aria-hidden="true" />
+                          <MinusSquare size={18} className="text-cyan-500" aria-hidden="true" />
                         ) : (
-                          <Square size={18} className="text-gray-400" aria-hidden="true" />
+                          <Square size={18} className="text-slate-400" aria-hidden="true" />
                         )}
                       </button>
-                      <span className="font-medium text-gray-900 text-sm">{group.category}</span>
+                      <span className="text-sm font-semibold text-slate-900">{group.category}</span>
                     </div>
-                    <span className="text-xs text-gray-500" aria-label={`${group.permissions.filter(p => selectedPermissions.has(p.id)).length} trên ${group.permissions.length} quyền được chọn`}>
+                    <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200" aria-label={`${group.permissions.filter(p => selectedPermissions.has(p.id)).length} trên ${group.permissions.length} quyền được chọn`}>
                       {group.permissions.filter(p => selectedPermissions.has(p.id)).length} / {group.permissions.length}
                     </span>
                   </div>
@@ -1023,7 +1036,7 @@ export const UserManagementPage = () => {
                       return (
                         <div
                           key={permission.id}
-                          className="px-4 py-3 hover:bg-gray-50 transition border-t border-gray-100 first:border-t-0"
+                          className="border-t border-slate-100 px-4 py-3 transition hover:bg-cyan-50/40 first:border-t-0"
                         >
                           <div className="flex items-start gap-3">
                             <div className="pt-0.5">
@@ -1034,24 +1047,24 @@ export const UserManagementPage = () => {
                                 onChange={() => handleTogglePermission(permission.id, permission.inherited || false)}
                                 disabled={isUpdating || permission.inherited}
                                 aria-describedby={`${permissionInputId}-description`}
-                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                className="h-4 w-4 cursor-pointer rounded border-slate-300 text-cyan-700 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
                               />
                             </div>
                             <label htmlFor={permissionInputId} className="flex-1 min-w-0 cursor-pointer">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-gray-900">
+                                  <span className="text-sm font-semibold text-slate-900">
                                   {permission.name}
                                 </span>
                                 {permission.inherited && (
                                   <span 
-                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700"
+                                    className="inline-flex items-center rounded-md bg-cyan-100 px-2 py-0.5 text-xs font-semibold text-cyan-800"
                                     aria-label="Quyền này được kế thừa từ vai trò"
                                   >
                                     Kế thừa
                                   </span>
                                 )}
                               </div>
-                              <p id={`${permissionInputId}-description`} className="text-xs text-gray-500 mt-0.5">
+                              <p id={`${permissionInputId}-description`} className="mt-0.5 text-xs leading-5 text-slate-500">
                                 {permission.description}
                               </p>
                             </label>
@@ -1064,10 +1077,10 @@ export const UserManagementPage = () => {
               ))}
             </div>
 
-            <div className="mt-2 text-xs text-gray-500 flex items-start gap-1" role="note">
+            <div className="mt-2 flex items-start gap-1 text-xs leading-5 text-slate-500" role="note">
               <AlertCircle size={12} className="mt-0.5 flex-shrink-0" aria-hidden="true" />
               <span>
-                Quyền "Kế thừa" được gắn từ động từ vai trò và không thể thay Đổi trực tiếp.
+                Quyền "Kế thừa" được gắn tự động từ vai trò và không thể thay đổi trực tiếp.
               </span>
             </div>
           </div>

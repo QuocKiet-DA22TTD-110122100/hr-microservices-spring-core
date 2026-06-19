@@ -22,9 +22,15 @@ describe('permissions utility', () => {
     });
 
     it('should combine role permissions with explicit permissions', () => {
-      const permissions = getUserPermissions(['USER'], ['custom:permission']);
+      const permissions = getUserPermissions(['EMPLOYEE'], ['custom:permission']);
       expect(permissions).toContain('custom:permission');
       expect(permissions).toContain(PERMISSIONS.EMPLOYEE_VIEW);
+    });
+
+    it('should normalize backend payroll permission aliases', () => {
+      const permissions = getUserPermissions([], ['PAYROLL.READ', 'PAYROLL.WRITE']);
+      expect(permissions).toContain(PERMISSIONS.PAYROLL_VIEW);
+      expect(permissions).toContain(PERMISSIONS.PAYROLL_MANAGE);
     });
 
     it('should handle empty arrays', () => {
@@ -123,6 +129,7 @@ describe('permissions utility', () => {
     it('should have permissions for all roles', () => {
       expect(ROLE_PERMISSIONS[ROLES.ADMIN]).toBeDefined();
       expect(ROLE_PERMISSIONS[ROLES.HR_MANAGER]).toBeDefined();
+      expect(ROLE_PERMISSIONS[ROLES.PAYROLL_OFFICER]).toBeDefined();
       expect(ROLE_PERMISSIONS[ROLES.MANAGER]).toBeDefined();
       expect(ROLE_PERMISSIONS[ROLES.USER]).toBeDefined();
     });
@@ -136,7 +143,7 @@ describe('permissions utility', () => {
 
     it('USER should have limited permissions', () => {
       const userPerms = ROLE_PERMISSIONS[ROLES.USER];
-      expect(userPerms).toContain(PERMISSIONS.EMPLOYEE_VIEW);
+      expect(userPerms).toEqual([]);
       expect(userPerms).not.toContain(PERMISSIONS.USER_DELETE);
       expect(userPerms).not.toContain(PERMISSIONS.SYSTEM_SETTINGS);
     });
@@ -146,7 +153,31 @@ describe('permissions utility', () => {
       expect(hrPerms).toContain(PERMISSIONS.EMPLOYEE_CREATE);
       expect(hrPerms).toContain(PERMISSIONS.EMPLOYEE_UPDATE);
       expect(hrPerms).toContain(PERMISSIONS.EMPLOYEE_DELETE);
+      expect(hrPerms).toContain(PERMISSIONS.PAYROLL_VIEW);
+      expect(hrPerms).not.toContain(PERMISSIONS.PAYROLL_MANAGE);
       expect(hrPerms).not.toContain(PERMISSIONS.SYSTEM_SETTINGS);
+    });
+
+    it('PAYROLL_OFFICER should have payroll permissions without system admin access', () => {
+      const payrollPerms = ROLE_PERMISSIONS[ROLES.PAYROLL_OFFICER];
+      expect(payrollPerms).toContain(PERMISSIONS.PAYROLL_VIEW);
+      expect(payrollPerms).toContain(PERMISSIONS.PAYROLL_MANAGE);
+      expect(payrollPerms).toContain(PERMISSIONS.EMPLOYEE_VIEW);
+      expect(payrollPerms).not.toContain(PERMISSIONS.SYSTEM_SETTINGS);
+      expect(payrollPerms).not.toContain(PERMISSIONS.USER_DELETE);
+      expect(payrollPerms).not.toContain(PERMISSIONS.PROJECT_UPDATE);
+      expect(payrollPerms).not.toContain(PERMISSIONS.TASK_UPDATE);
+    });
+
+    it('MANAGER should coordinate projects and tasks without HR write access', () => {
+      const managerPerms = ROLE_PERMISSIONS[ROLES.MANAGER];
+      expect(managerPerms).toContain(PERMISSIONS.PROJECT_CREATE);
+      expect(managerPerms).toContain(PERMISSIONS.PROJECT_UPDATE);
+      expect(managerPerms).toContain(PERMISSIONS.PROJECT_MEMBER_MANAGE);
+      expect(managerPerms).toContain(PERMISSIONS.TASK_CREATE);
+      expect(managerPerms).toContain(PERMISSIONS.TASK_UPDATE);
+      expect(managerPerms).not.toContain(PERMISSIONS.EMPLOYEE_UPDATE);
+      expect(managerPerms).not.toContain(PERMISSIONS.PAYROLL_VIEW);
     });
   });
 });

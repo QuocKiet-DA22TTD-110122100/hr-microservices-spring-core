@@ -188,12 +188,10 @@ public class HmacSecurityFilter implements GlobalFilter, Ordered {
     private boolean shouldAuthenticate(ServerWebExchange exchange)
     {
         Route route = exchange.getAttribute(ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR);
-        // Check path-based public endpoints first (before route resolution)
         String path = exchange.getRequest().getURI().getPath();
-        if (path.startsWith("/api/iam/login")
-            || path.startsWith("/api/iam/register")
-            || path.startsWith("/api/iam/user/register")
-            || path.startsWith("/api/iam/logout")) {
+        // IAM endpoints are browser-facing. Public endpoints are anonymous and
+        // protected endpoints are secured by JwtAuthFilter instead of HMAC.
+        if (path.startsWith("/api/xac-thuc/")) {
             return false;
         }
 

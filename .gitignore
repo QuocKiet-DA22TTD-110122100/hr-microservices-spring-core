@@ -39,5 +39,7 @@ external/
 
 # Debug artifacts created by automation/tools
 .codex/
+.logs/
+.agents/reference-repos/
 pull_requests/
 files.txt

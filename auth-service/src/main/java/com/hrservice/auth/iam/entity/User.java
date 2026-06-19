@@ -46,7 +46,7 @@ public class User {
     @Column(name = "password_updated_at", nullable = false)
     private Instant passwordUpdatedAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     @Column(name = "locked", nullable = false)
@@ -68,9 +68,14 @@ public class User {
     @PrePersist
     void onCreate() {
         Instant now = Instant.now();
-        this.createdAt = now;
+        if (this.createdAt == null) {
+            this.createdAt = now;
+        }
         if (this.passwordUpdatedAt == null) {
             this.passwordUpdatedAt = now;
+        }
+        if (this.updatedAt == null) {
+            this.updatedAt = now;
         }
     }
 

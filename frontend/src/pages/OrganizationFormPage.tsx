@@ -4,11 +4,13 @@ import { useForm } from 'react-hook-form';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { Input } from '@/components/UI/Input';
 import { Button } from '@/components/UI/Button';
+import { Card, CardContent } from '@/components/UI/Card';
+import { PageHeader } from '@/components/UI/PageHeader';
 import { useUIStore } from '@/store/uiStore';
 import { organizationApi } from '@/api/organization.api';
 import { OrganizationUnit, CreateOrganizationUnitRequest, UpdateOrganizationUnitRequest } from '@/types/organization';
 import { getApiErrorMessage } from '@/utils/error';
-import { ArrowLeft, Loader } from 'lucide-react';
+import { ArrowLeft, Layers, Loader } from 'lucide-react';
 
 interface OrganizationFormData {
   name: string;
@@ -147,7 +149,7 @@ export const OrganizationFormPage = () => {
     return (
       <MainLayout>
         <div className="flex justify-center items-center py-12">
-          <Loader size={32} className="animate-spin text-blue-600" />
+          <Loader size={32} className="animate-spin text-cyan-600" />
         </div>
       </MainLayout>
     );
@@ -172,25 +174,21 @@ export const OrganizationFormPage = () => {
   return (
     <MainLayout>
       <div className="space-y-5">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/organizations')}
-            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-800">
-              {id ? 'Chỉnh sửa tổ chức' : 'Thêm tổ chức mới'}
-            </h1>
-            <p className="text-gray-600 text-sm mt-1">
-              {id ? 'Cập nhật thông tin tổ chức' : 'Nhập thông tin tổ chức mới'}
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          icon={Layers}
+          title={id ? 'Chỉnh sửa tổ chức' : 'Thêm tổ chức mới'}
+          description={id ? 'Cập nhật tên, mã và quan hệ cha con của tổ chức.' : 'Tạo đơn vị mới trong cây tổ chức HR.'}
+          actions={
+            <Button type="button" variant="outline" onClick={() => navigate('/organizations')}>
+              <ArrowLeft size={18} />
+              Quay lại
+            </Button>
+          }
+        />
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="bg-white rounded-lg border shadow-sm p-6">
+          <Card>
+            <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <Input
                 label="Tên tổ chức"
@@ -207,12 +205,12 @@ export const OrganizationFormPage = () => {
               />
 
               <div>
-                <label htmlFor="level" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="level" className="mb-1.5 block text-sm font-semibold text-slate-700">
                   Loại tổ chức
                 </label>
                 <select
                   id="level"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-[0_1px_1px_rgba(15,23,42,0.04)] transition hover:border-slate-500 focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-700/15"
                   {...register('level', { required: 'Vui lòng chọn loại tổ chức' })}
                 >
                   {ORG_LEVELS.map((level) => (
@@ -221,22 +219,22 @@ export const OrganizationFormPage = () => {
                     </option>
                   ))}
                 </select>
-                {errors.level && <span className="text-red-500 text-xs mt-1">{errors.level.message}</span>}
+                {errors.level && <span className="mt-1.5 block text-sm text-rose-600">{errors.level.message}</span>}
               </div>
 
               {currentLevel !== 'CORPORATION' && (
                 <div>
-                  <label htmlFor="parentId" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="parentId" className="mb-1.5 block text-sm font-semibold text-slate-700">
                     Tổ chức cha
                   </label>
                   {parentOptions.length === 0 ? (
-                    <div className="px-3 py-2 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-gray-500 text-sm">
+                    <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-600">
                       Không có tổ chức cha khả dụng. Vui lòng tạo tổ chức cha trước.
                     </div>
                   ) : (
                     <select
                       id="parentId"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-[0_1px_1px_rgba(15,23,42,0.04)] transition hover:border-slate-500 focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-700/15"
                       {...register('parentId')}
                       onChange={(e) => {
                         const value = e.target.value ? Number(e.target.value) : undefined;
@@ -255,24 +253,25 @@ export const OrganizationFormPage = () => {
               )}
             </div>
 
-            <div className="flex gap-3 mt-8">
+            <div className="mt-8 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate('/organizations')}
+                disabled={isLoading || isSubmitting}
+              >
+                Hủy
+              </Button>
               <Button
                 type="submit"
                 disabled={isLoading || isSubmitting}
-                className="w-full md:w-auto"
+                isLoading={isLoading}
               >
-                {isLoading && <Loader size={18} className="mr-2 animate-spin" />}
                 {getButtonText()}
               </Button>
-              <button
-                type="button"
-                onClick={() => navigate('/organizations')}
-                className="w-full md:w-auto px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Hủy
-              </button>
             </div>
-          </div>
+            </CardContent>
+          </Card>
         </form>
       </div>
     </MainLayout>

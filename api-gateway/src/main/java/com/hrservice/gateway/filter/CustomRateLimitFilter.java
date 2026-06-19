@@ -3,6 +3,7 @@ package com.hrservice.gateway.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -30,8 +31,11 @@ public class CustomRateLimitFilter implements GlobalFilter, Ordered {
     private final ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
     private final ObjectMapper objectMapper;
 
-    private static final int LOGIN_LIMIT = 3;
-    private static final Duration LOGIN_WINDOW = Duration.ofSeconds(5);
+    @Value("${app.rate-limit.login.limit:${APP_RATE_LIMIT_LOGIN_LIMIT:3}}")
+    private int loginLimit;
+
+    @Value("${app.rate-limit.login.window-seconds:${APP_RATE_LIMIT_LOGIN_WINDOW_SECONDS:5}}")
+    private long loginWindowSeconds;
 
     private static final int REGISTER_LIMIT = 2;
     private static final Duration REGISTER_WINDOW = Duration.ofSeconds(10);
@@ -143,7 +147,7 @@ public class CustomRateLimitFilter implements GlobalFilter, Ordered {
                 .orElse("GET");
 
         if ("/api/iam/login".equals(path) || "/api/xac-thuc/dang-nhap".equals(path) || "/api/xac-thuc/oauth2/token".equals(path)) {
-            return new RateLimitPolicy("login", LOGIN_LIMIT, LOGIN_WINDOW);
+            return new RateLimitPolicy("login", loginLimit, Duration.ofSeconds(loginWindowSeconds));
         }
 
         if (

@@ -1,11 +1,14 @@
 x-eureka-default-zone: &eureka_default_zone http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/
-x-java-opts: &java_opts -Xmx256m -Xms128m
+x-java-opts: &java_opts -Xmx384m -Xms128m
+x-java-tool-options: &java_tool_options -Djava.security.egd=file:/dev/./urandom
 x-logging-level: &logging_level WARN
 
 services:
   hr-mysql:
     image: mysql:8.0
     container_name: hr-mysql
+    ports:
+      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -38,28 +41,33 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       INTERNAL_SECRET: ${INTERNAL_SECRET}
-      REDIS_HOST: redis-server
+      REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: "5672"
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
       EUREKA_CLIENT_ENABLED: "true"
       EUREKA_REGISTER_WITH_EUREKA: "true"
       EUREKA_FETCH_REGISTRY: "true"
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
       LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
+      JAVA_TOOL_OPTIONS: *java_tool_options
     depends_on:
       hr-mysql:
         condition: service_healthy
     networks:
       - microservices-network
     restart: on-failure
-    mem_limit: 300m
+    mem_limit: 512m
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8082/actuator/health"]
       interval: 20s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
+      timeout: 30s
+      retries: 8
+      start_period: 240s
 
 networks:
   microservices-network:

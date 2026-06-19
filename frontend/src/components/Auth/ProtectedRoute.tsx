@@ -78,20 +78,20 @@ export const UnauthorizedPage = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <Card className="w-full max-w-md p-8 text-center">
-        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-rose-50">
+      <Card className="relative w-full max-w-md overflow-hidden p-8 text-center shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-rose-500 via-amber-300 to-transparent" />
+        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border border-rose-100 bg-rose-50">
           <Shield size={40} className="text-rose-600" />
         </div>
 
-        <h1 className="text-2xl font-semibold text-slate-900">Truy cập bị từ chối</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-500">
-          Tài khoản hiện tại chưa có quyền mở trang này. Vui lòng liên hệ quản trị viên nếu đây là chức năng cần
-          cho công việc.
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-slate-950">Truy cập bị từ chối</h1>
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          Tài khoản hiện tại chưa có quyền mở trang này. Vui lòng liên hệ quản trị viên nếu đây là chức năng cần cho công việc.
         </p>
 
         {fromPath && (
           <p className="mt-5 text-sm text-slate-500">
-            Trang yêu cầu: <code className="rounded bg-slate-100 px-2 py-1">{fromPath}</code>
+            Trang yêu cầu: <code className="rounded-md border border-slate-200 bg-slate-100 px-2 py-1">{fromPath}</code>
           </p>
         )}
 

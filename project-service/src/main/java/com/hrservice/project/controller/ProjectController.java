@@ -28,14 +28,14 @@ public class ProjectController {
     private final ProjectAssignmentService projectAssignmentService;
 
     @GetMapping
-    @RequireRoles({"USER", "ADMIN"})
+    @RequireRoles({"ADMIN", "HR_MANAGER", "DEPARTMENT_HEAD", "MANAGER", "EMPLOYEE"})
     public ResponseEntity<List<Project>> getAllProjects() {
         log.info("[PROJECT-CONTROLLER] GET /api/projects");
         return ResponseEntity.ok(projectService.getAllProjects());
     }
 
     @GetMapping("/{id}")
-    @RequireRoles({"USER", "ADMIN"})
+    @RequireRoles({"ADMIN", "HR_MANAGER", "DEPARTMENT_HEAD", "MANAGER", "EMPLOYEE"})
     public ResponseEntity<Project> getProjectById(@PathVariable Long id) {
         log.info("[PROJECT-CONTROLLER] GET /api/projects/{}", id);
         return projectService.getProjectById(id)
@@ -44,7 +44,7 @@ public class ProjectController {
     }
 
     @PostMapping
-    @RequireRoles({"ADMIN"})
+    @RequireRoles({"ADMIN", "MANAGER"})
     public ResponseEntity<Project> createProject(@Valid @RequestBody ProjectRequest request) {
         log.info("[PROJECT-CONTROLLER] POST /api/projects - name: {}", request.name());
         Project project = new Project();
@@ -58,7 +58,7 @@ public class ProjectController {
     }
 
     @PutMapping("/{id}")
-    @RequireRoles({"ADMIN"})
+    @RequireRoles({"ADMIN", "MANAGER"})
     public ResponseEntity<Project> updateProject(@PathVariable Long id, @Valid @RequestBody ProjectRequest request) {
         log.info("[PROJECT-CONTROLLER] PUT /api/projects/{}", id);
         Project project = new Project();
@@ -86,14 +86,14 @@ public class ProjectController {
     }
 
     @GetMapping("/status/{status}")
-    @RequireRoles({"USER", "ADMIN"})
+    @RequireRoles({"ADMIN", "HR_MANAGER", "DEPARTMENT_HEAD", "MANAGER", "EMPLOYEE"})
     public ResponseEntity<List<Project>> getProjectsByStatus(@PathVariable Project.ProjectStatus status) {
         log.info("[PROJECT-CONTROLLER] GET /api/projects/status/{}", status);
         return ResponseEntity.ok(projectService.getProjectsByStatus(status));
     }
 
     @GetMapping("/lead/{leadId}")
-    @RequireRoles({"USER", "ADMIN"})
+    @RequireRoles({"ADMIN", "HR_MANAGER", "DEPARTMENT_HEAD", "MANAGER", "EMPLOYEE"})
     public ResponseEntity<List<Project>> getProjectsByLead(@PathVariable Long leadId) {
         log.info("[PROJECT-CONTROLLER] GET /api/projects/lead/{}", leadId);
         return ResponseEntity.ok(projectService.getProjectsByLead(leadId));
@@ -116,7 +116,7 @@ public class ProjectController {
     }
 
     @GetMapping("/{projectId}/assignments")
-    @RequireRoles({"USER", "ADMIN", "MANAGER"})
+    @RequireRoles({"ADMIN", "HR_MANAGER", "DEPARTMENT_HEAD", "MANAGER", "EMPLOYEE"})
     public ResponseEntity<List<ProjectAssignment>> getProjectAssignments(@PathVariable Long projectId) {
         log.info("[PROJECT-CONTROLLER] GET /api/projects/{}/assignments", projectId);
         return ResponseEntity.ok(projectAssignmentService.getAssignmentsByProject(projectId));
@@ -135,7 +135,7 @@ public class ProjectController {
     }
 
     @GetMapping("/employees/{employeeId}/assignments")
-    @RequireRoles({"USER", "ADMIN", "MANAGER"})
+    @RequireRoles({"ADMIN", "HR_MANAGER", "DEPARTMENT_HEAD", "MANAGER", "EMPLOYEE"})
     public ResponseEntity<List<ProjectAssignment>> getEmployeeProjectAssignments(@PathVariable Long employeeId) {
         log.info("[PROJECT-CONTROLLER] GET /api/projects/employees/{}/assignments", employeeId);
         return ResponseEntity.ok(projectAssignmentService.getAssignmentsByEmployee(employeeId));

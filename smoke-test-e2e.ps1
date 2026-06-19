@@ -73,13 +73,16 @@ $registerBody = @{
 
 try {
     Write-Host "  [TEST] Register user..." -NoNewline
-    $registerResp = Invoke-WebRequest -Uri "$GatewayUrl/api/iam/register" `
-        -Method POST `
-        -Headers @{"Content-Type" = "application/json"} `
-        -Body $registerBody `
-        -UseBasicParsing `
-        -TimeoutSec 10 `
-        -ErrorAction Stop
+    $registerRequest = @{
+        Uri = "$GatewayUrl/api/iam/register"
+        Method = 'POST'
+        Headers = @{ 'Content-Type' = 'application/json' }
+        Body = $registerBody
+        UseBasicParsing = $true
+        TimeoutSec = 10
+        ErrorAction = 'Stop'
+    }
+    $registerResp = Invoke-WebRequest @registerRequest
     if ($registerResp.StatusCode -eq 200 -or $registerResp.StatusCode -eq 201) {
         Write-Host " ✓" -ForegroundColor Green
         $script:testsPassed++
@@ -101,14 +104,17 @@ $loginBody = @{
 $jwtToken = $null
 try {
     Write-Host "  [TEST] Login user..." -NoNewline
-    $loginResp = Invoke-WebRequest -Uri "$GatewayUrl/api/iam/login" `
-        -Method POST `
-        -Headers @{"Content-Type" = "application/json"} `
-        -Body $loginBody `
-        -UseBasicParsing `
-        -TimeoutSec 10 `
-        -ErrorAction Stop
-    
+    $loginRequest = @{
+        Uri = "$GatewayUrl/api/iam/login"
+        Method = 'POST'
+        Headers = @{ 'Content-Type' = 'application/json' }
+        Body = $loginBody
+        UseBasicParsing = $true
+        TimeoutSec = 10
+        ErrorAction = 'Stop'
+    }
+    $loginResp = Invoke-WebRequest @loginRequest
+
     if ($loginResp.StatusCode -eq 200) {
         $loginData = $loginResp.Content | ConvertFrom-Json
         if ($loginData.data.token) {

@@ -1,5 +1,6 @@
 x-eureka-default-zone: &eureka_default_zone http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/
-x-java-opts: &java_opts -Xmx256m -Xms128m
+x-java-opts: &java_opts -Xmx384m -Xms128m
+x-java-tool-options: &java_tool_options -Djava.security.egd=file:/dev/./urandom
 x-logging-level: &logging_level WARN
 
 services:
@@ -40,6 +41,10 @@ services:
       RABBITMQ_PORT: "5672"
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: "5672"
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
       RABBITMQ_VHOST: /
       TASK_REASSIGN_DEFAULT_POOL_ASSIGNEE_ID: ${TASK_REASSIGN_DEFAULT_POOL_ASSIGNEE_ID:-1000}
       TASK_NOTIFICATION_PROVIDER: ${TASK_NOTIFICATION_PROVIDER:-log}
@@ -47,25 +52,26 @@ services:
       TASK_NOTIFICATION_EMAIL_ASSIGNEE_DOMAIN: ${TASK_NOTIFICATION_EMAIL_ASSIGNEE_DOMAIN:-hr.local}
       TASK_NOTIFICATION_SNS_REGION: ${TASK_NOTIFICATION_SNS_REGION:-ap-southeast-1}
       TASK_NOTIFICATION_SNS_TOPIC_ARN: ${TASK_NOTIFICATION_SNS_TOPIC_ARN:-}
-      REDIS_HOST: redis-server
+      REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
       LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
+      JAVA_TOOL_OPTIONS: *java_tool_options
     depends_on:
       business-mysql:
         condition: service_healthy
     networks:
       - microservices-network
     restart: on-failure
-    mem_limit: 300m
+    mem_limit: 512m
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8084/actuator/health"]
       interval: 20s
-      timeout: 5s
-      retries: 5
-      start_period: 120s
+      timeout: 30s
+      retries: 8
+      start_period: 240s
 
   task-service:
     build:
@@ -83,8 +89,12 @@ services:
       RABBITMQ_PORT: "5672"
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: "5672"
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
       RABBITMQ_VHOST: /
-      REDIS_HOST: redis-server
+      REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       EUREKA_CLIENT_ENABLED: "true"
@@ -93,19 +103,20 @@ services:
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
       LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
+      JAVA_TOOL_OPTIONS: *java_tool_options
     depends_on:
       business-mysql:
         condition: service_healthy
     networks:
       - microservices-network
     restart: on-failure
-    mem_limit: 300m
+    mem_limit: 512m
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8087/actuator/health"]
       interval: 20s
-      timeout: 5s
-      retries: 5
-      start_period: 120s
+      timeout: 30s
+      retries: 8
+      start_period: 240s
 
 networks:
   microservices-network:

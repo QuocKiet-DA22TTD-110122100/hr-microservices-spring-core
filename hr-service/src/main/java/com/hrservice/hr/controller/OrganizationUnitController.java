@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Locale;
 
 @RestController
-@RequestMapping("/don-vi-to-chuc")
+@RequestMapping("/organization-units")
 public class OrganizationUnitController {
 
     private final OrganizationUnitRepository organizationUnitRepository;

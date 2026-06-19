@@ -1,10 +1,12 @@
 x-eureka-default-zone: &eureka_default_zone http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/
 x-java-opts: &java_opts -Xmx256m -Xms128m
+x-java-tool-options: &java_tool_options -Djava.security.egd=file:/dev/./urandom
 x-logging-level: &logging_level WARN
 
 services:
   redis:
     image: redis:7-alpine
+    hostname: redis
     command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis-data:/data
@@ -34,12 +36,16 @@ services:
       EUREKA_PEER1_PORT: ${EUREKA_PEER1_PORT}
       EUREKA_PEER2_PORT: ${EUREKA_PEER2_PORT}
       EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+      EUREKA_CLIENT_FETCH_REGISTRY: "false"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
       SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
       SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
       SECURITY_USER_NAME: ${EUREKA_USERNAME}
       SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
       LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
+      JAVA_TOOL_OPTIONS: *java_tool_options
     volumes:
       - eureka1-data:/app/data
     networks:
@@ -49,9 +55,79 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "curl -sf -u ${EUREKA_USERNAME}:${EUREKA_PASSWORD} http://localhost:${EUREKA_PEER1_PORT}/actuator/health | grep -q UP || exit 1"]
       interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
+      timeout: 30s
+      retries: 8
+      start_period: 240s
+
+  eureka-peer2:
+    build:
+      context: ./eureka-server
+      dockerfile: dockerfile
+    hostname: eureka-peer2
+    ports:
+      - "${EUREKA_PEER2_PORT}:${EUREKA_PEER2_PORT}"
+    environment:
+      SPRING_PROFILES_ACTIVE: peer2
+      SERVER_PORT: ${EUREKA_PEER2_PORT}
+      EUREKA_USERNAME: ${EUREKA_USERNAME}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+      EUREKA_PEER1_PORT: ${EUREKA_PEER1_PORT}
+      EUREKA_PEER2_PORT: ${EUREKA_PEER2_PORT}
+      EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
+      SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
+      SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+      SECURITY_USER_NAME: ${EUREKA_USERNAME}
+      SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+      LOGGING_LEVEL_ROOT: *logging_level
+      JAVA_OPTS: *java_opts
+      JAVA_TOOL_OPTIONS: *java_tool_options
+    volumes:
+      - eureka2-data:/app/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    mem_limit: 300m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -u ${EUREKA_USERNAME}:${EUREKA_PASSWORD} http://localhost:${EUREKA_PEER2_PORT}/actuator/health | grep -q UP || exit 1"]
+      interval: 30s
+      timeout: 30s
+      retries: 8
+      start_period: 240s
+
+  eureka-peer3:
+    build:
+      context: ./eureka-server
+      dockerfile: dockerfile
+    hostname: eureka-peer3
+    ports:
+      - "${EUREKA_PEER3_PORT}:${EUREKA_PEER3_PORT}"
+    environment:
+      SPRING_PROFILES_ACTIVE: peer3
+      SERVER_PORT: ${EUREKA_PEER3_PORT}
+      EUREKA_USERNAME: ${EUREKA_USERNAME}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+      EUREKA_PEER1_PORT: ${EUREKA_PEER1_PORT}
+      EUREKA_PEER2_PORT: ${EUREKA_PEER2_PORT}
+      EUREKA_PEER3_PORT: ${EUREKA_PEER3_PORT}
+      SPRING_SECURITY_USER_NAME: ${EUREKA_USERNAME}
+      SPRING_SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+      SECURITY_USER_NAME: ${EUREKA_USERNAME}
+      SECURITY_USER_PASSWORD: ${EUREKA_PASSWORD}
+      LOGGING_LEVEL_ROOT: *logging_level
+      JAVA_OPTS: *java_opts
+      JAVA_TOOL_OPTIONS: *java_tool_options
+    volumes:
+      - eureka3-data:/app/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    mem_limit: 300m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -u ${EUREKA_USERNAME}:${EUREKA_PASSWORD} http://localhost:${EUREKA_PEER3_PORT}/actuator/health | grep -q UP || exit 1"]
+      interval: 30s
+      timeout: 30s
+      retries: 8
+      start_period: 240s
 
   haproxy:
     image: haproxy:2.8-alpine
@@ -69,7 +145,7 @@ services:
     restart: unless-stopped
     mem_limit: 100m
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8404/ >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "wget -qO- http://admin:admin123@127.0.0.1:8404/ >/dev/null 2>&1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -144,10 +220,13 @@ services:
 
 networks:
   microservices-network:
+    name: microservices-network
     driver: bridge
 
 volumes:
   redis-data: {}
   eureka1-data: {}
+  eureka2-data: {}
+  eureka3-data: {}
   prometheus-data: {}
   grafana-data: {}

@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Edit, FolderKanban, Plus, Trash2 } from 'lucide-react';
+import { Archive, CheckCircle2, Edit, FolderKanban, PauseCircle, Plus, Trash2, Users } from 'lucide-react';
 import { projectApi } from '@/api/project.api';
 import { taskApi } from '@/api/task.api';
 import { Badge } from '@/components/UI/Badge';
 import { Button } from '@/components/UI/Button';
+import { Card } from '@/components/UI/Card';
 import { DataListPage } from '@/components/UI/DataListPage';
 import { Input } from '@/components/UI/Input';
 import { Column } from '@/components/UI/Table';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Project, ProjectStatus } from '@/types/project';
+import { PERMISSIONS } from '@/utils/permissions';
 
 interface ProjectRow extends Project {
   memberCount: number;
@@ -35,6 +38,10 @@ const formatDate = (value?: string | null) => (value ? new Date(value).toLocaleD
 
 export const ProjectListPage = () => {
   const navigate = useNavigate();
+  const { can } = usePermissions();
+  const canCreateProject = can(PERMISSIONS.PROJECT_CREATE);
+  const canUpdateProject = can(PERMISSIONS.PROJECT_UPDATE);
+  const canDeleteProject = can(PERMISSIONS.PROJECT_DELETE);
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +116,44 @@ export const ProjectListPage = () => {
       });
   }, [projects, search, sortDirection, sortKey, statusFilter]);
 
+  const projectStats = useMemo(() => {
+    const activeProjects = projects.filter((project) => project.status === 'ACTIVE').length;
+    const pausedProjects = projects.filter((project) => project.status === 'PAUSED').length;
+    const completedProjects = projects.filter((project) => project.status === 'COMPLETED').length;
+    const totalMembers = projects.reduce((sum, project) => sum + project.memberCount, 0);
+
+    return [
+      {
+        label: 'Dự án đang chạy',
+        value: activeProjects.toString(),
+        hint: 'Cần theo dõi tiến độ hằng ngày',
+        icon: FolderKanban,
+        tone: 'bg-cyan-50 text-cyan-700',
+      },
+      {
+        label: 'Tạm dừng',
+        value: pausedProjects.toString(),
+        hint: 'Cần quyết định tiếp tục hoặc đóng',
+        icon: PauseCircle,
+        tone: 'bg-amber-50 text-amber-700',
+      },
+      {
+        label: 'Hoàn tất',
+        value: completedProjects.toString(),
+        hint: 'Có thể dùng cho báo cáo năng suất',
+        icon: CheckCircle2,
+        tone: 'bg-emerald-50 text-emerald-700',
+      },
+      {
+        label: 'Thành viên active',
+        value: totalMembers.toString(),
+        hint: 'Tổng phân bổ đang hoạt động',
+        icon: Users,
+        tone: 'bg-slate-100 text-slate-700',
+      },
+    ];
+  }, [projects]);
+
   const totalPages = Math.max(1, Math.ceil(filteredProjects.length / pageSize));
   const pagedProjects = filteredProjects.slice((page - 1) * pageSize, page * pageSize);
 
@@ -143,7 +188,7 @@ export const ProjectListPage = () => {
       onSort: handleSort,
       render: (value) => <Badge variant={statusVariants[value]}>{statusLabels[value]}</Badge>,
     },
-    { key: 'leadId', title: 'Lead ID', sortable: true, onSort: handleSort },
+    { key: 'leadId', title: 'Lead ID', sortable: true, onSort: handleSort, render: (value) => <span>#{value}</span> },
     { key: 'memberCount', title: 'Thành viên', sortable: true, onSort: handleSort },
     { key: 'taskCount', title: 'Task', sortable: true, onSort: handleSort },
     {
@@ -156,20 +201,49 @@ export const ProjectListPage = () => {
     {
       key: 'id',
       title: 'Thao tác',
-      render: (_value, record) => (
-        <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
-          <Button type="button" variant="outline" size="sm" onClick={() => navigate(`/projects/edit/${record.id}`)}>
-            <Edit size={14} />
-            Sửa
-          </Button>
-          <Button type="button" variant="danger" size="sm" onClick={() => void handleDelete(record)}>
-            <Trash2 size={14} />
-            Xóa
-          </Button>
-        </div>
-      ),
+      render: (_value, record) => {
+        if (!canUpdateProject && !canDeleteProject) {
+          return <span className="text-sm text-slate-500">Chỉ xem</span>;
+        }
+
+        return (
+          <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
+            {canUpdateProject && (
+              <Button type="button" variant="outline" size="sm" onClick={() => navigate(`/projects/edit/${record.id}`)}>
+                <Edit size={14} />
+                Sửa
+              </Button>
+            )}
+            {canDeleteProject && (
+              <Button type="button" variant="danger" size="sm" onClick={() => void handleDelete(record)}>
+                <Trash2 size={14} />
+                Xóa
+              </Button>
+            )}
+          </div>
+        );
+      },
     },
   ];
+
+  const summary = (
+    <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {projectStats.map((stat) => (
+        <Card key={stat.label} className="p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-500">{stat.label}</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900">{stat.value}</p>
+              <p className="mt-2 text-sm text-slate-500">{stat.hint}</p>
+            </div>
+            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md ${stat.tone}`}>
+              <stat.icon size={22} />
+            </div>
+          </div>
+        </Card>
+      ))}
+    </section>
+  );
 
   const filters = (
     <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
@@ -187,7 +261,7 @@ export const ProjectListPage = () => {
           id="project-status-filter"
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value as 'ALL' | ProjectStatus)}
-          className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
         >
           <option value="ALL">Tất cả</option>
           {Object.entries(statusLabels).map(([value, label]) => (
@@ -202,17 +276,18 @@ export const ProjectListPage = () => {
 
   return (
     <DataListPage
-      icon={FolderKanban}
+      icon={Archive}
       title="Quản lý dự án"
-      description="Theo dõi danh sách dự án, lead, thành viên và số lượng task theo từng dự án."
-      actions={
+      description="Theo dõi dự án, lead, thành viên và số lượng task theo từng dự án."
+      actions={canCreateProject ? (
         <Link to="/projects/add">
           <Button>
             <Plus size={16} />
             Tạo dự án
           </Button>
         </Link>
-      }
+      ) : undefined}
+      summary={summary}
       filters={filters}
       columns={columns}
       data={pagedProjects}

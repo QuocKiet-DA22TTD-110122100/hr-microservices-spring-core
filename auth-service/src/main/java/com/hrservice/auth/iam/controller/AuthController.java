@@ -3,18 +3,22 @@ package com.hrservice.auth.iam.controller;
 import com.hrservice.auth.iam.service.AuthService;
 import com.hrservice.auth.iam.service.AccountLockedException;
 import com.hrservice.auth.iam.service.PasswordExpiredException;
+import com.hrservice.auth.iam.service.RoleManagementService;
 import com.hrservice.auth.iam.entity.User;
 import com.hrservice.auth.security.RequiredRoles;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -23,10 +27,12 @@ import java.util.UUID;
 public class AuthController {
 
     private final AuthService authService;
+    private final RoleManagementService roleManagementService;
     private final com.hrservice.auth.iam.mapper.AuthDtoMapper authDtoMapper;
 
-    public AuthController(AuthService authService, com.hrservice.auth.iam.mapper.AuthDtoMapper authDtoMapper) {
+    public AuthController(AuthService authService, RoleManagementService roleManagementService, com.hrservice.auth.iam.mapper.AuthDtoMapper authDtoMapper) {
         this.authService = authService;
+        this.roleManagementService = roleManagementService;
         this.authDtoMapper = authDtoMapper;
     }
 
@@ -63,6 +69,98 @@ public class AuthController {
             UUID parsed = UUID.fromString(userId);
             var status = authService.retryUserSync(parsed);
             return ResponseEntity.ok(authDtoMapper.toSyncStatusResponse(status));
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
+    @RequiredRoles({"ADMIN"})
+    @GetMapping("/quan-tri/tai-khoan")
+    public ResponseEntity<List<UserDto>> listUsers() {
+        return ResponseEntity.ok(authDtoMapper.toUserDtoList(authService.listUsers()));
+    }
+
+    @RequiredRoles({"ADMIN"})
+    @PutMapping("/quan-tri/tai-khoan/{userId}")
+    public ResponseEntity<UserDto> updateUser(@PathVariable String userId, @RequestBody UpdateUserRequest request) {
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
+        }
+
+        try {
+            UUID parsed = UUID.fromString(userId);
+            User updatedUser = authService.updateUser(parsed, request.role(), request.locked());
+            return ResponseEntity.ok(authDtoMapper.toUserDto(updatedUser));
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
+    @RequiredRoles({"ADMIN"})
+    @DeleteMapping("/quan-tri/tai-khoan/{userId}")
+    public ResponseEntity<AdminResponse> deleteUser(@PathVariable String userId) {
+        try {
+            UUID parsed = UUID.fromString(userId);
+            authService.deleteUser(parsed);
+            return ResponseEntity.ok(authDtoMapper.toAdminResponse("User deleted successfully"));
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
+    @RequiredRoles({"ADMIN"})
+    @GetMapping("/quan-tri/vai-tro")
+    public ResponseEntity<List<RoleDto>> getRoles() {
+        return ResponseEntity.ok(roleManagementService.listRoles().stream()
+            .map(role -> new RoleDto(role.name(), role.description(), role.permissions(), role.userCount()))
+            .toList());
+    }
+
+    @RequiredRoles({"ADMIN"})
+    @PostMapping("/quan-tri/vai-tro")
+    public ResponseEntity<RoleDto> createRole(@RequestBody RoleRequest request) {
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
+        }
+
+        try {
+            RoleManagementService.RoleView role = roleManagementService.createRole(
+                request.name(),
+                request.description(),
+                request.permissions()
+            );
+            return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new RoleDto(role.name(), role.description(), role.permissions(), role.userCount()));
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
+    @RequiredRoles({"ADMIN"})
+    @PutMapping("/quan-tri/vai-tro/{roleName}")
+    public ResponseEntity<RoleDto> updateRole(@PathVariable String roleName, @RequestBody RoleRequest request) {
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
+        }
+
+        try {
+            RoleManagementService.RoleView role = roleManagementService.updateRole(
+                roleName,
+                request.description(),
+                request.permissions()
+            );
+            return ResponseEntity.ok(new RoleDto(role.name(), role.description(), role.permissions(), role.userCount()));
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
+    @RequiredRoles({"ADMIN"})
+    @DeleteMapping("/quan-tri/vai-tro/{roleName}")
+    public ResponseEntity<AdminResponse> deleteRole(@PathVariable String roleName) {
+        try {
+            roleManagementService.deleteRole(roleName);
+            return ResponseEntity.ok(authDtoMapper.toAdminResponse("Role deleted successfully"));
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }
@@ -162,7 +260,7 @@ public class AuthController {
         }
     }
 
-    @RequiredRoles({"USER", "ADMIN"})
+    @RequiredRoles({"USER", "EMPLOYEE", "MANAGER", "DEPARTMENT_HEAD", "HR_MANAGER", "PAYROLL_OFFICER", "ADMIN"})
     @PostMapping("/doi-mat-khau")
     public ResponseEntity<ChangePasswordResponse> changePassword(@RequestBody ChangePasswordRequest request) {
         if (request == null) {
@@ -179,7 +277,7 @@ public class AuthController {
         }
     }
 
-    @RequiredRoles({"USER", "ADMIN"})
+    @RequiredRoles({"USER", "EMPLOYEE", "MANAGER", "DEPARTMENT_HEAD", "HR_MANAGER", "PAYROLL_OFFICER", "ADMIN"})
     @PostMapping("/kiem-tra")
     public ResponseEntity<VerifyTokenResponse> verify(@RequestBody VerifyTokenRequest request) {
         if (request == null || request.token() == null || request.token().isBlank()) {
@@ -299,6 +397,18 @@ public class AuthController {
     }
 
     public record AdminAccountRequest(String username) {
+    }
+
+    public record UserDto(String id, String username, String role, boolean locked, String createdAt) {
+    }
+
+    public record UpdateUserRequest(String role, Boolean locked) {
+    }
+
+    public record RoleDto(String name, String description, List<String> permissions, int userCount) {
+    }
+
+    public record RoleRequest(String name, String description, List<String> permissions) {
     }
 
     public record AdminResponse(String message) {

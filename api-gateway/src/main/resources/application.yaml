@@ -9,13 +9,17 @@ server:
 # JWT Configuration - must be at root level
 app:
   jwt:
-    jwks-uri: ${JWT_JWKS_URI:http://kms/kms/.well-known/jwks.json}
+    jwks-uri: ${JWT_JWKS_URI:http://kms/quan-ly-khoa/.well-known/jwks.json}
     jwks-cache-seconds: ${JWT_JWKS_CACHE_SECONDS:300}
   security:
     token-blacklist:
       l1:
         max-size: ${TOKEN_BLACKLIST_L1_MAX_SIZE:10000}
         ttl-seconds: ${TOKEN_BLACKLIST_L1_TTL_SECONDS:30}
+  rate-limit:
+    login:
+      limit: ${APP_RATE_LIMIT_LOGIN_LIMIT:3}
+      window-seconds: ${APP_RATE_LIMIT_LOGIN_WINDOW_SECONDS:5}
 management:
   endpoints:
     web:
@@ -89,7 +93,7 @@ spring:
 
             # Public IAM endpoints - no JWT required
             - id: auth-public-route
-              uri: lb://auth-service
+              uri: ${AUTH_SERVICE_URL:http://localhost:8087}
               predicates:
                 - Path=/api/xac-thuc/dang-nhap,/api/xac-thuc/dang-ky,/api/xac-thuc/dang-xuat,/api/xac-thuc/oauth2/token,/api/xac-thuc/2fa/**
               filters:
@@ -99,7 +103,7 @@ spring:
 
             # Protected IAM endpoints - JWT required
             - id: auth-protected-route
-              uri: lb://auth-service
+              uri: ${AUTH_SERVICE_URL:http://localhost:8087}
               predicates:
                 - Path=/api/xac-thuc/kiem-tra,/api/xac-thuc/doi-mat-khau,/api/xac-thuc/quan-tri/**,/api/xac-thuc/trang-thai-dong-bo/**,/api/xac-thuc/thu-lai-dong-bo/**
               filters:
@@ -109,53 +113,96 @@ spring:
 
             # HR Service Routes - Employee
             - id: hr-employee-route
-              uri: lb://hr-service
+              uri: ${HR_SERVICE_URL:lb://hr-service}
               predicates:
                 - Path=/api/nhan-vien/**
               filters:
                 - StripPrefix=2
               metadata:
                 requires-jwt: true
+                requires-hmac: false
 
             # HR Service Routes - Department
             - id: hr-department-route
-              uri: lb://hr-service
+              uri: ${HR_SERVICE_URL:lb://hr-service}
               predicates:
                 - Path=/api/phong-ban/**
               filters:
                 - StripPrefix=2
               metadata:
                 requires-jwt: true
+                requires-hmac: false
 
             # HR Service Routes - Organization Unit
             - id: hr-org-unit-route
-              uri: lb://hr-service
+              uri: ${HR_SERVICE_URL:lb://hr-service}
               predicates:
                 - Path=/api/don-vi-to-chuc/**
               filters:
                 - StripPrefix=2
               metadata:
                 requires-jwt: true
+                requires-hmac: false
+
+            # HR Service Routes - Browser API (English)
+            - id: hr-browser-api-route
+              uri: ${HR_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/hr/**
+              filters:
+                - StripPrefix=2
+              metadata:
+                requires-jwt: true
+                requires-hmac: false
+
+            # HR Service Routes - Payroll
+            - id: hr-payroll-route
+              uri: ${HR_SERVICE_URL:lb://hr-service}
+              predicates:
+                - Path=/api/payroll/**,/api/chi-tra/**
+              metadata:
+                requires-jwt: true
+                requires-hmac: false
 
             # Project Service Routes
+            - id: project-browser-api-route
+              uri: ${PROJECT_SERVICE_URL:lb://project-service}
+              predicates:
+                - Path=/api/projects/**
+              metadata:
+                requires-jwt: true
+                requires-hmac: false
+
+            # Project Service Routes - Vietnamese legacy path
             - id: project-service-route
-              uri: lb://project-service
+              uri: ${PROJECT_SERVICE_URL:lb://project-service}
               predicates:
                 - Path=/api/du-an/**
               filters:
                 - RewritePath=/api/du-an/(?<segment>.*), /api/projects/$\{segment}
               metadata:
                 requires-jwt: true
+                requires-hmac: false
 
             # Task Service Routes
+            - id: task-browser-api-route
+              uri: ${TASK_SERVICE_URL:lb://task-service}
+              predicates:
+                - Path=/api/tasks/**
+              metadata:
+                requires-jwt: true
+                requires-hmac: false
+
+            # Task Service Routes - Vietnamese legacy path
             - id: task-service-route
-              uri: lb://task-service
+              uri: ${TASK_SERVICE_URL:lb://task-service}
               predicates:
                 - Path=/api/cong-viec/**
               filters:
                 - RewritePath=/api/cong-viec/(?<segment>.*), /api/tasks/$\{segment}
               metadata:
                 requires-jwt: true
+                requires-hmac: false
 
   data:
     redis:
@@ -172,7 +219,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: ${JWT_JWKS_URI:http://kms/kms/.well-known/jwks.json}
+          jwk-set-uri: ${JWT_JWKS_URI:http://kms/quan-ly-khoa/.well-known/jwks.json}
 
 ---
 # Docker Profile Configuration
@@ -182,7 +229,7 @@ spring:
       on-profile: docker
   data:
     redis:
-      host: ${REDIS_HOST:redis-server}
+      host: ${REDIS_HOST:redis}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
 
@@ -206,7 +253,7 @@ eureka:
 
 app:
   jwt:
-    jwks-uri: ${JWT_JWKS_URI:http://kms-service:8083/kms/.well-known/jwks.json}
+    jwks-uri: ${JWT_JWKS_URI:http://kms-service:8083/quan-ly-khoa/.well-known/jwks.json}
     jwks-cache-seconds: ${JWT_JWKS_CACHE_SECONDS:300}
 
 logging:

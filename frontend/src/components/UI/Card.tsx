@@ -6,25 +6,31 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export const Card = ({ className = '', children, ...props }: CardProps) => (
-  <div className={cn('rounded-lg border border-slate-200 bg-white shadow-sm', className)} {...props}>
+  <div
+    className={cn(
+      'rounded-xl border border-slate-200/80 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,0.05)] ring-1 ring-white/70',
+      className
+    )}
+    {...props}
+  >
     {children}
   </div>
 );
 
 export const CardHeader = ({ className = '', children, ...props }: CardProps) => (
-  <div className={cn('border-b border-slate-200 px-5 py-4', className)} {...props}>
+  <div className={cn('border-b border-slate-200/80 px-5 py-4', className)} {...props}>
     {children}
   </div>
 );
 
 export const CardTitle = ({ className = '', children, ...props }: CardProps) => (
-  <h2 className={cn('text-lg font-semibold text-slate-900', className)} {...props}>
+  <h2 className={cn('text-base font-semibold tracking-[-0.01em] text-slate-950 sm:text-lg', className)} {...props}>
     {children}
   </h2>
 );
 
 export const CardDescription = ({ className = '', children, ...props }: CardProps) => (
-  <p className={cn('mt-1 text-sm text-slate-500', className)} {...props}>
+  <p className={cn('mt-1 text-sm leading-6 text-slate-600', className)} {...props}>
     {children}
   </p>
 );

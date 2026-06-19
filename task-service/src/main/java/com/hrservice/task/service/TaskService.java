@@ -90,6 +90,7 @@ public class TaskService {
                     existing.setTitle(updates.getTitle());
                     existing.setDescription(updates.getDescription());
                     existing.setStatus(newStatus);
+                    existing.setPriority(updates.getPriority() == null ? existing.getPriority() : updates.getPriority());
                     existing.setAssigneeId(updates.getAssigneeId());
                     existing.setProjectId(updates.getProjectId());
 

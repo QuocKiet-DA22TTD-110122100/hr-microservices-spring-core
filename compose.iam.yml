@@ -1,11 +1,14 @@
 x-eureka-default-zone: &eureka_default_zone http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/
-x-java-opts: &java_opts -Xmx256m -Xms128m
+x-java-opts: &java_opts -Xmx384m -Xms128m
+x-java-tool-options: &java_tool_options -Djava.security.egd=file:/dev/./urandom
 x-logging-level: &logging_level WARN
 
 services:
   auth-postgres:
     image: postgres:16-alpine
     container_name: auth-postgres
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -33,20 +36,21 @@ services:
     environment:
       LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
+      JAVA_TOOL_OPTIONS: *java_tool_options
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
-      REDIS_HOST: redis-server
+      REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     networks:
       - microservices-network
     restart: on-failure
-    mem_limit: 300m
+    mem_limit: 512m
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8083/actuator/health"]
       interval: 20s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
+      timeout: 30s
+      retries: 8
+      start_period: 240s
 
   auth-service:
     build:
@@ -61,7 +65,7 @@ services:
       DB_USERNAME: ${AUTH_DB_USERNAME}
       DB_PASSWORD: ${AUTH_DB_PASSWORD}
       KMS_BASE_URL: http://kms-service:8083
-      REDIS_HOST: redis-server
+      REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
@@ -73,6 +77,7 @@ services:
       HR_SYNC_INTERNAL_SECRET: ${INTERNAL_SECRET}
       LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
+      JAVA_TOOL_OPTIONS: *java_tool_options
     depends_on:
       auth-postgres:
         condition: service_healthy
@@ -81,13 +86,13 @@ services:
     networks:
       - microservices-network
     restart: on-failure
-    mem_limit: 300m
+    mem_limit: 512m
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8086/actuator/health"]
       interval: 20s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
+      timeout: 30s
+      retries: 8
+      start_period: 240s
 
 networks:
   microservices-network:

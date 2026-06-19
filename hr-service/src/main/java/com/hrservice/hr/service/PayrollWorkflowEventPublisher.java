@@ -2,6 +2,8 @@ package com.hrservice.hr.service;
 
 import com.hrservice.hr.events.PayrollApprovedEvent;
 import com.hrservice.hr.events.PayrollProcessedEvent;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,12 +14,22 @@ public class PayrollWorkflowEventPublisher {
     private static final Logger logger = LoggerFactory.getLogger(PayrollWorkflowEventPublisher.class);
     private final RabbitTemplate rabbitTemplate;
 
+    @Autowired
+    public PayrollWorkflowEventPublisher(ObjectProvider<RabbitTemplate> rabbitTemplateProvider) {
+        this(rabbitTemplateProvider.getIfAvailable());
+    }
+
     public PayrollWorkflowEventPublisher(RabbitTemplate rabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
     }
 
     public void publishApproved(PayrollApprovedEvent event) {
         try {
+            if (rabbitTemplate == null) {
+                logger.debug("RabbitTemplate is not available; skipping payroll.approved event publish");
+                return;
+            }
+
             rabbitTemplate.convertAndSend("payroll.workflow", "payroll.approved", event);
         } catch (Exception ex) {
             logger.warn("Failed to publish payroll.approved event", ex);
@@ -26,6 +38,11 @@ public class PayrollWorkflowEventPublisher {
 
     public void publishProcessed(PayrollProcessedEvent event) {
         try {
+            if (rabbitTemplate == null) {
+                logger.debug("RabbitTemplate is not available; skipping payroll.processed event publish");
+                return;
+            }
+
             rabbitTemplate.convertAndSend("payroll.workflow", "payroll.processed", event);
         } catch (Exception ex) {
             logger.warn("Failed to publish payroll.processed event", ex);

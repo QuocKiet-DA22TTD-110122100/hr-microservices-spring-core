@@ -15,6 +15,8 @@ public record TaskRequest(
 
         Task.TaskStatus status,
 
+        Task.TaskPriority priority,
+
         @NotNull(message = "assigneeId is required")
         Long assigneeId,
 

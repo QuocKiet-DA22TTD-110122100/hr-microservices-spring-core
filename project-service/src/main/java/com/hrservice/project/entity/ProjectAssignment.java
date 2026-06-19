@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
@@ -21,7 +22,8 @@ import java.time.LocalDateTime;
 @ToString(exclude = "project")
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProjectAssignment {
+public class ProjectAssignment implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

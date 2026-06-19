@@ -3,6 +3,7 @@ package com.hrservice.gateway.util;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -35,13 +36,16 @@ public class JwtUtils {
     private final WebClient.Builder webClientBuilder;
     private final ConcurrentMap<String, CachedPublicKey> publicKeyCache = new ConcurrentHashMap<>();
 
-    @Value("${app.jwt.jwks-uri:http://kms/kms/.well-known/jwks.json}")
+    @Value("${app.jwt.jwks-uri:http://kms/quan-ly-khoa/.well-known/jwks.json}")
     private String jwksUri;
 
     @Value("${app.jwt.jwks-cache-seconds:300}")
     private long jwksCacheSeconds;
 
-    public JwtUtils(ObjectMapper objectMapper, WebClient.Builder webClientBuilder) {
+    public JwtUtils(
+            ObjectMapper objectMapper,
+            @Qualifier("directWebClientBuilder") WebClient.Builder webClientBuilder
+    ) {
         this.objectMapper = objectMapper;
         this.webClientBuilder = webClientBuilder;
     }

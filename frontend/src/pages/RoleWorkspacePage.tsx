@@ -8,26 +8,26 @@ import {
   ClipboardCheck,
   Clock3,
   FileText,
-  Plus,
   ShieldAlert,
   ShieldCheck,
+  Users,
   WalletCards,
 } from 'lucide-react';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { Button } from '@/components/UI/Button';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/UI/Card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/UI/Card';
 import { WorkspaceActionPanel } from '@/components/Workspace/WorkspaceActionPanel';
 import { WorkspaceMetricCards } from '@/components/Workspace/WorkspaceMetricCards';
 import { WorkspaceStatusFilters, WorkspaceFilter } from '@/components/Workspace/WorkspaceStatusFilters';
 import { WorkspaceStatusList } from '@/components/Workspace/WorkspaceStatusList';
 import { WorkspaceDefinition, WorkspaceItem } from '@/components/Workspace/types';
-import { useAuthStore } from '@/store/authStore';
 import { resolveWorkspaceRole } from '@/config/roleExperience';
+import { useAuthStore } from '@/store/authStore';
 
 const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
   'account-security': {
     title: 'Tài khoản và bảo mật',
-    subtitle: 'Theo dõi hồ sơ tài khoản, h?n mật khẩu và phạm vi quyền truy cập cá nhân.',
+    subtitle: 'Theo dõi hồ sơ tài khoản, hạn mật khẩu và phạm vi quyền truy cập cá nhân.',
     icon: ShieldCheck,
     allowedRoles: ['user', 'employee', 'manager', 'departmentHead', 'hr', 'admin'],
     primaryAction: 'Đổi mật khẩu',
@@ -50,7 +50,7 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
       },
       {
         title: 'Mật khẩu đăng nhập',
-        description: 'Đổi mật khẩu định kỳ để giờm rủi ro truy cập trái phép.',
+        description: 'Đổi mật khẩu định kỳ để giảm rủi ro truy cập trái phép.',
         owner: 'Tôi',
         meta: 'Bảo mật',
         status: 'pending',
@@ -60,7 +60,7 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
       },
       {
         title: 'Quyền truy cập hiện tại',
-        description: 'Đối chiếu role trong token với các mục đang hiển thị ? sidebar.',
+        description: 'Đối chiếu role trong token với các mục đang hiển thị ở sidebar.',
         owner: 'Hệ thống',
         meta: 'RBAC',
         status: 'inProgress',
@@ -86,7 +86,7 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
     items: [
       {
         title: 'Thứ hai, 01/06',
-        description: '08:05 - 17:32, đã công, có tăng ca 30 phút.',
+        description: '08:05 - 17:32, đã đủ công, có tăng ca 30 phút.',
         owner: 'Tôi',
         meta: 'Phòng Kỹ thuật',
         status: 'approved',
@@ -98,7 +98,7 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
         title: 'Thứ ba, 02/06',
         description: '08:18 - 17:10, cần bổ sung lý do vào trễ.',
         owner: 'Tôi',
-        meta: 'Ch? quản lý xác nhận',
+        meta: 'Chờ quản lý xác nhận',
         status: 'pending',
         priority: 'medium',
         due: 'Hôm nay',
@@ -115,7 +115,7 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
         nextStep: 'Theo dõi trạng thái xác nhận.',
       },
     ],
-    processNotes: ['Chấm công cá nhân dùng cho nhân viên.', 'Quản lý/trưởng phòng có thể xem để hỗ trợ phê duyệt.', 'Các ngoại lệ cần ghi chú trước khi khóa kỳ công.'],
+    processNotes: ['Nhân viên dùng để theo dõi công cá nhân.', 'Quản lý có thể xem để hỗ trợ phê duyệt.', 'Ngoại lệ cần ghi chú trước khi khóa kỳ công.'],
   },
   leave: {
     title: 'Nghỉ phép',
@@ -154,18 +154,18 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
         title: 'Nghỉ bù',
         description: 'Dùng 1 ngày nghỉ bù từ đợt hỗ trợ triển khai.',
         owner: 'Tôi',
-        meta: 'đã hoàn tất',
+        meta: 'Đã hoàn tất',
         status: 'approved',
         priority: 'normal',
         due: 'Hoàn tất',
         nextStep: 'Không cần xử lý thêm.',
       },
     ],
-    processNotes: ['Nhân viên tạo đơn nghỉ.', 'Quản lý duyệt bước đầu.', 'Trưởng phòng/HR theo dõi các trường hợp ?nh hưởng vận hành.'],
+    processNotes: ['Nhân viên tạo đơn nghỉ.', 'Quản lý duyệt bước đầu.', 'Trưởng phòng và HR theo dõi các trường hợp ảnh hưởng vận hành.'],
   },
   'personal-tasks': {
     title: 'Task cá nhân',
-    subtitle: 'Theo dõi task được giao, deadline, mục ưu tiên và trạng thái thực hiện.',
+    subtitle: 'Theo dõi task được giao, deadline, mức ưu tiên và trạng thái thực hiện.',
     icon: Briefcase,
     allowedRoles: ['employee', 'manager', 'departmentHead', 'admin'],
     primaryAction: 'Cập nhật tiến độ',
@@ -203,279 +203,344 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
         meta: 'Nội bộ',
         status: 'inProgress',
         priority: 'normal',
-        due: 'Thồ sơu',
-        nextStep: 'Xác nhận để đểc sau khi hoàn tất.',
+        due: 'Thứ sáu',
+        nextStep: 'Xác nhận đã đọc sau khi hoàn tất.',
       },
     ],
-    processNotes: ['Task cá nhân chỉ tập trung vào việc được giao cho người đăng nhập.', 'Các task blocked nên n?m đểu queue.', 'Dữ liệu hiện là mock UI chỉ nối API task-service.'],
+    processNotes: ['Task cá nhân chỉ tập trung vào việc được giao cho người đăng nhập.', 'Task blocked nên được ưu tiên trong queue.', 'Dữ liệu hiện là mock UI, sẵn sàng nối API task-service.'],
   },
   'timesheet-approval': {
     title: 'Duyệt timesheet',
-    subtitle: 'Xác nhận bạng công, ghi chú ngoại lệ và giờ làm của nhân viên trong nhóm.',
+    subtitle: 'Xác nhận bảng công, ghi chú ngoại lệ và giờ làm của nhân viên trong nhóm.',
     icon: ClipboardCheck,
     allowedRoles: ['manager', 'departmentHead', 'hr', 'admin'],
     primaryAction: 'Duyệt mục đã chọn',
     secondaryAction: 'Lọc ngoại lệ',
     metrics: [
       { label: 'Chờ duyệt', value: '12', hint: 'Bảng công trong tuần' },
-      { label: 'Ngoại lệ', value: '3', hint: 'Vào trễ hoặc thiếu log' },
-      { label: 'đã xử lý', value: '28', hint: 'Trong kỳ hiện tại' },
+      { label: 'Ngoại lệ', value: '3', hint: 'Thiếu check-out hoặc OT' },
+      { label: 'Đã xử lý', value: '28', hint: 'Trong kỳ công hiện tại' },
     ],
     items: [
       {
-        title: 'Nguyễn Minh Anh',
+        title: 'Nguyễn Minh An',
         description: 'Thiếu check-out ngày 03/06, có ghi chú từ nhân viên.',
-        owner: 'Nhóm Backend',
-        meta: 'Cần quản lý xác nhận',
+        owner: 'Quản lý nhóm',
+        meta: 'Ngoại lệ',
         status: 'pending',
         priority: 'high',
         due: 'Hôm nay',
-        nextStep: 'Kiểm tra ghi chú và duyệt/hoàn trả.',
+        nextStep: 'Xác nhận ghi chú và duyệt hoặc trả lại.',
       },
       {
-        title: 'Trần Quốc Bảo',
-        description: 'Têng ca 2 giờ cho đãt release module payroll.',
-        owner: 'Nhóm Backend',
-        meta: 'Chờ duyệt OT',
+        title: 'Trần Bảo Ngọc',
+        description: 'OT 2 giờ cần xác nhận trước khi khóa kỳ công.',
+        owner: 'Quản lý nhóm',
+        meta: 'Tăng ca',
         status: 'inProgress',
         priority: 'medium',
-        due: 'Ngày mai',
-        nextStep: 'Đối chiếu kế hoạch release trước khi duyệt OT.',
+        due: 'Tuần này',
+        nextStep: 'Đối chiếu task phát sinh và duyệt OT.',
       },
       {
         title: 'Lê Ngọc Hân',
-        description: 'Bảng công tuần đã đủ log và khớp lịch làm việc.',
-        owner: 'Nhóm QA',
-        meta: 'Có thể duyệt nhanh',
+        description: 'Bảng công đầy đủ, không có ngoại lệ.',
+        owner: 'Quản lý nhóm',
+        meta: 'Sẵn sàng',
         status: 'approved',
         priority: 'normal',
-        due: 'Hoàn tất',
+        due: 'Đã duyệt',
         nextStep: 'Không cần xử lý thêm.',
       },
     ],
-    processNotes: ['Manager duyệt timesheet nhóm trực tiếp.', 'Trưởng phòng có thể theo dõi các ngoại lệ cấp phòng.', 'HR/Admin dùng để giám sát dữ liệu trước kỳ công.'],
+    processNotes: ['Ưu tiên xử lý ngoại lệ trước khi khóa kỳ công.', 'Manager duyệt phạm vi nhóm.', 'HR theo dõi để chuẩn bị payroll.'],
   },
   'team-tasks': {
     title: 'Task nhóm',
-    subtitle: 'Tạo task, Đặt ưu tiên, theo dõi tải công việc và trạng thái thực hiện của nhóm.',
+    subtitle: 'Theo dõi tiến độ, rủi ro và phân công của các task trong nhóm.',
     icon: Briefcase,
     allowedRoles: ['manager', 'departmentHead', 'admin'],
-    primaryAction: 'Tạo task',
-    secondaryAction: 'Xem tải công việc',
+    primaryAction: 'Điều phối task',
+    secondaryAction: 'Xem board',
     metrics: [
-      { label: 'Đang làm', value: '18', hint: 'Task trong nhóm' },
-      { label: 'Quá h?n', value: '2', hint: 'Cần can thiệp' },
-      { label: 'Hoàn tất', value: '41', hint: 'Trong sprint' },
+      { label: 'Đang mở', value: '18', hint: 'Task thuộc nhóm' },
+      { label: 'Quá hạn', value: '2', hint: 'Cần xử lý ngay' },
+      { label: 'Blocked', value: '1', hint: 'Đang chờ hỗ trợ' },
     ],
     items: [
       {
         title: 'Tích hợp API nhân viên',
         description: 'Hoàn thiện mapping dữ liệu hồ sơ nhân sự sang dashboard.',
-        owner: 'Nguyễn Minh Anh',
-        meta: 'Ưu tiên cao',
+        owner: 'Team Backend',
+        meta: 'Sprint 12',
         status: 'inProgress',
         priority: 'high',
-        due: 'Thứ năm',
-        nextStep: 'Theo dõi tiến độ và unblock API nếu cần.',
+        due: 'Thứ sáu',
+        nextStep: 'Chốt payload và cập nhật tiến độ.',
       },
       {
-        title: 'Kiểm thử phân quyền',
-        description: 'Xác nhận các route HR, Manager, Department Head.',
-        owner: 'Lê Ngọc Hân',
-        meta: 'Đến hạn hôm nay',
-        status: 'blocked',
-        priority: 'high',
-        due: 'Hôm nay',
-        nextStep: 'Điều phối người hỗ trợ test RBAC.',
-      },
-      {
-        title: 'Tối ưu bảng phòng ban',
-        description: 'Bổ sung filter theo công ty thành viên và trạng thái hoạt động.',
-        owner: 'Trần Quốc Bảo',
-        meta: 'Đang review',
+        title: 'Chuẩn hóa form nghỉ phép',
+        description: 'UI đã có mock, cần nối API leave-service.',
+        owner: 'Frontend',
+        meta: 'UI/API',
         status: 'pending',
         priority: 'medium',
         due: 'Tuần này',
-        nextStep: 'Chờ review UI trước khi merge.',
+        nextStep: 'Tạo contract API và test happy path.',
+      },
+      {
+        title: 'Kiểm thử phân quyền',
+        description: 'Kiểm tra route guard cho manager, HR và admin.',
+        owner: 'QA',
+        meta: 'Security',
+        status: 'blocked',
+        priority: 'high',
+        due: 'Hôm nay',
+        nextStep: 'Bổ sung tài khoản seed và chạy test API.',
       },
     ],
-    processNotes: ['Manager dùng để Điều phối team hằng ngày.', 'Trưởng phòng xem các task trợng điểm và rủi ro.', 'Nên ưu tiên task blocked/quá hạn trước.'],
+    processNotes: ['Manager điều phối task trong nhóm.', 'Task blocked cần owner rõ ràng.', 'Khi nối API, dữ liệu sẽ đến từ task-service.'],
   },
-  tasks: {
-    title: 'Task nhóm',
-    subtitle: 'Workspace cũ được giữ tương thích và dùng cùng dữ liệu task nhóm.',
-    icon: Briefcase,
-    allowedRoles: ['manager', 'departmentHead', 'admin'],
-    primaryAction: 'Tạo task',
-    secondaryAction: 'Xem tải công việc',
-    metrics: [
-      { label: 'Đang làm', value: '18', hint: 'Task trong nhóm' },
-      { label: 'Quá h?n', value: '2', hint: 'Cần can thiệp' },
-      { label: 'Hoàn tất', value: '41', hint: 'Trong sprint' },
-    ],
-    items: [],
-    processNotes: ['Workspace này tương thích với đường dẫn cũ.', 'Nên dùng /workspace/team-tasks cho UI mới.', 'Dữ liệu sẽ được đồng bộ khi nối API.'],
-  },
-  'department-approvals': {
-    title: 'Phê duyệt phòng ban',
-    subtitle: 'Gom các yêu cầu nghỉ phép, Điều chuyển và phân bổ nhân sự cần trưởng phòng quyết định.',
-    icon: FileText,
-    allowedRoles: ['departmentHead', 'hr', 'admin'],
+  approvals: {
+    title: 'Phê duyệt cấp phòng',
+    subtitle: 'Gom yêu cầu nghỉ phép, điều chuyển và phân bổ nhân sự cần trưởng phòng quyết định.',
+    icon: ShieldAlert,
+    allowedRoles: ['departmentHead', 'admin'],
     primaryAction: 'Phê duyệt',
-    secondaryAction: 'Chuyển HR',
+    secondaryAction: 'Chuyển xử lý',
     metrics: [
-      { label: 'Chờ duyệt', value: '7', hint: 'Yêu cầu cấp phòng' },
+      { label: 'Chờ duyệt', value: '7', hint: 'Cấp phòng' },
       { label: 'Điều chuyển', value: '2', hint: 'Cần xác nhận nhân sự' },
-      { label: 'SLA', value: '92%', hint: 'Duyệt đúng hạn' },
+      { label: 'Rủi ro SLA', value: '3', hint: 'Gần quá hạn' },
     ],
     items: [
       {
-        title: 'Điều chuyển sang nhóm Payroll',
-        description: 'để xu?t Điều chuyển 1 nhân viên từ HRIS sang Payroll trong 2 tháng.',
-        owner: 'HR Operations',
-        meta: 'Cần trưởng phòng duyệt',
+        title: 'Điều chuyển nhân sự',
+        description: 'Đề xuất điều chuyển 1 nhân viên từ HRIS sang Payroll trong 2 tháng.',
+        owner: 'Trưởng phòng',
+        meta: 'Điều chuyển',
         status: 'pending',
         priority: 'high',
         due: 'Hôm nay',
-        nextStep: 'Xem tác đếng nhân sự và quyết định phê duyệt.',
+        nextStep: 'Xem tác động nhân sự và quyết định phê duyệt.',
       },
       {
-        title: 'Nghỉ phép dài ngày',
-        description: 'Nhân viên xin ngh? 5 ngày, quản lý trực tiếp đã đãng ?.',
-        owner: 'Nhóm Mobile',
-        meta: 'Ảnh hưởng lịch release',
+        title: 'Nghỉ dài ngày',
+        description: 'Nhân viên xin nghỉ 5 ngày, quản lý trực tiếp đã đồng ý.',
+        owner: 'Trưởng phòng',
+        meta: 'Nghỉ phép',
         status: 'inProgress',
         priority: 'medium',
-        due: 'Ngày mai',
+        due: 'Tuần này',
         nextStep: 'Đối chiếu kế hoạch thay thế nhân sự.',
       },
       {
         title: 'Bổ sung nhân sự dự án',
-        description: 'để ngh? thêm 2 nhân sự cho dự án tách hợp API nội bộ.',
-        owner: 'Project Office',
-        meta: 'Chờ xác nhận ngân sách',
+        description: 'Đề nghị thêm 2 nhân sự cho dự án tích hợp API nội bộ.',
+        owner: 'Trưởng phòng',
+        meta: 'Chờ ngân sách',
         status: 'blocked',
         priority: 'high',
         due: 'Tuần này',
         nextStep: 'Chuyển HR/PMO làm rõ ngân sách.',
       },
     ],
-    processNotes: ['Trưởng phòng quyết định các yêu cầu cấp phòng.', 'HR/Admin có thể xem để phối hợp vận hành.', 'Các mục ?nh hđếng release cần ưu tiên cao.'],
+    processNotes: ['Trưởng phòng quyết định các thay đổi ảnh hưởng vận hành.', 'Các phê duyệt phải có lý do rõ.', 'HR và PMO nhận phần việc tiếp theo sau phê duyệt.'],
   },
   'department-reports': {
     title: 'Báo cáo phòng ban',
-    subtitle: 'Từng hợp KPI, headcount, tải công việc và trạng thái vận hành của phòng ban.',
+    subtitle: 'Theo dõi headcount, KPI, rủi ro tải việc và các chỉ số vận hành.',
     icon: BarChart3,
-    allowedRoles: ['departmentHead', 'hr', 'admin'],
-    primaryAction: 'Tạo báo cáo',
-    secondaryAction: 'Xuất PDF',
+    allowedRoles: ['departmentHead', 'admin'],
+    primaryAction: 'Xuất báo cáo',
+    secondaryAction: 'Lọc phòng ban',
     metrics: [
       { label: 'Headcount', value: '46', hint: 'Nhân sự đang hoạt động' },
-      { label: 'Utilization', value: '81%', hint: 'Tải công việc trung bình' },
-      { label: 'KPI', value: '88%', hint: 'Mục hoàn thành tháng' },
+      { label: 'KPI', value: '88%', hint: 'Mức hoàn thành tháng' },
+      { label: 'Rủi ro tải việc', value: '2 nhóm', hint: 'Cần điều phối' },
     ],
     items: [
       {
-        title: 'Từng quan nhân sự tháng 06',
-        description: 'Headcount têng 4%, tỷ lệ nghỉ phép trong ngđãng ?n đãnh.',
+        title: 'Tổng quan nhân sự tháng 06',
+        description: 'Headcount ổn định, 3 vị trí đang tuyển bổ sung.',
         owner: 'Trưởng phòng',
-        meta: 'Cập nhật hôm nay',
+        meta: 'Nhân sự',
         status: 'approved',
         priority: 'normal',
-        due: 'đã cập nhật',
-        nextStep: 'Dùng làm dữ liệu họp tuần.',
+        due: 'Tháng này',
+        nextStep: 'Chia sẻ báo cáo cho ban điều hành.',
       },
       {
-        title: 'Rủi ro tải công việc',
-        description: 'Nhóm Backend vượt 90% utilization trong 2 tuần liên tiếp.',
-        owner: 'Delivery Manager',
-        meta: 'Cần điều phối',
+        title: 'Utilization Backend',
+        description: 'Tải việc vượt 90% trong 2 tuần liên tiếp.',
+        owner: 'Trưởng phòng',
+        meta: 'Rủi ro',
         status: 'blocked',
         priority: 'high',
         due: 'Hôm nay',
-        nextStep: 'Điều chỉnh phân bổ hoặc bổ sung h? trợ.',
+        nextStep: 'Điều chỉnh phân bổ hoặc bổ sung hỗ trợ.',
       },
       {
-        title: 'Kế hoạch tuyển bổ sung',
-        description: 'để xu?t 3 vị trí cho qu? tải d?a trên pipeline dự án.',
-        owner: 'HR Business Partner',
-        meta: 'Đang chuẩn bị',
+        title: 'KPI chất lượng',
+        description: 'Tỷ lệ task hoàn thành đúng hạn đạt 88%.',
+        owner: 'Trưởng phòng',
+        meta: 'KPI',
         status: 'inProgress',
         priority: 'medium',
         due: 'Tuần này',
-        nextStep: 'Chuyển HR xác nhận kế hoạch tuyển.',
+        nextStep: 'Rà soát task quá hạn và nguyên nhân.',
       },
     ],
-    processNotes: ['Báo cáo phục vụ trưởng phòng và HR.', 'Rủi ro tải công việc cần gắn với action c? thể.', 'Khi nối API nên l?y tế hr-service/project-service.'],
+    processNotes: ['Báo cáo dùng cho điều hành phòng ban.', 'Chỉ số rủi ro cần hành động cụ thể.', 'Khi nối API, dữ liệu lấy từ HR và task-service.'],
   },
-  benefits: {
-    title: 'Hồ sơ phúc lợi',
-    subtitle: 'Theo dõi lương, bảo hiểm, phụ cấp và chính sách phúc lợi của nhân viên.',
-    icon: WalletCards,
+  'hr-records': {
+    title: 'Hồ sơ nhân sự',
+    subtitle: 'Theo dõi dữ liệu nhân viên, trạng thái hồ sơ và các cập nhật cần HR xử lý.',
+    icon: Users,
     allowedRoles: ['hr', 'admin'],
-    primaryAction: 'Cập nhật hồ sơ',
-    secondaryAction: 'Kiểm tra thiếu sót',
+    primaryAction: 'Mở hồ sơ',
+    secondaryAction: 'Lọc thiếu dữ liệu',
     metrics: [
-      { label: 'Hồ sơ đã', value: '94%', hint: 'đã có dữ liệu phúc lợi' },
-      { label: 'Cần rà soát', value: '11', hint: 'Thiếu mã bảo hiểm hoặc phụ cấp' },
-      { label: 'Cập nhật mới', value: '6', hint: 'Trong tuần' },
+      { label: 'Đủ dữ liệu', value: '94%', hint: 'Hồ sơ đạt chuẩn' },
+      { label: 'Thiếu thông tin', value: '11', hint: 'Cần bổ sung trước payroll' },
+      { label: 'Cập nhật mới', value: '6', hint: 'Trong tuần hiện tại' },
     ],
     items: [
       {
-        title: 'Rà soát bảo hiểm xã hội',
-        description: '11 hồ sơ cần bổ sung mã BHXH trước kỳ payroll.',
-        owner: 'HR Payroll',
-        meta: 'Ưu tiên cao',
+        title: 'Bổ sung mã số thuế',
+        description: '5 nhân viên thiếu mã số thuế hoặc thông tin phụ thuộc.',
+        owner: 'HR',
+        meta: 'Hồ sơ',
         status: 'pending',
         priority: 'high',
-        due: 'Trước kỳ lương',
+        due: 'Trước payroll',
         nextStep: 'Liên hệ nhân viên thiếu thông tin và cập nhật hồ sơ.',
       },
       {
-        title: 'Cập nhật phụ cấp dự án',
-        description: '6 nhân viên được thêm phụ cấp dự án theo quyết định mới.',
-        owner: 'HR Operations',
-        meta: 'Đang xử lý',
+        title: 'Cập nhật chức danh',
+        description: '3 nhân viên thay đổi chức danh sau kỳ review.',
+        owner: 'HR',
+        meta: 'Vòng đời nhân viên',
         status: 'inProgress',
         priority: 'medium',
         due: 'Tuần này',
-        nextStep: 'Đối chiếu quyết định và đồng bộ payroll.',
+        nextStep: 'Đồng bộ chức danh sang HRIS.',
       },
       {
-        title: 'Đối soát dữ liệu phúc lợi',
-        description: 'Dữ liệu benefit tháng trước đã khớp payroll.',
-        owner: 'Payroll Team',
-        meta: 'đã hoàn tất',
+        title: 'Rà soát trạng thái làm việc',
+        description: 'Đối chiếu danh sách active với hợp đồng còn hiệu lực.',
+        owner: 'HR',
+        meta: 'Compliance',
+        status: 'approved',
+        priority: 'normal',
+        due: 'Hàng tháng',
+        nextStep: 'Lưu báo cáo kiểm tra.',
+      },
+    ],
+    processNotes: ['HR chịu trách nhiệm độ chính xác hồ sơ.', 'Dữ liệu thiếu cần xử lý trước payroll.', 'Các thay đổi nhân sự nên có dấu vết audit.'],
+  },
+  benefits: {
+    title: 'Phúc lợi',
+    subtitle: 'Theo dõi lương, bảo hiểm, phụ cấp và chính sách phúc lợi của nhân viên.',
+    icon: WalletCards,
+    allowedRoles: ['hr', 'admin'],
+    primaryAction: 'Cập nhật phúc lợi',
+    secondaryAction: 'Xuất danh sách',
+    metrics: [
+      { label: 'Chờ rà soát', value: '11', hint: 'Thiếu bảo hiểm hoặc phụ cấp' },
+      { label: 'Đã cập nhật', value: '6', hint: 'Trong tuần hiện tại' },
+      { label: 'Sẵn sàng payroll', value: '92%', hint: 'Hồ sơ đủ dữ liệu' },
+    ],
+    items: [
+      {
+        title: 'Thiếu thông tin bảo hiểm',
+        description: '11 hồ sơ cần bổ sung trước kỳ payroll.',
+        owner: 'HR',
+        meta: 'BHXH',
+        status: 'pending',
+        priority: 'high',
+        due: 'Trước payroll',
+        nextStep: 'Liên hệ nhân viên thiếu thông tin và cập nhật hồ sơ.',
+      },
+      {
+        title: 'Phụ cấp dự án',
+        description: '6 nhân viên được thêm phụ cấp dự án theo quyết định mới.',
+        owner: 'HR',
+        meta: 'Phụ cấp',
+        status: 'inProgress',
+        priority: 'medium',
+        due: 'Tuần này',
+        nextStep: 'Xác nhận quyết định và cập nhật phụ cấp.',
+      },
+      {
+        title: 'Chính sách nghỉ lễ',
+        description: 'Thông tin phúc lợi đã cập nhật cho kỳ nghỉ sắp tới.',
+        owner: 'HR',
+        meta: 'Chính sách',
         status: 'approved',
         priority: 'normal',
         due: 'Hoàn tất',
-        nextStep: 'Lưu kết quả đối soát.',
+        nextStep: 'Thông báo cho nhân viên.',
       },
     ],
-    processNotes: ['HR chịu trách nhiệm dữ liệu phúc lợi.', 'Admin có thể truy cập để hỗ trợ cấu hình/vận hành.', 'Các thiếu sót nên xử lý trước kỳ payroll.'],
+    processNotes: ['Phúc lợi liên quan trực tiếp đến payroll.', 'Dữ liệu phải được kiểm tra trước kỳ lương.', 'Mọi cập nhật nên có nguồn quyết định rõ ràng.'],
+  },
+  audit: {
+    title: 'Audit và phân quyền',
+    subtitle: 'Theo dõi thay đổi tài khoản, role và các sự kiện nhạy cảm.',
+    icon: FileText,
+    allowedRoles: ['admin'],
+    primaryAction: 'Xem audit',
+    secondaryAction: 'Xuất log',
+    metrics: [
+      { label: 'Sự kiện tuần này', value: '9', hint: 'Thay đổi quyền' },
+      { label: 'Role hệ thống', value: '6', hint: 'Đang sử dụng' },
+      { label: 'Tài khoản nhạy cảm', value: '4', hint: 'Cần rà soát định kỳ' },
+    ],
+    items: [
+      {
+        title: 'Thay đổi role HR',
+        description: 'Một tài khoản được cấp quyền HR_MANAGER.',
+        owner: 'Admin',
+        meta: 'Role',
+        status: 'inProgress',
+        priority: 'high',
+        due: 'Hôm nay',
+        nextStep: 'Xác minh người phê duyệt và lý do thay đổi.',
+      },
+      {
+        title: 'Tài khoản bị khóa',
+        description: 'Một tài khoản bị khóa sau nhiều lần đăng nhập thất bại.',
+        owner: 'Hệ thống',
+        meta: 'Security',
+        status: 'approved',
+        priority: 'medium',
+        due: 'Đã xử lý',
+        nextStep: 'Theo dõi nếu có yêu cầu mở khóa.',
+      },
+      {
+        title: 'Rà soát quyền admin',
+        description: 'Kiểm tra tài khoản quyền cao theo lịch định kỳ.',
+        owner: 'Admin',
+        meta: 'Compliance',
+        status: 'pending',
+        priority: 'medium',
+        due: 'Tuần này',
+        nextStep: 'Đối chiếu danh sách tài khoản quyền cao.',
+      },
+    ],
+    processNotes: ['Admin chịu trách nhiệm kiểm soát quyền cao.', 'Audit cần có lý do và người phê duyệt.', 'Khi nối API, dữ liệu lấy từ auth-service.'],
   },
 };
 
-workspaceDefinitions.tasks.items = workspaceDefinitions['team-tasks'].items;
-
-const resolveWorkspace = (slug?: string) => {
-  if (!slug) return undefined;
-  return workspaceDefinitions[slug];
-};
-
 export const RoleWorkspacePage = () => {
-  const { slug } = useParams();
+  const { slug = '' } = useParams();
   const { user } = useAuthStore();
-  const [selectedItemTitle, setSelectedItemTitle] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<WorkspaceFilter>('all');
 
+  const workspace = workspaceDefinitions[slug];
   const workspaceRole = resolveWorkspaceRole(user?.roles);
-  const workspace = resolveWorkspace(slug);
-
-  const canAccess = useMemo(
-    () => Boolean(workspace && workspace.allowedRoles.includes(workspaceRole)),
-    [workspace, workspaceRole]
-  );
+  const hasAccess = workspace?.allowedRoles.includes(workspaceRole);
 
   const filteredItems = useMemo(() => {
     if (!workspace) return [];
@@ -483,30 +548,56 @@ export const RoleWorkspacePage = () => {
     return workspace.items.filter((item) => item.status === activeFilter);
   }, [activeFilter, workspace]);
 
+  const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
   const selectedItem = useMemo(() => {
     if (!workspace) return undefined;
-    return workspace.items.find((item) => item.title === selectedItemTitle) || filteredItems[0];
-  }, [filteredItems, selectedItemTitle, workspace]);
+    return workspace.items.find((item) => item.title === selectedTitle) || filteredItems[0];
+  }, [filteredItems, selectedTitle, workspace]);
 
-  if (!workspace || !canAccess) {
+  const handleSelectItem = (item: WorkspaceItem) => {
+    setSelectedTitle(item.title);
+  };
+
+  if (!workspace) {
     return (
       <MainLayout>
-        <Card className="p-8 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-rose-600">
-            <ShieldAlert size={28} />
-          </div>
-          <h2 className="mt-4 text-xl font-semibold text-slate-900">Không có quyền truy cập không gian này</h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-            Chức năng này chỉ hiển thị cho đúng nhóm vai trò. H?y quay lỗi dashboard để xem các chức năng phù hợp
-            với tài khoản hiện tại.
-          </p>
-          <Link
-            to="/"
-            className="mt-6 inline-flex items-center gap-2 rounded-md bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700"
-          >
-            <ArrowLeft size={16} />
-            Về dashboard
-          </Link>
+        <Card className="mx-auto max-w-2xl p-8 text-center">
+          <CardHeader>
+            <CardTitle>Không tìm thấy workspace</CardTitle>
+            <CardDescription>Đường dẫn hiện tại chưa có cấu hình giao diện.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link to="/">
+              <Button type="button">
+                <ArrowLeft size={16} />
+                Về dashboard
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </MainLayout>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <MainLayout>
+        <Card className="mx-auto max-w-2xl p-8 text-center">
+          <CardHeader>
+            <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-md bg-rose-50 text-rose-600">
+              <ShieldAlert size={28} />
+            </div>
+            <CardTitle>Bạn chưa có quyền vào workspace này</CardTitle>
+            <CardDescription>Vai trò hiện tại không nằm trong phạm vi được phép của trang này.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link to="/">
+              <Button type="button">
+                <ArrowLeft size={16} />
+                Về dashboard
+              </Button>
+            </Link>
+          </CardContent>
         </Card>
       </MainLayout>
     );
@@ -517,28 +608,24 @@ export const RoleWorkspacePage = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex min-w-0 gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-cyan-50 text-cyan-700">
                 <Icon size={24} />
               </div>
               <div className="min-w-0">
-                <Link to="/" className="mb-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-cyan-700">
-                  <ArrowLeft size={16} />
-                  Dashboard
-                </Link>
-                <h2 className="text-2xl font-semibold text-slate-900">{workspace.title}</h2>
+                <p className="text-xs font-semibold uppercase text-cyan-700">Workspace</p>
+                <h1 className="mt-1 text-2xl font-semibold text-slate-900">{workspace.title}</h1>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{workspace.subtitle}</p>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button variant="secondary">{workspace.secondaryAction}</Button>
-              <Button>
-                <Plus size={16} />
-                {workspace.primaryAction}
+              <Button type="button" variant="outline">
+                {workspace.secondaryAction}
               </Button>
+              <Button type="button">{workspace.primaryAction}</Button>
             </div>
           </div>
         </section>
@@ -546,20 +633,17 @@ export const RoleWorkspacePage = () => {
         <WorkspaceMetricCards metrics={workspace.metrics} />
 
         <section className="grid gap-6 xl:grid-cols-[1fr_360px]">
-          <Card>
-            <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <CardTitle>Danh sách xử lý</CardTitle>
-                <CardDescription>Dữ liệu mẫu UI, sẵn sàng nối API ở bước sau.</CardDescription>
+          <Card className="overflow-hidden">
+            <CardHeader className="border-b border-slate-100">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <CardTitle>Danh sách xử lý</CardTitle>
+                  <CardDescription>Lọc theo trạng thái để tập trung vào việc quan trọng.</CardDescription>
+                </div>
+                <WorkspaceStatusFilters activeFilter={activeFilter} onFilterChange={setActiveFilter} />
               </div>
-              <WorkspaceStatusFilters activeFilter={activeFilter} onFilterChange={setActiveFilter} />
             </CardHeader>
-
-            <WorkspaceStatusList
-              items={filteredItems}
-              selectedItem={selectedItem}
-              onSelectItem={(item: WorkspaceItem) => setSelectedItemTitle(item.title)}
-            />
+            <WorkspaceStatusList items={filteredItems} selectedItem={selectedItem} onSelectItem={handleSelectItem} />
           </Card>
 
           <WorkspaceActionPanel selectedItem={selectedItem} processNotes={workspace.processNotes} />

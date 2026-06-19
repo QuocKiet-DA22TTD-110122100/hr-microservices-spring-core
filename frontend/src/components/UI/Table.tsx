@@ -30,24 +30,24 @@ interface TableProps<T extends object> {
 }
 
 const LoadingSkeleton = memo(({ columns, rows = 5 }: { columns: number; rows?: number }) => (
-  <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+  <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white">
     <div className="overflow-x-auto">
       <table className="min-w-full">
-        <thead className="bg-slate-50">
+        <thead className="bg-slate-100/90">
           <tr>
             {Array.from({ length: columns }).map((_, index) => (
               <th key={index} className="border-b border-slate-200 px-5 py-3">
-                <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />
+                <div className="h-4 w-24 animate-pulse rounded bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_100%] animate-shimmer" />
               </th>
             ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {Array.from({ length: rows }).map((_, rowIndex) => (
-            <tr key={rowIndex}>
+          <tr key={rowIndex} className="bg-white">
               {Array.from({ length: columns }).map((_, columnIndex) => (
                 <td key={columnIndex} className="px-5 py-4">
-                  <div className="h-4 w-32 animate-pulse rounded bg-slate-100" />
+                  <div className="h-4 w-32 animate-pulse rounded bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 bg-[length:200%_100%] animate-shimmer" />
                 </td>
               ))}
             </tr>
@@ -59,7 +59,7 @@ const LoadingSkeleton = memo(({ columns, rows = 5 }: { columns: number; rows?: n
 ));
 
 const ErrorState = memo(({ message, onRetry }: { message: string; onRetry?: () => void }) => (
-  <div className="rounded-lg border border-rose-200 bg-white">
+  <div className="rounded-xl border border-rose-200 bg-rose-50/60">
     <EmptyState
       icon={AlertCircle}
       title="Có lỗi xảy ra"
@@ -87,7 +87,7 @@ function TableComponent<T extends object>({
 
   if (data.length === 0) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white">
+      <div className="rounded-xl border border-slate-200/80 bg-white">
         <EmptyState
           icon={FileText}
           title="Không có dữ liệu"
@@ -98,17 +98,17 @@ function TableComponent<T extends object>({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white">
       <div className="overflow-x-auto">
         <table className="min-w-full">
-          <thead className="bg-slate-50">
+          <thead className="sticky top-0 z-[1] bg-slate-100/95 backdrop-blur">
             <tr>
               {columns.map((column) => (
                 <th
                   key={String(column.key)}
                   className={cn(
-                    'border-b border-slate-200 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500',
-                    column.sortable && 'cursor-pointer select-none hover:bg-slate-100'
+                    'border-b border-slate-200/80 px-5 py-3 text-left text-xs font-semibold text-slate-600',
+                    column.sortable && 'cursor-pointer select-none transition hover:bg-slate-200/70'
                   )}
                   onClick={() => column.sortable && column.onSort?.(column.key)}
                 >
@@ -128,7 +128,20 @@ function TableComponent<T extends object>({
                 <tr
                   key={recordKey}
                   onClick={() => onRowClick?.(record)}
-                  className={cn(onRowClick && 'cursor-pointer hover:bg-cyan-50/50')}
+                  tabIndex={onRowClick ? 0 : undefined}
+                  onKeyDown={(event) => {
+                    if (!onRowClick) return;
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onRowClick(record);
+                    }
+                  }}
+                  className={cn(
+                    'transition duration-150 focus-within:bg-cyan-50/70 focus:outline-none',
+                    onRowClick
+                      ? 'cursor-pointer hover:bg-cyan-50/70 focus:bg-cyan-50/70 focus:ring-2 focus:ring-inset focus:ring-cyan-600/20'
+                      : 'hover:bg-slate-50/70'
+                  )}
                 >
                   {columns.map((column) => {
                     const value = record[column.key];

@@ -1,17 +1,34 @@
 package com.hrservice.auth.iam.mapper;
 
 import com.hrservice.auth.iam.controller.AuthController.RegisterResponse;
+import com.hrservice.auth.iam.controller.AuthController.RoleDto;
 import com.hrservice.auth.iam.controller.AuthController.SyncStatusResponse;
+import com.hrservice.auth.iam.controller.AuthController.UserDto;
 import com.hrservice.auth.iam.entity.User;
 import com.hrservice.auth.iam.service.AuthService;
 import com.hrservice.auth.iam.sync.UserSyncService;
 import org.springframework.stereotype.Component;
+import java.util.List;
 
 @Component
 public class AuthDtoMapper {
 
     public RegisterResponse toRegisterResponse(User user) {
         return new RegisterResponse(user.getId().toString(), user.getUsername(), user.getRole());
+    }
+
+    public UserDto toUserDto(User user) {
+        return new UserDto(
+            user.getId().toString(),
+            user.getUsername(),
+            user.getRole(),
+            user.isLocked(),
+            user.getCreatedAt() == null ? null : user.getCreatedAt().toString()
+        );
+    }
+
+    public List<UserDto> toUserDtoList(List<User> users) {
+        return users.stream().map(this::toUserDto).toList();
     }
 
     public SyncStatusResponse toSyncStatusResponse(UserSyncService.SyncStatusView status) {

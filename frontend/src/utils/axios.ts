@@ -55,13 +55,11 @@ apiClient.interceptors.response.use(
 
     if (error.response?.status === 429) {
       const retryAfter = error.response.headers['retry-after'];
-      const message = `Quá nhiều yêu cầu. Vui lòng thử lại sau ${retryAfter || 60} giây.`;
-      throw toApiError(message, error);
+      throw toApiError(`Quá nhiều yêu cầu. Vui lòng thử lại sau ${retryAfter || 60} giây.`, error);
     }
 
     if (error.response?.status === 423) {
-      const lockedUntil = error.response.data.message;
-      throw toApiError(`Tài khoản bị khóa. ${lockedUntil}`, error);
+      throw toApiError(`Tài khoản bị khóa. ${error.response.data.message}`, error);
     }
 
     throw error;

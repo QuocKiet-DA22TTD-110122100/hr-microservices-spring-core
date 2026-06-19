@@ -45,6 +45,10 @@ export const PERMISSIONS = {
   TASK_CREATE: 'task:create',
   TASK_UPDATE: 'task:update',
   TASK_DELETE: 'task:delete',
+
+  // Payroll Management
+  PAYROLL_VIEW: 'payroll:view',
+  PAYROLL_MANAGE: 'payroll:manage',
   
   // System Admin
   SYSTEM_SETTINGS: 'system:settings',
@@ -59,9 +63,51 @@ export const ROLES = {
   HR_MANAGER: 'HR_MANAGER',
   DEPARTMENT_HEAD: 'DEPARTMENT_HEAD',
   MANAGER: 'MANAGER',
+  PAYROLL_OFFICER: 'PAYROLL_OFFICER',
   EMPLOYEE: 'EMPLOYEE',
   USER: 'USER',
 } as const;
+
+const BACKEND_PERMISSION_ALIASES: Record<string, string> = {
+  READ_USER: PERMISSIONS.USER_VIEW,
+  WRITE_USER: PERMISSIONS.USER_UPDATE,
+  DELETE_USER: PERMISSIONS.USER_DELETE,
+  READ_ROLE: PERMISSIONS.ROLE_VIEW,
+  WRITE_ROLE: PERMISSIONS.ROLE_UPDATE,
+  DELETE_ROLE: PERMISSIONS.ROLE_DELETE,
+  READ_EMPLOYEE: PERMISSIONS.EMPLOYEE_VIEW,
+  WRITE_EMPLOYEE: PERMISSIONS.EMPLOYEE_UPDATE,
+  DELETE_EMPLOYEE: PERMISSIONS.EMPLOYEE_DELETE,
+  'HR.READ': PERMISSIONS.EMPLOYEE_VIEW,
+  'HR.WRITE': PERMISSIONS.EMPLOYEE_UPDATE,
+  READ_DEPARTMENT: PERMISSIONS.DEPARTMENT_VIEW,
+  WRITE_DEPARTMENT: PERMISSIONS.DEPARTMENT_UPDATE,
+  DELETE_DEPARTMENT: PERMISSIONS.DEPARTMENT_DELETE,
+  READ_ORGANIZATION: PERMISSIONS.ORGANIZATION_VIEW,
+  WRITE_ORGANIZATION: PERMISSIONS.ORGANIZATION_UPDATE,
+  DELETE_ORGANIZATION: PERMISSIONS.ORGANIZATION_DELETE,
+  READ_PROJECT: PERMISSIONS.PROJECT_VIEW,
+  WRITE_PROJECT: PERMISSIONS.PROJECT_UPDATE,
+  DELETE_PROJECT: PERMISSIONS.PROJECT_DELETE,
+  READ_TASK: PERMISSIONS.TASK_VIEW,
+  WRITE_TASK: PERMISSIONS.TASK_UPDATE,
+  DELETE_TASK: PERMISSIONS.TASK_DELETE,
+  READ_PAYROLL: PERMISSIONS.PAYROLL_VIEW,
+  WRITE_PAYROLL: PERMISSIONS.PAYROLL_MANAGE,
+  'PAYROLL.READ': PERMISSIONS.PAYROLL_VIEW,
+  'PAYROLL.WRITE': PERMISSIONS.PAYROLL_MANAGE,
+  ALL: '*',
+};
+
+const normalizeRoleName = (role: string): string => role.trim().toUpperCase();
+
+export const normalizePermission = (permission: string): string => {
+  const normalized = permission.trim();
+  if (!normalized) return normalized;
+
+  const backendPermission = BACKEND_PERMISSION_ALIASES[normalized.toUpperCase()];
+  return backendPermission ?? normalized;
+};
 
 /**
  * Default role-based permissions
@@ -100,6 +146,8 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     PERMISSIONS.TASK_CREATE,
     PERMISSIONS.TASK_UPDATE,
     PERMISSIONS.TASK_DELETE,
+    PERMISSIONS.PAYROLL_VIEW,
+    PERMISSIONS.PAYROLL_MANAGE,
     PERMISSIONS.SYSTEM_SETTINGS,
     PERMISSIONS.SYSTEM_LOGS,
   ],
@@ -115,19 +163,26 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     PERMISSIONS.ORGANIZATION_VIEW,
     PERMISSIONS.PROJECT_VIEW,
     PERMISSIONS.TASK_VIEW,
+    PERMISSIONS.PAYROLL_VIEW,
+  ],
+  [ROLES.PAYROLL_OFFICER]: [
+    PERMISSIONS.EMPLOYEE_VIEW,
+    PERMISSIONS.PAYROLL_VIEW,
+    PERMISSIONS.PAYROLL_MANAGE,
   ],
   [ROLES.MANAGER]: [
     PERMISSIONS.EMPLOYEE_VIEW,
-    PERMISSIONS.EMPLOYEE_UPDATE,
     PERMISSIONS.DEPARTMENT_VIEW,
     PERMISSIONS.PROJECT_VIEW,
+    PERMISSIONS.PROJECT_CREATE,
+    PERMISSIONS.PROJECT_UPDATE,
     PERMISSIONS.PROJECT_MEMBER_MANAGE,
     PERMISSIONS.TASK_VIEW,
+    PERMISSIONS.TASK_CREATE,
     PERMISSIONS.TASK_UPDATE,
   ],
   [ROLES.DEPARTMENT_HEAD]: [
     PERMISSIONS.EMPLOYEE_VIEW,
-    PERMISSIONS.EMPLOYEE_UPDATE,
     PERMISSIONS.DEPARTMENT_VIEW,
     PERMISSIONS.ORGANIZATION_VIEW,
     PERMISSIONS.PROJECT_VIEW,
@@ -153,11 +208,16 @@ export const getUserPermissions = (
   userRoles: string[] = [],
   userPermissions: string[] = []
 ): string[] => {
-  // Start with explicit permissions from backend
-  const permissions = new Set(userPermissions);
+  const normalizedRoles = userRoles.map(normalizeRoleName);
+  const normalizedExplicitPermissions = userPermissions.map(normalizePermission).filter(Boolean);
+  const permissions = new Set(normalizedExplicitPermissions);
+
+  if (permissions.has('*')) {
+    return ROLE_PERMISSIONS[ROLES.ADMIN];
+  }
   
   // Add role-based permissions
-  userRoles.forEach((role) => {
+  normalizedRoles.forEach((role) => {
     const rolePerms = ROLE_PERMISSIONS[role] || [];
     rolePerms.forEach((perm) => permissions.add(perm));
   });
@@ -211,7 +271,8 @@ export const hasAllPermissions = (
  * @returns True if user has the role
  */
 export const hasRole = (userRoles: string[], requiredRole: string): boolean => {
-  return userRoles.includes(requiredRole);
+  const normalizedRequiredRole = normalizeRoleName(requiredRole);
+  return userRoles.map(normalizeRoleName).includes(normalizedRequiredRole);
 };
 
 /**
@@ -221,7 +282,8 @@ export const hasRole = (userRoles: string[], requiredRole: string): boolean => {
  * @returns True if user has any of the roles
  */
 export const hasAnyRole = (userRoles: string[], requiredRoles: string[]): boolean => {
-  return requiredRoles.some((role) => userRoles.includes(role));
+  const normalizedUserRoles = userRoles.map(normalizeRoleName);
+  return requiredRoles.some((role) => normalizedUserRoles.includes(normalizeRoleName(role)));
 };
 
 /**

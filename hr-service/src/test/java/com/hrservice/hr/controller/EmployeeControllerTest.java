@@ -96,6 +96,9 @@ class EmployeeControllerTest {
             null,
             "John Doe",
             "Senior Dev",
+            new BigDecimal("120000.00"),
+            LocalDate.of(2026, 1, 15),
+            "ACTIVE",
             10L,
             "Engineering"
         ));

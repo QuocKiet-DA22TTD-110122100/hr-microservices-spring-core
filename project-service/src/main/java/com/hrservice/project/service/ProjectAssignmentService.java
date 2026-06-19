@@ -32,7 +32,7 @@ public class ProjectAssignmentService {
     public List<ProjectAssignment> getAssignmentsByProject(Long projectId) {
         Long id = Objects.requireNonNull(projectId, "projectId must not be null");
         log.info("[PROJECT-ASSIGNMENT] Cache MISS: fetching assignments for project {}", id);
-        return projectAssignmentRepository.findByProjectIdAndActiveTrueOrderByAssignedAtDesc(id);
+        return projectAssignmentRepository.findByProject_IdAndActiveTrueOrderByAssignedAtDesc(id);
     }
 
     @Cacheable(value = "projectAssignmentsByEmployee", key = "#employeeId")
@@ -45,7 +45,7 @@ public class ProjectAssignmentService {
     public boolean isActiveProjectMember(Long projectId, Long employeeId) {
         Long checkedProjectId = Objects.requireNonNull(projectId, "projectId must not be null");
         Long checkedEmployeeId = Objects.requireNonNull(employeeId, "employeeId must not be null");
-        return projectAssignmentRepository.existsByProjectIdAndEmployeeIdAndActiveTrue(checkedProjectId, checkedEmployeeId);
+        return projectAssignmentRepository.existsByProject_IdAndEmployeeIdAndActiveTrue(checkedProjectId, checkedEmployeeId);
     }
 
     @Transactional
@@ -57,12 +57,12 @@ public class ProjectAssignmentService {
         Project project = projectRepository.findById(checkedProjectId)
                 .orElseThrow(() -> new NoSuchElementException("Project not found: " + checkedProjectId));
 
-        if (projectAssignmentRepository.existsByProjectIdAndEmployeeIdAndActiveTrue(checkedProjectId, checkedEmployeeId)) {
+        if (projectAssignmentRepository.existsByProject_IdAndEmployeeIdAndActiveTrue(checkedProjectId, checkedEmployeeId)) {
             throw new IllegalStateException("Employee is already assigned to project");
         }
 
         ProjectAssignment assignment = projectAssignmentRepository
-                .findByProjectIdAndEmployeeId(checkedProjectId, checkedEmployeeId)
+                .findByProject_IdAndEmployeeId(checkedProjectId, checkedEmployeeId)
                 .orElseGet(ProjectAssignment::new);
 
         assignment.setProject(project);
@@ -81,7 +81,7 @@ public class ProjectAssignmentService {
         Long checkedEmployeeId = Objects.requireNonNull(employeeId, "employeeId must not be null");
 
         ProjectAssignment assignment = projectAssignmentRepository
-                .findByProjectIdAndEmployeeId(checkedProjectId, checkedEmployeeId)
+                .findByProject_IdAndEmployeeId(checkedProjectId, checkedEmployeeId)
                 .orElseThrow(() -> new NoSuchElementException("Project assignment not found"));
 
         assignment.setActive(false);

@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Edit, ListChecks, Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock3, Edit, ListChecks, Plus, Trash2, Zap } from 'lucide-react';
 import { taskApi } from '@/api/task.api';
 import { Badge } from '@/components/UI/Badge';
 import { Button } from '@/components/UI/Button';
+import { Card } from '@/components/UI/Card';
 import { DataListPage } from '@/components/UI/DataListPage';
 import { Input } from '@/components/UI/Input';
 import { Column } from '@/components/UI/Table';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Task, TaskPriority, TaskStatus } from '@/types/task';
+import { PERMISSIONS } from '@/utils/permissions';
 
 const statusLabels: Record<TaskStatus, string> = {
   OPEN: 'Mở',
@@ -43,6 +46,10 @@ const formatDate = (value?: string | null) => (value ? new Date(value).toLocaleD
 
 export const TaskListPage = () => {
   const navigate = useNavigate();
+  const { can } = usePermissions();
+  const canCreateTask = can(PERMISSIONS.TASK_CREATE);
+  const canUpdateTask = can(PERMISSIONS.TASK_UPDATE);
+  const canDeleteTask = can(PERMISSIONS.TASK_DELETE);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +111,44 @@ export const TaskListPage = () => {
       });
   }, [priorityFilter, search, sortDirection, sortKey, statusFilter, tasks]);
 
+  const taskStats = useMemo(() => {
+    const openTasks = tasks.filter((task) => task.status === 'OPEN').length;
+    const inProgressTasks = tasks.filter((task) => task.status === 'IN_PROGRESS').length;
+    const completedTasks = tasks.filter((task) => task.status === 'COMPLETED').length;
+    const urgentTasks = tasks.filter((task) => task.priority === 'URGENT' || task.priority === 'HIGH').length;
+
+    return [
+      {
+        label: 'Task mở',
+        value: openTasks.toString(),
+        hint: 'Chờ nhận hoặc phân công',
+        icon: ListChecks,
+        tone: 'bg-cyan-50 text-cyan-700',
+      },
+      {
+        label: 'Đang làm',
+        value: inProgressTasks.toString(),
+        hint: 'Cần theo dõi tiến độ',
+        icon: Clock3,
+        tone: 'bg-amber-50 text-amber-700',
+      },
+      {
+        label: 'Hoàn tất',
+        value: completedTasks.toString(),
+        hint: 'Có thể dùng cho báo cáo sprint',
+        icon: CheckCircle2,
+        tone: 'bg-emerald-50 text-emerald-700',
+      },
+      {
+        label: 'Ưu tiên cao',
+        value: urgentTasks.toString(),
+        hint: 'Nên xử lý trước trong ngày',
+        icon: AlertTriangle,
+        tone: 'bg-rose-50 text-rose-700',
+      },
+    ];
+  }, [tasks]);
+
   const totalPages = Math.max(1, Math.ceil(filteredTasks.length / pageSize));
   const pagedTasks = filteredTasks.slice((page - 1) * pageSize, page * pageSize);
 
@@ -145,8 +190,8 @@ export const TaskListPage = () => {
       onSort: handleSort,
       render: (value) => <Badge variant={priorityVariants[value]}>{priorityLabels[value]}</Badge>,
     },
-    { key: 'projectId', title: 'Project ID', sortable: true, onSort: handleSort },
-    { key: 'assigneeId', title: 'Assignee ID', sortable: true, onSort: handleSort },
+    { key: 'projectId', title: 'Project ID', sortable: true, onSort: handleSort, render: (value) => <span>#{value}</span> },
+    { key: 'assigneeId', title: 'Assignee ID', sortable: true, onSort: handleSort, render: (value) => <span>#{value}</span> },
     {
       key: 'createdAt',
       title: 'Ngày tạo',
@@ -157,20 +202,49 @@ export const TaskListPage = () => {
     {
       key: 'id',
       title: 'Thao tác',
-      render: (_value, record) => (
-        <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
-          <Button type="button" variant="outline" size="sm" onClick={() => navigate(`/tasks/edit/${record.id}`)}>
-            <Edit size={14} />
-            Sửa
-          </Button>
-          <Button type="button" variant="danger" size="sm" onClick={() => void handleDelete(record)}>
-            <Trash2 size={14} />
-            Xóa
-          </Button>
-        </div>
-      ),
+      render: (_value, record) => {
+        if (!canUpdateTask && !canDeleteTask) {
+          return <span className="text-sm text-slate-500">Chỉ xem</span>;
+        }
+
+        return (
+          <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
+            {canUpdateTask && (
+              <Button type="button" variant="outline" size="sm" onClick={() => navigate(`/tasks/edit/${record.id}`)}>
+                <Edit size={14} />
+                Sửa
+              </Button>
+            )}
+            {canDeleteTask && (
+              <Button type="button" variant="danger" size="sm" onClick={() => void handleDelete(record)}>
+                <Trash2 size={14} />
+                Xóa
+              </Button>
+            )}
+          </div>
+        );
+      },
     },
   ];
+
+  const summary = (
+    <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {taskStats.map((stat) => (
+        <Card key={stat.label} className="p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-500">{stat.label}</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900">{stat.value}</p>
+              <p className="mt-2 text-sm text-slate-500">{stat.hint}</p>
+            </div>
+            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md ${stat.tone}`}>
+              <stat.icon size={22} />
+            </div>
+          </div>
+        </Card>
+      ))}
+    </section>
+  );
 
   const filters = (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_200px_200px]">
@@ -188,7 +262,7 @@ export const TaskListPage = () => {
           id="task-status-filter"
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value as 'ALL' | TaskStatus)}
-          className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
         >
           <option value="ALL">Tất cả</option>
           {Object.entries(statusLabels).map(([value, label]) => (
@@ -206,7 +280,7 @@ export const TaskListPage = () => {
           id="task-priority-filter"
           value={priorityFilter}
           onChange={(event) => setPriorityFilter(event.target.value as 'ALL' | TaskPriority)}
-          className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
         >
           <option value="ALL">Tất cả</option>
           {Object.entries(priorityLabels).map(([value, label]) => (
@@ -221,17 +295,18 @@ export const TaskListPage = () => {
 
   return (
     <DataListPage
-      icon={ListChecks}
+      icon={Zap}
       title="Quản lý task"
       description="Theo dõi task theo dự án, người phụ trách, trạng thái và mức ưu tiên."
-      actions={
+      actions={canCreateTask ? (
         <Link to="/tasks/add">
           <Button>
             <Plus size={16} />
             Tạo task
           </Button>
         </Link>
-      }
+      ) : undefined}
+      summary={summary}
       filters={filters}
       columns={columns}
       data={pagedTasks}

@@ -15,7 +15,7 @@ interface ErrorModalProps {
 export const ErrorModal = ({
   isOpen,
   onClose,
-  title = 'đã xảy ra lỗi',
+  title = 'Đã xảy ra lỗi',
   message,
   details,
   onRetry,
@@ -33,12 +33,12 @@ export const ErrorModal = ({
       <div className="space-y-4">
         {/* Error Icon and Title */}
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-            <AlertCircle size={24} className="text-red-600" aria-hidden="true" />
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 shadow-sm">
+            <AlertCircle size={24} className="text-rose-600" aria-hidden="true" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-            <p className="mt-2 text-sm text-gray-700" role="alert">
+            <h3 className="text-lg font-semibold tracking-[-0.01em] text-slate-950">{title}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600" role="alert">
               {message}
             </p>
           </div>
@@ -46,12 +46,12 @@ export const ErrorModal = ({
 
         {/* Error Details (if provided) */}
         {details && details.length > 0 && (
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <h4 className="text-sm font-medium text-gray-900 mb-2">Chi tiết lỗi:</h4>
+          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+            <h4 className="mb-2 text-sm font-semibold text-slate-900">Chi tiết lỗi:</h4>
             <ul className="space-y-1">
               {details.map((detail, index) => (
-                <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
-                  <span className="text-gray-400 flex-shrink-0">•</span>
+                <li key={index} className="flex items-start gap-2 text-sm leading-6 text-slate-600">
+                  <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-rose-400" />
                   <span>{detail}</span>
                 </li>
               ))}
@@ -60,7 +60,7 @@ export const ErrorModal = ({
         )}
 
         {/* Actions */}
-        <div className="flex gap-3 justify-end pt-2">
+        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
           {onRetry && (
             <Button
               variant="primary"

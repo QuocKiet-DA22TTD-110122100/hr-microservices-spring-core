@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableRabbit
-@ConditionalOnProperty(name = "spring.rabbitmq.host")
+@ConditionalOnProperty(name = "messaging.enabled", havingValue = "true")
 public class RabbitMQConfig {
 
     // Project Exchanges

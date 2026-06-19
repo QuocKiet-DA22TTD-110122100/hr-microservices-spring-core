@@ -10,12 +10,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles = {
-  primary: 'bg-cyan-600 text-white shadow-sm hover:bg-cyan-700 focus:ring-cyan-500',
-  secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 focus:ring-slate-400',
-  danger: 'bg-rose-600 text-white shadow-sm hover:bg-rose-700 focus:ring-rose-500',
-  success: 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 focus:ring-emerald-500',
-  ghost: 'bg-transparent text-slate-700 hover:bg-slate-100 focus:ring-slate-400',
-  outline: 'border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 focus:ring-cyan-500',
+  primary: 'bg-cyan-800 text-white shadow-cyan-900/10 hover:bg-cyan-900 active:bg-cyan-950 focus:ring-cyan-500',
+  secondary: 'bg-slate-100 text-slate-950 shadow-slate-900/5 hover:bg-slate-200 active:bg-slate-300 focus:ring-slate-400',
+  danger: 'bg-rose-600 text-white shadow-rose-900/10 hover:bg-rose-700 active:bg-rose-800 focus:ring-rose-500',
+  success: 'bg-emerald-600 text-white shadow-emerald-900/10 hover:bg-emerald-700 active:bg-emerald-800 focus:ring-emerald-500',
+  ghost: 'bg-transparent text-slate-700 shadow-none hover:bg-slate-100 active:bg-slate-200 focus:ring-slate-400',
+  outline: 'border border-slate-300 bg-white text-slate-800 shadow-slate-900/5 hover:border-cyan-500 hover:bg-cyan-50 active:bg-cyan-100 focus:ring-cyan-500',
 };
 
 const sizeStyles = {
@@ -39,8 +39,8 @@ export const Button = ({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-md font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2',
-        'disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex items-center justify-center gap-2 rounded-md font-semibold transition duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-offset-2',
+        'shadow-sm active:translate-y-px disabled:pointer-events-none disabled:opacity-55',
         variantStyles[variant],
         sizeStyles[size],
         isDisabled && 'cursor-not-allowed',

@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/nhan-vien")
+@RequestMapping({"/nhan-vien", "/employees"})
 public class EmployeeController {
 
     private final EmployeeRepository employeeRepository;
@@ -324,6 +324,9 @@ public class EmployeeController {
                                    String did,
                                    String name,
                                    String position,
+                                   BigDecimal baseSalary,
+                                   LocalDate hireDate,
+                                   String status,
                                    Long departmentId,
                                    String departmentName) {
     }

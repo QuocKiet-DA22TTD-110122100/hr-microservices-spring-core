@@ -258,15 +258,15 @@ export const RoleManagementPage = () => {
     return (
       <div className="space-y-4">
         {/* Select All Button */}
-        <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-center justify-between rounded-xl border border-cyan-200 bg-cyan-50/80 p-3 shadow-sm">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={selectedPerms.length === allPermissions.length}
               onChange={() => handleSelectAllPermissions(isAdd)}
-              className="rounded"
+              className="rounded border-cyan-300 text-cyan-700 focus:ring-cyan-500"
             />
-            <span className="font-medium text-blue-900">
+            <span className="font-semibold text-cyan-950">
               Chọn tất cả quyền ({selectedPerms.length}/{allPermissions.length})
             </span>
           </label>
@@ -279,9 +279,9 @@ export const RoleManagementPage = () => {
           const someGroupSelected = groupPerms.some((p) => selectedPerms.includes(p)) && !allGroupSelected;
 
           return (
-            <div key={groupName} className="border border-gray-200 rounded-lg overflow-hidden">
+            <div key={groupName} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
               {/* Group Header */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
+              <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/90 p-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -290,11 +290,11 @@ export const RoleManagementPage = () => {
                       if (el) el.indeterminate = someGroupSelected;
                     }}
                     onChange={() => handleSelectAllInGroup(groupName, isAdd)}
-                    className="rounded"
+                    className="rounded border-slate-300 text-cyan-700 focus:ring-cyan-500"
                   />
-                  <span className="font-medium text-gray-900">{groupName}</span>
+                  <span className="font-semibold text-slate-900">{groupName}</span>
                 </label>
-                <span className="text-xs text-gray-600">
+                <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
                   {groupPerms.filter((p) => selectedPerms.includes(p)).length}/{groupPerms.length}
                 </span>
               </div>
@@ -304,17 +304,17 @@ export const RoleManagementPage = () => {
                 {permissions.map((perm) => (
                   <label
                     key={perm.value}
-                    className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
+                    className="flex cursor-pointer items-center gap-3 rounded-lg p-2 transition hover:bg-cyan-50/50"
                   >
                     <input
                       type="checkbox"
                       checked={selectedPerms.includes(perm.value)}
                       onChange={() => onToggle(perm.value)}
-                      className="rounded"
+                      className="rounded border-slate-300 text-cyan-700 focus:ring-cyan-500"
                     />
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">{perm.label}</div>
-                      <div className="text-xs text-gray-500">{perm.value}</div>
+                      <div className="text-sm font-semibold text-slate-900">{perm.label}</div>
+                      <div className="text-xs leading-5 text-slate-500">{perm.value}</div>
                     </div>
                   </label>
                 ))}
@@ -605,6 +605,7 @@ export const RoleManagementPage = () => {
           isOpen={isModalOpen} 
           onClose={() => { setIsModalOpen(false); resetAddRoleForm(); }} 
           title="Thêm vai trò mới"
+          size="lg"
         >
           <form className="space-y-4" onSubmit={handleAddRole}>
             <Input
@@ -623,8 +624,8 @@ export const RoleManagementPage = () => {
             />
             
             <div>
-              <label htmlFor="roleDescription" className="block text-sm font-medium text-gray-700 mb-1">
-                Mô tả <span className="text-red-500">*</span>
+              <label htmlFor="roleDescription" className="mb-1 block text-sm font-semibold text-slate-700">
+                Mô tả <span className="text-rose-500">*</span>
               </label>
               <textarea
                 id="roleDescription"
@@ -636,23 +637,23 @@ export const RoleManagementPage = () => {
                   }
                 }}
                 onBlur={() => setDescriptionError(validateDescription(newRoleDescription))}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  descriptionError ? 'border-red-500' : 'border-gray-300'
+                className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+                  descriptionError ? 'border-rose-500' : 'border-slate-300 hover:border-cyan-300'
                 }`}
                 rows={3}
                 placeholder="Nhập mô tả vai trò (tối thiểu 10 ký tự)"
               />
               {descriptionError && (
-                <p className="mt-1 text-sm text-red-500">{descriptionError}</p>
+                <p className="mt-1 text-sm text-rose-600">{descriptionError}</p>
               )}
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-slate-500">
                 {newRoleDescription.length}/500 ký tự
               </p>
             </div>
 
             <div>
-              <div className="block text-sm font-medium text-gray-700 mb-2">
-                Quyền hạn <span className="text-red-500">*</span>
+              <div className="mb-2 block text-sm font-semibold text-slate-700">
+                Quyền hạn <span className="text-rose-500">*</span>
               </div>
               
               {/* TASK 3.7: Use Permission Matrix */}
@@ -663,7 +664,7 @@ export const RoleManagementPage = () => {
               />
               
               {selectedPermissions.length === 0 && (
-                <p className="mt-2 text-xs text-red-500">
+                <p className="mt-2 text-xs font-medium text-rose-600">
                   Vui lòng chọn ít nhất một quyền
                 </p>
               )}
@@ -700,28 +701,29 @@ export const RoleManagementPage = () => {
           isOpen={isEditModalOpen} 
           onClose={() => { setIsEditModalOpen(false); resetEditRoleForm(); }} 
           title="Chỉnh sửa vai trò"
+          size="lg"
         >
           <form className="space-y-4" onSubmit={handleUpdateRole}>
             {/* Role name (readonly) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mb-1 block text-sm font-semibold text-slate-700">
                 Tên vai trò
               </label>
               <input
                 type="text"
                 value={editRoleName}
                 disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                className="w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-slate-500">
                 Tên vai trò không thể thay đổi
               </p>
             </div>
 
             {/* Description (editable) */}
             <div>
-              <label htmlFor="editRoleDescription" className="block text-sm font-medium text-gray-700 mb-1">
-                Mô tả <span className="text-red-500">*</span>
+              <label htmlFor="editRoleDescription" className="mb-1 block text-sm font-semibold text-slate-700">
+                Mô tả <span className="text-rose-500">*</span>
               </label>
               <textarea
                 id="editRoleDescription"
@@ -733,24 +735,24 @@ export const RoleManagementPage = () => {
                   }
                 }}
                 onBlur={() => setEditDescriptionError(validateDescription(editRoleDescription))}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  editDescriptionError ? 'border-red-500' : 'border-gray-300'
+                className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
+                  editDescriptionError ? 'border-rose-500' : 'border-slate-300 hover:border-cyan-300'
                 }`}
                 rows={3}
                 placeholder="Nhập mô tả vai trò (tối thiểu 10 ký tự)"
               />
               {editDescriptionError && (
-                <p className="mt-1 text-sm text-red-500">{editDescriptionError}</p>
+                <p className="mt-1 text-sm text-rose-600">{editDescriptionError}</p>
               )}
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-slate-500">
                 {editRoleDescription.length}/500 ký tự
               </p>
             </div>
 
             {/* Permissions (editable) */}
             <div>
-              <div className="block text-sm font-medium text-gray-700 mb-2">
-                Quyền hạn <span className="text-red-500">*</span>
+              <div className="mb-2 block text-sm font-semibold text-slate-700">
+                Quyền hạn <span className="text-rose-500">*</span>
               </div>
               
               {/* TASK 3.7: Use Permission Matrix */}
@@ -761,7 +763,7 @@ export const RoleManagementPage = () => {
               />
               
               {editPermissions.length === 0 && (
-                <p className="mt-2 text-xs text-red-500">
+                <p className="mt-2 text-xs font-medium text-rose-600">
                   Vui lòng chọn ít nhất một quyền
                 </p>
               )}
@@ -804,25 +806,25 @@ export const RoleManagementPage = () => {
 
               return (
                 <>
-                  <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+                  <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4">
+                    <AlertCircle className="mt-0.5 flex-shrink-0 text-rose-600" size={20} />
                     <div>
-                      <h3 className="font-medium text-red-900 mb-1">
+                      <h3 className="mb-1 font-semibold text-rose-950">
                         Bạn có chắc chắn muốn xóa vai trò này?
                       </h3>
-                      <p className="text-sm text-red-800">
+                      <p className="text-sm leading-6 text-rose-800">
                         Hành động này không thể hoàn tác. Vai trò "<strong>{role.name}</strong>" sẽ bị xóa vĩnh viễn khỏi hệ thống.
                       </p>
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 mb-2">Thông tin vai trò:</h4>
-                    <ul className="space-y-1 text-sm text-gray-700">
-                      <li>• <strong>Tên:</strong> {role.name}</li>
-                      <li>• <strong>Mô tả:</strong> {role.description}</li>
-                      <li>• <strong>Số người dùng:</strong> {role.userCount}</li>
-                      <li>• <strong>Số quyền:</strong> {role.permissions.length}</li>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                    <h4 className="mb-2 font-semibold text-slate-900">Thông tin vai trò:</h4>
+                    <ul className="space-y-1 text-sm leading-6 text-slate-700">
+                      <li><strong>Tên:</strong> {role.name}</li>
+                      <li><strong>Mô tả:</strong> {role.description}</li>
+                      <li><strong>Số người dùng:</strong> {role.userCount}</li>
+                      <li><strong>Số quyền:</strong> {role.permissions.length}</li>
                     </ul>
                   </div>
                 </>

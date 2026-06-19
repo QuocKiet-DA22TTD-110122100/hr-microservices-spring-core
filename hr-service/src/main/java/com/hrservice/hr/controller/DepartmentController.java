@@ -2,8 +2,8 @@ package com.hrservice.hr.controller;
 
 import com.hrservice.hr.entity.Department;
 import com.hrservice.hr.entity.OrganizationUnit;
-import com.hrservice.hr.mapper.HrDtoMapper;
 import com.hrservice.hr.repository.DepartmentRepository;
+import com.hrservice.hr.repository.EmployeeRepository;
 import com.hrservice.hr.repository.OrganizationUnitRepository;
 import com.hrservice.hr.util.SecurityValidator;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,22 +14,22 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/phong-ban")
+@RequestMapping({"/phong-ban", "/departments"})
 public class DepartmentController {
 
     private final DepartmentRepository departmentRepository;
     private final OrganizationUnitRepository organizationUnitRepository;
+    private final EmployeeRepository employeeRepository;
     private final SecurityValidator securityValidator;
-    private final HrDtoMapper hrDtoMapper;
 
     public DepartmentController(DepartmentRepository departmentRepository,
                                 OrganizationUnitRepository organizationUnitRepository,
-                                SecurityValidator securityValidator,
-                                HrDtoMapper hrDtoMapper) {
+                                EmployeeRepository employeeRepository,
+                                SecurityValidator securityValidator) {
         this.departmentRepository = departmentRepository;
         this.organizationUnitRepository = organizationUnitRepository;
+        this.employeeRepository = employeeRepository;
         this.securityValidator = securityValidator;
-        this.hrDtoMapper = hrDtoMapper;
     }
 
     @GetMapping
@@ -44,7 +44,7 @@ public class DepartmentController {
             departments = departmentRepository.findByOrganizationUnitId(organizationUnitId);
         }
 
-        return departments.stream().map(hrDtoMapper::toResponse).toList();
+        return departments.stream().map(this::toResponse).toList();
     }
 
     @GetMapping("/{id}")
@@ -53,7 +53,7 @@ public class DepartmentController {
 
         Department department = departmentRepository.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found"));
-        return hrDtoMapper.toResponse(department);
+        return toResponse(department);
     }
 
     @PostMapping
@@ -65,7 +65,7 @@ public class DepartmentController {
         Department department = new Department();
         applyUpsertPayload(requestBody, department);
 
-        return hrDtoMapper.toResponse(departmentRepository.save(department));
+        return toResponse(departmentRepository.save(department));
     }
 
     @PutMapping("/{id}")
@@ -81,7 +81,7 @@ public class DepartmentController {
 
         applyUpsertPayload(requestBody, department);
         Department savedDepartment = departmentRepository.save(department);
-        return hrDtoMapper.toResponse(savedDepartment);
+        return toResponse(savedDepartment);
     }
 
     @DeleteMapping("/{id}")
@@ -115,9 +115,29 @@ public class DepartmentController {
         department.setOrganizationUnit(organizationUnit);
     }
 
+    private DepartmentResponse toResponse(Department department) {
+        Long organizationUnitId = department.getOrganizationUnit() == null ? null : department.getOrganizationUnit().getId();
+        String organizationUnitName = department.getOrganizationUnit() == null ? null : department.getOrganizationUnit().getName();
+        long employeeCount = department.getId() == null ? 0 : employeeRepository.countByDepartmentId(department.getId());
+
+        return new DepartmentResponse(
+            department.getId(),
+            department.getName(),
+            department.getCode(),
+            organizationUnitId,
+            organizationUnitName,
+            employeeCount
+        );
+    }
+
     public record DepartmentUpsertRequest(String name, String code, Long organizationUnitId) {
     }
 
-    public record DepartmentResponse(Long id, String name, String code, Long organizationUnitId, String organizationUnitName) {
+    public record DepartmentResponse(Long id,
+                                     String name,
+                                     String code,
+                                     Long organizationUnitId,
+                                     String organizationUnitName,
+                                     long employeeCount) {
     }
 }

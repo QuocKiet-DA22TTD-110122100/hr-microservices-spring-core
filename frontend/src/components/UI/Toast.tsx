@@ -51,32 +51,32 @@ export const Toast = ({ id, type, message, duration = 5000, onClose, onRetry }: 
 
   const variants = {
     success: {
-      bg: 'bg-green-50',
-      border: 'border-green-200',
-      text: 'text-green-800',
-      icon: <CheckCircle size={20} className="text-green-600" aria-hidden="true" />,
-      progressBg: 'bg-green-500',
+      bg: 'bg-emerald-50',
+      border: 'border-emerald-200',
+      text: 'text-emerald-900',
+      icon: <CheckCircle size={20} className="text-emerald-600" aria-hidden="true" />,
+      progressBg: 'bg-emerald-500',
     },
     error: {
-      bg: 'bg-red-50',
-      border: 'border-red-200',
-      text: 'text-red-800',
-      icon: <AlertCircle size={20} className="text-red-600" aria-hidden="true" />,
-      progressBg: 'bg-red-500',
+      bg: 'bg-rose-50',
+      border: 'border-rose-200',
+      text: 'text-rose-900',
+      icon: <AlertCircle size={20} className="text-rose-600" aria-hidden="true" />,
+      progressBg: 'bg-rose-500',
     },
     warning: {
-      bg: 'bg-yellow-50',
-      border: 'border-yellow-200',
-      text: 'text-yellow-800',
-      icon: <AlertTriangle size={20} className="text-yellow-600" aria-hidden="true" />,
-      progressBg: 'bg-yellow-500',
+      bg: 'bg-amber-50',
+      border: 'border-amber-200',
+      text: 'text-amber-900',
+      icon: <AlertTriangle size={20} className="text-amber-600" aria-hidden="true" />,
+      progressBg: 'bg-amber-500',
     },
     info: {
-      bg: 'bg-blue-50',
-      border: 'border-blue-200',
-      text: 'text-blue-800',
-      icon: <Info size={20} className="text-blue-600" aria-hidden="true" />,
-      progressBg: 'bg-blue-500',
+      bg: 'bg-cyan-50',
+      border: 'border-cyan-200',
+      text: 'text-cyan-900',
+      icon: <Info size={20} className="text-cyan-700" aria-hidden="true" />,
+      progressBg: 'bg-cyan-600',
     },
   };
 
@@ -89,20 +89,20 @@ export const Toast = ({ id, type, message, duration = 5000, onClose, onRetry }: 
       className={`
         relative overflow-hidden
         ${variant.bg} ${variant.border} ${variant.text}
-        border rounded-lg shadow-lg
+        border rounded-xl shadow-[0_18px_45px_rgba(15,23,42,0.14)]
         min-w-[320px] max-w-[480px]
         transition-all duration-300 ease-out
         ${isExiting ? 'opacity-0 translate-x-full' : 'opacity-100 translate-x-0'}
       `}
     >
-      <div className="p-4 flex items-start gap-3">
+      <div className="flex items-start gap-3 p-4">
         <div className="flex-shrink-0 pt-0.5">{variant.icon}</div>
 
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium break-words">{message}</p>
+        <div className="min-w-0 flex-1">
+          <p className="break-words text-sm font-medium leading-6">{message}</p>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
           {onRetry && type === 'error' && (
             <button
               onClick={handleRetry}

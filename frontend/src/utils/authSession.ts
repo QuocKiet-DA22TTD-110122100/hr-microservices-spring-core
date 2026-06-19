@@ -13,7 +13,7 @@ export const toStringArray = (value: unknown): string[] => {
 
   if (typeof value === 'string') {
     return value
-      .split(',')
+      .split(/[,\s]+/)
       .map((item) => item.trim())
       .filter(Boolean);
   }
@@ -21,14 +21,25 @@ export const toStringArray = (value: unknown): string[] => {
   return [];
 };
 
+const uniqueValues = (values: string[]): string[] => Array.from(new Set(values));
+
 export const toStringClaim = (value: unknown, fallback: string): string => {
   return typeof value === 'string' && value.trim() ? value : fallback;
 };
 
 export const mapClaimsToUser = (claims: AuthClaims, fallbackUsername: string): User => {
   const username = toStringClaim(claims.username ?? claims.sub, fallbackUsername);
-  const roles = toStringArray(claims.roles ?? claims.role);
-  const permissions = toStringArray(claims.permissions);
+  const roles = uniqueValues([
+    ...toStringArray(claims.roles),
+    ...toStringArray(claims.role),
+    ...toStringArray(claims.authorities).filter((value) => value.toUpperCase().startsWith('ROLE_')),
+  ]).map((role) => role.replace(/^ROLE_/i, '').toUpperCase());
+  const permissions = uniqueValues([
+    ...toStringArray(claims.permissions),
+    ...toStringArray(claims.scope),
+    ...toStringArray(claims.scopes),
+    ...toStringArray(claims.authorities).filter((value) => !value.toUpperCase().startsWith('ROLE_')),
+  ]);
   const passwordExpiresAt =
     typeof claims.passwordExpiresAt === 'string'
       ? claims.passwordExpiresAt
@@ -46,15 +57,26 @@ export const mapClaimsToUser = (claims: AuthClaims, fallbackUsername: string): U
   };
 };
 
+export const decodeJwtClaims = (token: string): AuthClaims => {
+  const [, payload] = token.split('.');
+  if (!payload) {
+    throw new Error('Token không hợp lệ.');
+  }
+
+  const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
+  const paddedPayload = normalizedPayload.padEnd(
+    normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
+    '='
+  );
+
+  return JSON.parse(globalThis.atob(paddedPayload)) as AuthClaims;
+};
+
 export const isJwtExpired = (token: string | null): boolean => {
   if (!token) return true;
 
   try {
-    const [, payload] = token.split('.');
-    if (!payload) return false;
-
-    const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const decoded = JSON.parse(globalThis.atob(normalizedPayload)) as { exp?: number };
+    const decoded = decodeJwtClaims(token);
 
     if (!decoded.exp) return false;
     return decoded.exp * 1000 <= Date.now();

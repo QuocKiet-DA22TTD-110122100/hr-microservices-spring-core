@@ -40,8 +40,8 @@ public class PayrollController {
     }
 
     @GetMapping("/{employeeId}/calculate")
-    @PreAuthorize("hasRole('HR_ADMIN')")
-    public ResponseEntity<PayrollResult> calculatePayroll(
+    @PreAuthorize("hasAnyRole('HR_ADMIN', 'HR_MANAGER', 'PAYROLL_OFFICER', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> calculatePayroll(
             @PathVariable Long employeeId,
             @RequestParam String yearMonth,
             HttpServletRequest request) {
@@ -54,39 +54,39 @@ public class PayrollController {
         try {
             YearMonth ym = YearMonth.parse(yearMonth);
             PayrollResult result = payrollService.calculatePayroll(employeeId, ym);
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(toPayrollResponse(result));
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
 
     @GetMapping("/{employeeId}/current")
-    @PreAuthorize("hasRole('HR_ADMIN')")
-    public ResponseEntity<PayrollResult> getCurrentPayroll(
+    @PreAuthorize("hasAnyRole('HR_ADMIN', 'HR_MANAGER', 'PAYROLL_OFFICER', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> getCurrentPayroll(
             @PathVariable Long employeeId,
             HttpServletRequest request) {
         securityValidator.enforceGatewayAccess(request);
 
         return payrollResultRepository.findLatestByEmployeeId(employeeId)
-                .map(ResponseEntity::ok)
+                .map(result -> ResponseEntity.ok(toPayrollResponse(result)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{employeeId}/history")
-    @PreAuthorize("hasRole('HR_ADMIN')")
-    public ResponseEntity<List<PayrollResult>> getPayrollHistory(
+    @PreAuthorize("hasAnyRole('HR_ADMIN', 'HR_MANAGER', 'PAYROLL_OFFICER', 'ADMIN')")
+    public ResponseEntity<List<Map<String, Object>>> getPayrollHistory(
             @PathVariable Long employeeId,
             HttpServletRequest request) {
         securityValidator.enforceGatewayAccess(request);
 
         List<PayrollResult> history = payrollResultRepository
                 .findByEmployeeIdAndStatusOrderByPeriodStartDateDesc(employeeId, "PROCESSED");
-        return ResponseEntity.ok(history);
+        return ResponseEntity.ok(history.stream().map(this::toPayrollResponse).toList());
     }
 
     @PostMapping("/{payrollId}/approve")
-    @PreAuthorize("hasRole('HR_ADMIN')")
-    public ResponseEntity<PayrollResult> approvePayroll(
+    @PreAuthorize("hasAnyRole('HR_ADMIN', 'HR_MANAGER', 'PAYROLL_OFFICER', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> approvePayroll(
             @PathVariable Long payrollId,
             @RequestBody Map<String, String> request,
             HttpServletRequest httpRequest) {
@@ -95,14 +95,14 @@ public class PayrollController {
         try {
             String approvedBy = request.getOrDefault("approvedBy", "SYSTEM");
             PayrollResult result = payrollService.approvePayroll(payrollId, approvedBy);
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(toPayrollResponse(result));
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
 
     @PostMapping("/runs")
-    @PreAuthorize("hasRole('HR_ADMIN')")
+    @PreAuthorize("hasAnyRole('HR_ADMIN', 'HR_MANAGER', 'PAYROLL_OFFICER', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> createPayrollRun(
             @RequestBody Map<String, String> body,
             HttpServletRequest request) {
@@ -130,6 +130,34 @@ public class PayrollController {
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
+    }
+
+    private Map<String, Object> toPayrollResponse(PayrollResult result) {
+        Map<String, Object> employee = new java.util.LinkedHashMap<>();
+        employee.put("id", result.getEmployee().getId());
+        employee.put("username", result.getEmployee().getUsername());
+        employee.put("name", result.getEmployee().getName());
+        employee.put("position", result.getEmployee().getPosition());
+
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("id", result.getId());
+        response.put("employeeId", result.getEmployee().getId());
+        response.put("employee", employee);
+        response.put("periodStartDate", result.getPeriodStartDate());
+        response.put("periodEndDate", result.getPeriodEndDate());
+        response.put("grossPay", result.getGrossPay());
+        response.put("taxDeduction", result.getTaxDeduction());
+        response.put("insuranceDeduction", result.getInsuranceDeduction());
+        response.put("otherDeduction", result.getOtherDeduction());
+        response.put("totalDeduction", result.getTotalDeduction());
+        response.put("netPay", result.getNetPay());
+        response.put("status", result.getStatus());
+        response.put("approvedBy", result.getApprovedBy());
+        response.put("approvedAt", result.getApprovedAt());
+        response.put("processedBy", result.getProcessedBy());
+        response.put("processedAt", result.getProcessedAt());
+        response.put("remarks", result.getRemarks());
+        return response;
     }
 }
 // PR: included in feature/PAYROLL-001-payroll-run

@@ -18,13 +18,13 @@ eureka:
     lease-expiration-duration-in-seconds: 90
     
   client:
-    register-with-eureka: true
-    fetch-registry: true
+    register-with-eureka: false
+    fetch-registry: false
     disable-delta: true
     eureka-server-connect-timeout-seconds: 10
     eureka-server-read-timeout-seconds: 60
     service-url:
-      defaultZone: http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer2:${EUREKA_PEER2_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer3:${EUREKA_PEER3_PORT}/eureka/
+      defaultZone: http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/
       
   server:
     enable-self-preservation: false

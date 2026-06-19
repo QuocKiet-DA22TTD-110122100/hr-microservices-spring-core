@@ -58,7 +58,7 @@ export const TablePagination = ({
 
   return (
     <nav
-      className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 md:flex-row md:items-center md:justify-between"
+      className="flex flex-col gap-3 border-t border-slate-200/80 bg-slate-50/90 px-5 py-4 md:flex-row md:items-center md:justify-between"
       aria-label="Điều hướng trang"
     >
       <div className="flex flex-wrap items-center gap-3">
@@ -76,7 +76,7 @@ export const TablePagination = ({
               id="page-size-select"
               value={pageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
-              className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800 shadow-sm transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
               aria-label="Chọn số dòng trên mỗi trang"
             >
               {pageSizeOptions.map((option) => (
@@ -154,10 +154,11 @@ export function DataListPage<T extends object>({
       <div className={cn('space-y-5', className)}>
         <PageHeader icon={icon} title={title} description={description} actions={actions} />
 
-        {summary}
+        {summary && <div className="relative">{summary}</div>}
 
         {filters && (
-          <Card>
+          <Card className="overflow-hidden bg-white/95">
+            <div className="h-1 bg-gradient-to-r from-cyan-600 via-slate-300 to-transparent" />
             <CardContent>{filters}</CardContent>
           </Card>
         )}

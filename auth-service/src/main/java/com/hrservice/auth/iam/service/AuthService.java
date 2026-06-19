@@ -144,6 +144,47 @@ public class AuthService {
         return userSyncService.retrySync(userId);
     }
 
+    @Transactional(readOnly = true)
+    public List<User> listUsers() {
+        return userRepository.findAll();
+    }
+
+    @Transactional
+    public User updateUser(UUID userId, String role, Boolean locked) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (role != null && !role.isBlank()) {
+            String normalizedRole = role.trim().toUpperCase(Locale.ROOT);
+            if (normalizedRole.length() > 50) {
+                throw new IllegalArgumentException("role phải dưới <= 50 ký tự");
+            }
+            user.setRole(normalizedRole);
+        }
+
+        if (locked != null) {
+            if (locked) {
+                user.setLocked(true);
+                user.setLockedAt(Instant.now());
+            } else {
+                user.setLocked(false);
+                user.setLockedAt(null);
+                loginAttemptService.resetAttempts(user.getUsername());
+            }
+        }
+
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public void deleteUser(UUID userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new IllegalArgumentException("User not found");
+        }
+        userPasswordHistoryRepository.deleteByUserId(userId);
+        userRepository.deleteById(userId);
+    }
+
     @Transactional
     public void changePassword(String username, String oldPassword, String newPassword) {
         if (username == null || username.isBlank() || oldPassword == null || oldPassword.isBlank() || newPassword == null || newPassword.isBlank()) {

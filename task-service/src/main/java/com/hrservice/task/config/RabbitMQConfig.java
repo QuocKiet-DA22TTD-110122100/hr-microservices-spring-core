@@ -15,7 +15,7 @@ import java.util.Objects;
 
 @Configuration
 @EnableRabbit
-@ConditionalOnProperty(name = "spring.rabbitmq.host")
+@ConditionalOnProperty(name = "messaging.enabled", havingValue = "true")
 // Đây là lớp cấu hình RabbitMQ cho Task Service, định nghĩa các exchange, queue và binding cần thiết để gửi và nhận các sự kiện liên quan đến Task. Nó sử dụng DirectExchange cho sự kiện tạo Task và TopicExchange cho sự kiện thay đổi trạng thái Task, cho phép linh hoạt trong việc định tuyến các sự kiện dựa trên routing key.
 public class RabbitMQConfig {
 

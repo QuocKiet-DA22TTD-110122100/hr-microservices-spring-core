@@ -11,13 +11,12 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
       RABBITMQ_DEFAULT_VHOST: /
-      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 256MB
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 10s
+      interval: 30s
+      timeout: 60s
       retries: 10
-      start_period: 120s
+      start_period: 600s
     init: true
     networks:
       - microservices-network

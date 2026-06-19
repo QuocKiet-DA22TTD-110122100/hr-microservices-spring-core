@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, KeyRound, Mail } from 'lucide-react';
+import { ArrowLeft, KeyRound, Mail, ShieldAlert } from 'lucide-react';
 import { AuthShell } from '@/components/Auth/AuthShell';
 import { Button } from '@/components/UI/Button';
 import { Input } from '@/components/UI/Input';
@@ -34,9 +34,10 @@ export const ForgotPasswordPage = () => {
         title="Kiểm tra email của bạn"
         description="Nếu email tồn tại trong hệ thống, hướng dẫn khôi phục mật khẩu sẽ được gửi đến hộp thư của bạn."
         icon={Mail}
+        eyebrow="Recovery sent"
       >
-        <Link to="/login">
-          <Button className="w-full">Quay lỗi đăng nhập</Button>
+        <Link to="/login" className="block">
+          <Button className="w-full">Quay lại đăng nhập</Button>
         </Link>
       </AuthShell>
     );
@@ -44,22 +45,21 @@ export const ForgotPasswordPage = () => {
 
   return (
     <AuthShell
-      title="Quên mật khẩu?"
-      description="Nhập email đã đăng ký đã nh?n hưởng d?n khôi phục mật khẩu."
+      title="Khôi phục mật khẩu"
+      description="Nhập email đã đăng ký để nhận hướng dẫn đặt lại mật khẩu."
       icon={KeyRound}
+      eyebrow="Password recovery"
       footer={
-        <>
+        <div className="space-y-4">
           <Link to="/login" className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 hover:text-cyan-800">
             <ArrowLeft size={16} />
-            Quay lỗi đăng nhập
+            Quay lại đăng nhập
           </Link>
-          <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
-            <p className="text-sm text-amber-800">
-              <span className="font-semibold">Lưu ý:</span> Nếu không nh?n được email, hãy kiểm tra thư mục spam hoặc
-              liên hệ quản trị viên.
-            </p>
+          <div className="flex gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            <ShieldAlert size={18} className="mt-0.5 shrink-0" />
+            <p>Nếu không nhận được email, hãy kiểm tra thư mục spam hoặc liên hệ quản trị viên.</p>
           </div>
-        </>
+        </div>
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

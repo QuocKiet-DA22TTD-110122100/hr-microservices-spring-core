@@ -12,13 +12,15 @@ services:
     ports:
       - "8080:8080"
     environment:
-      REDIS_HOST: redis-server
+      REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
-      JWT_JWKS_URI: http://kms-service:8083/kms/.well-known/jwks.json
+      JWT_JWKS_URI: http://kms-service:8083/quan-ly-khoa/.well-known/jwks.json
       INTERNAL_SECRET: ${INTERNAL_SECRET}
       AUTH_SERVICE_URL: http://auth-service:8086
+      SPRING_MAIN_BANNER_MODE: off
+      JAVA_TOOL_OPTIONS: -Dspring.main.banner-mode=off -Dspring.backgroundpreinitializer.ignore=true -Djava.security.egd=file:/dev/./urandom
       SPRING_PROFILES_ACTIVE: docker
       LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
@@ -26,13 +28,13 @@ services:
     networks:
       - microservices-network
     restart: on-failure
-    mem_limit: 300m
+    mem_limit: 512m
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8080/actuator/health"]
       interval: 20s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
+      timeout: 30s
+      retries: 8
+      start_period: 240s
 
   frontend:
     image: ${FRONTEND_IMAGE:-hr-frontend:latest}
