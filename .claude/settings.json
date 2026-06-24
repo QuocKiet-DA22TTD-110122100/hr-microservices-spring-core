@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(curl -s -X POST \"http://localhost:8080/api/xac-thuc/dang-nhap\" -H \"Content-Type: application/json\" -d \"{\\\\\"username\\\\\":\\\\\"admin\\\\\",\\\\\"password\\\\\":\\\\\"Admin@123\\\\\"}\")",
+      "Bash(xargs ls)",
+      "Bash(xargs cat)",
+      "Bash(curl -s -X POST \"http://localhost:8080/api/xac-thuc/dang-nhap\" -H \"Content-Type: application/json\" -d \"{\\\\\"username\\\\\":\\\\\"manager\\\\\",\\\\\"password\\\\\":\\\\\"Admin@123\\\\\"}\")",
+      "Bash(curl -s -X POST \"http://localhost:8080/api/xac-thuc/dang-nhap\" -H \"Content-Type: application/json\" -d \"{\\\\\"username\\\\\":\\\\\"employee\\\\\",\\\\\"password\\\\\":\\\\\"Admin@123\\\\\"}\")",
+      "Bash(docker cp *)",
+      "Bash(curl -s -X POST \"http://localhost:8086/api/xac-thuc/dang-nhap\" -H \"Content-Type: application/json\" -d '{\"username\":\"admin\",\"password\":\"Admin@123\"}')"
+    ]
+  }
+}

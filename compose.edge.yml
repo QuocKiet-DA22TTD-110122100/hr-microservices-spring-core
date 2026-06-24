@@ -19,6 +19,9 @@ services:
       JWT_JWKS_URI: http://kms-service:8083/quan-ly-khoa/.well-known/jwks.json
       INTERNAL_SECRET: ${INTERNAL_SECRET}
       AUTH_SERVICE_URL: http://auth-service:8086
+      HR_SERVICE_URL: http://hr-service:8082
+      PROJECT_SERVICE_URL: http://project-service:8084
+      TASK_SERVICE_URL: http://task-service:8087
       SPRING_MAIN_BANNER_MODE: off
       JAVA_TOOL_OPTIONS: -Dspring.main.banner-mode=off -Dspring.backgroundpreinitializer.ignore=true -Djava.security.egd=file:/dev/./urandom
       SPRING_PROFILES_ACTIVE: docker

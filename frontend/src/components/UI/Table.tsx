@@ -30,24 +30,27 @@ interface TableProps<T extends object> {
 }
 
 const LoadingSkeleton = memo(({ columns, rows = 5 }: { columns: number; rows?: number }) => (
-  <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white">
+  <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white/90">
     <div className="overflow-x-auto">
       <table className="min-w-full">
         <thead className="bg-slate-100/90">
           <tr>
             {Array.from({ length: columns }).map((_, index) => (
               <th key={index} className="border-b border-slate-200 px-5 py-3">
-                <div className="h-4 w-24 animate-pulse rounded bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_100%] animate-shimmer" />
+                <div className="h-4 w-24 rounded animate-shimmer" />
               </th>
             ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {Array.from({ length: rows }).map((_, rowIndex) => (
-          <tr key={rowIndex} className="bg-white">
+            <tr key={rowIndex} className="bg-white/90">
               {Array.from({ length: columns }).map((_, columnIndex) => (
                 <td key={columnIndex} className="px-5 py-4">
-                  <div className="h-4 w-32 animate-pulse rounded bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 bg-[length:200%_100%] animate-shimmer" />
+                  <div
+                    className="h-4 rounded animate-shimmer"
+                    style={{ width: `${60 + ((rowIndex * 3 + columnIndex * 7) % 40)}%` }}
+                  />
                 </td>
               ))}
             </tr>
@@ -59,7 +62,7 @@ const LoadingSkeleton = memo(({ columns, rows = 5 }: { columns: number; rows?: n
 ));
 
 const ErrorState = memo(({ message, onRetry }: { message: string; onRetry?: () => void }) => (
-  <div className="rounded-xl border border-rose-200 bg-rose-50/60">
+  <div className="animate-fade-in rounded-xl border border-rose-200 bg-rose-50/70">
     <EmptyState
       icon={AlertCircle}
       title="Có lỗi xảy ra"
@@ -87,7 +90,7 @@ function TableComponent<T extends object>({
 
   if (data.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200/80 bg-white">
+      <div className="animate-fade-in rounded-xl border border-slate-200/80 bg-white/90">
         <EmptyState
           icon={FileText}
           title="Không có dữ liệu"
@@ -98,7 +101,7 @@ function TableComponent<T extends object>({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white">
+    <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white/90 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead className="sticky top-0 z-[1] bg-slate-100/95 backdrop-blur">
@@ -107,14 +110,16 @@ function TableComponent<T extends object>({
                 <th
                   key={String(column.key)}
                   className={cn(
-                    'border-b border-slate-200/80 px-5 py-3 text-left text-xs font-semibold text-slate-600',
-                    column.sortable && 'cursor-pointer select-none transition hover:bg-slate-200/70'
+                    'border-b border-slate-200/80 px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.03em] text-slate-600',
+                    column.sortable && 'cursor-pointer select-none transition-colors duration-150 hover:bg-slate-200/70'
                   )}
                   onClick={() => column.sortable && column.onSort?.(column.key)}
                 >
                   <div className="flex items-center gap-2">
                     {column.renderHeader ? column.renderHeader() : column.title}
-                    {column.sortable && <ArrowUpDown size={14} className="text-slate-400" />}
+                    {column.sortable && (
+                      <ArrowUpDown size={14} className="text-slate-400 transition-colors group-hover:text-slate-600" />
+                    )}
                   </div>
                 </th>
               ))}
@@ -123,6 +128,7 @@ function TableComponent<T extends object>({
           <tbody className="divide-y divide-slate-100">
             {data.map((record, index) => {
               const recordKey = 'id' in record ? String(record.id) : index;
+              const delay = Math.min(index * 40, 400);
 
               return (
                 <tr
@@ -137,15 +143,21 @@ function TableComponent<T extends object>({
                     }
                   }}
                   className={cn(
-                    'transition duration-150 focus-within:bg-cyan-50/70 focus:outline-none',
+                    'animate-fade-up focus:outline-none',
+                    'transition-colors duration-150',
                     onRowClick
-                      ? 'cursor-pointer hover:bg-cyan-50/70 focus:bg-cyan-50/70 focus:ring-2 focus:ring-inset focus:ring-cyan-600/20'
-                      : 'hover:bg-slate-50/70'
+                      ? 'cursor-pointer hover:bg-blue-50/60 focus:bg-blue-50/60 focus:ring-2 focus:ring-inset focus:ring-blue-500/20'
+                      : 'hover:bg-slate-50/80',
+                    index % 2 === 1 && 'bg-slate-50/35'
                   )}
+                  style={{ animationDelay: `${delay}ms` }}
                 >
                   {columns.map((column) => {
                     const value = record[column.key];
-                    const content = 'render' in column && column.render ? column.render(value, record) : String(value ?? '');
+                    const content =
+                      'render' in column && column.render
+                        ? column.render(value, record)
+                        : String(value ?? '');
 
                     return (
                       <td key={String(column.key)} className="whitespace-nowrap px-5 py-4 text-sm text-slate-800">

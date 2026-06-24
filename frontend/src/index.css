@@ -2,6 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --app-bg: #eef3f8;
+  --app-bg-soft: #f7f9fc;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --ink: #0f172a;
+  --ink-muted: #475569;
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --accent-soft: #dbeafe;
+  --line: #d8e1ea;
+  --sidebar: #ffffff;
+  --sidebar-ink: #1f2937;
+  --sidebar-muted: #6b7280;
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Lumora palette tokens ── */
+  --lm-ink:     #0a0a0a;
+  --lm-surface: #f1f0ee;
+  --lm-surface2:#e3e2df;
+  --lm-line:    #e6e5e2;
+  --lm-warm:    #b15f2c;
+  --lm-warm-from: #cf8047;
+  --lm-warm-to:   #97501f;
+  --lm-muted:   #8d8d8d;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -16,15 +45,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'kern';
   background:
-    radial-gradient(circle at 12% 0%, rgba(14, 116, 144, 0.09), transparent 28rem),
-    radial-gradient(circle at 88% 8%, rgba(71, 85, 105, 0.08), transparent 24rem),
-    linear-gradient(180deg, #f8fafc 0%, #eef3f8 48%, #f8fafc 100%);
-  color: #0f172a;
+    radial-gradient(circle at 7% -10%, rgba(37, 99, 235, 0.10), transparent 28rem),
+    radial-gradient(circle at 90% 0%, rgba(14, 165, 233, 0.09), transparent 25rem),
+    linear-gradient(180deg, var(--app-bg) 0%, var(--app-bg-soft) 48%, #f8fafc 100%);
+  color: var(--ink);
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
 html {
@@ -36,10 +64,25 @@ html {
   color: #083344;
 }
 
+/* ─── Keyframes ──────────────────────────────────────────── */
+
 @keyframes page-enter {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translate3d(0, 12px, 0) scale(0.993);
+    filter: blur(1px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -47,13 +90,234 @@ html {
   }
 }
 
-.page-enter {
-  animation: page-enter 180ms ease-out both;
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Shimmer: gradient sweeps left-to-right */
+@keyframes shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.35); }
+  70%  { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+
+/* ─── Animation utilities ────────────────────────────────── */
+
+.page-enter {
+  animation: page-enter 280ms var(--ease-spring) both;
+  will-change: opacity, transform;
+}
+
+.animate-fade-up {
+  animation: fade-up 320ms var(--ease-spring) both;
+  will-change: opacity, transform;
+}
+
+.animate-fade-in {
+  animation: fade-in 200ms ease-out both;
+}
+
+.animate-scale-in {
+  animation: scale-in 220ms var(--ease-spring) both;
+  will-change: opacity, transform;
+}
+
+.animate-slide-left {
+  animation: slide-in-left 260ms var(--ease-spring) both;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(226, 232, 240, 0.8) 25%,
+    rgba(241, 245, 249, 0.95) 50%,
+    rgba(226, 232, 240, 0.8) 75%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* Stagger helpers — apply to children via parent class */
+.stagger-children > *:nth-child(1)  { animation-delay:  0ms; }
+.stagger-children > *:nth-child(2)  { animation-delay: 35ms; }
+.stagger-children > *:nth-child(3)  { animation-delay: 70ms; }
+.stagger-children > *:nth-child(4)  { animation-delay: 105ms; }
+.stagger-children > *:nth-child(5)  { animation-delay: 140ms; }
+.stagger-children > *:nth-child(6)  { animation-delay: 175ms; }
+.stagger-children > *:nth-child(7)  { animation-delay: 210ms; }
+.stagger-children > *:nth-child(8)  { animation-delay: 245ms; }
+.stagger-children > *:nth-child(9)  { animation-delay: 280ms; }
+.stagger-children > *:nth-child(n+10) { animation-delay: 320ms; }
+
+/* ─── Shell / layout ─────────────────────────────────────── */
+
+.app-shell {
+  min-height: 100vh;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0)),
+    transparent;
+}
+
+.app-topbar {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 1px 0 rgba(148, 163, 184, 0.24),
+    0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.app-sidebar {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    1px 0 0 rgba(203, 213, 225, 0.7),
+    18px 0 44px rgba(15, 23, 42, 0.06);
+}
+
+/* ─── Navigation ─────────────────────────────────────────── */
+
+.nav-section-label {
+  color: #2563eb;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Active nav item indicator slides in */
+.nav-active-bar {
+  content: '';
+  position: absolute;
+  inset-y: 0;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #2563eb;
+  animation: scale-in 180ms var(--ease-spring) both;
+}
+
+/* ─── Interactive states ─────────────────────────────────── */
+
+.interactive-lift {
+  transition:
+    transform 180ms var(--ease-spring),
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 180ms ease,
+    color 160ms ease;
+}
+
+.interactive-lift:hover {
+  transform: translateY(-1px);
+}
+
+.interactive-lift:active {
+  transform: translateY(0.5px) scale(0.985);
+}
+
+/* Card with hover lift */
+.card-hover {
+  transition:
+    transform 220ms var(--ease-spring),
+    box-shadow 220ms var(--ease-spring),
+    border-color 200ms ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 16px 32px rgba(15, 23, 42, 0.10);
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+/* ─── Surface panels ─────────────────────────────────────── */
+
+.surface-panel {
+  border: 1px solid rgba(216, 225, 234, 0.92);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.92)),
+    var(--surface);
+  box-shadow:
+    0 1px 1px rgba(15, 23, 42, 0.035),
+    0 12px 24px rgba(15, 23, 42, 0.055);
+}
+
+.surface-panel-quiet {
+  border: 1px solid rgba(203, 213, 225, 0.88);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 1px 1px rgba(15, 23, 42, 0.035),
+    0 8px 18px rgba(15, 23, 42, 0.045);
+}
+
+/* ─── Focus ring ─────────────────────────────────────────── */
+
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.22);
+}
+
+/* ─── Typography ─────────────────────────────────────────── */
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* ─── Reduced motion ─────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -66,21 +330,173 @@ html {
   }
 }
 
+/* ─── Scrollbar ──────────────────────────────────────────── */
+
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #e2e8f0;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #94a3b8;
-  border: 2px solid #e2e8f0;
+  background: rgba(148, 163, 184, 0.5);
+  border: 2px solid transparent;
+  background-clip: padding-box;
   border-radius: 999px;
+  transition: background 200ms ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: rgba(100, 116, 139, 0.8);
+  background-clip: padding-box;
 }
+
+/* ─── Lumora-style pill buttons ──────────────────────────── */
+
+.pill-dark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--lm-ink);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+              opacity 0.2s ease;
+}
+.pill-dark:hover { transform: scale(1.04); }
+.pill-dark:active { transform: scale(0.97); }
+.pill-dark:disabled { opacity: 0.45; pointer-events: none; }
+
+.pill-light {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--lm-surface);
+  color: #111;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+              background 0.2s ease;
+}
+.pill-light:hover { transform: scale(1.04); background: var(--lm-surface2); }
+.pill-light:active { transform: scale(0.97); }
+.pill-light:disabled { opacity: 0.45; pointer-events: none; }
+
+.pill-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: transparent;
+  color: #111;
+  border: 1px solid var(--lm-line);
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+              border-color 0.2s ease,
+              background 0.2s ease;
+}
+.pill-outline:hover { transform: scale(1.04); background: var(--lm-surface); border-color: #c0bfbb; }
+.pill-outline:active { transform: scale(0.97); }
+.pill-outline:disabled { opacity: 0.45; pointer-events: none; }
+
+.pill-accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: linear-gradient(to bottom right, var(--lm-warm-from), var(--lm-warm-to));
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
+}
+.pill-accent:hover { transform: scale(1.04); opacity: 0.92; }
+.pill-accent:active { transform: scale(0.97); }
+.pill-accent:disabled { opacity: 0.45; pointer-events: none; }
+
+/* Sizes for pill buttons */
+.pill-sm  { padding: 0.5rem 1.25rem; font-size: 0.8rem; }
+.pill-md  { padding: 0.625rem 1.5rem; }
+.pill-lg  { padding: 0.875rem 2rem; font-size: 1rem; }
+
+/* With-arrow pill: tight right padding + circular badge */
+.pill-wa  { padding: 0.375rem 0.375rem 0.375rem 1.5rem; }
+.pill-badge {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  font-size: 1rem;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.pill-dark  .pill-badge { background: #fff;            color: var(--lm-ink); }
+.pill-light .pill-badge { background: var(--lm-ink);   color: #fff; }
+.pill-outline .pill-badge { background: var(--lm-ink); color: #fff; }
+.pill-accent .pill-badge { background: rgba(255,255,255,.2); color: #fff; }
+.pill-dark:hover  .pill-badge,
+.pill-light:hover .pill-badge,
+.pill-outline:hover .pill-badge,
+.pill-accent:hover .pill-badge { transform: translate(2px, -2px); }
+
+/* ─── Lumora surface cards ───────────────────────────────── */
+
+.lm-card {
+  border-radius: 2rem;
+  background: #fff;
+  border: 1px solid var(--lm-line);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lm-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+}
+
+.lm-card-dark {
+  border-radius: 2rem;
+  background: var(--lm-ink);
+  color: #fff;
+  overflow: hidden;
+}
+
+/* ─── Warm accent dot / eyebrow ─────────────────────────── */
+
+.lm-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(17, 17, 17, 0.7);
+}
+.lm-eyebrow::before {
+  content: '';
+  display: block;
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 9999px;
+  background: rgba(17, 17, 17, 0.5);
+  flex-shrink: 0;
+}
+.lm-eyebrow.warm { color: var(--lm-warm); }
+.lm-eyebrow.warm::before { background: var(--lm-warm); }

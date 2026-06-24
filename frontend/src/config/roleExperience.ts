@@ -236,6 +236,11 @@ export const workspaceNavigation: NavigationItem[] = [
     roles: ['admin', 'payroll', 'hr'],
   },
   {
+    icon: FileText,
+    label: 'Tài liệu phòng ban',
+    path: '/documents',
+  },
+  {
     icon: FolderKanban,
     label: 'Dự án',
     path: '/projects',

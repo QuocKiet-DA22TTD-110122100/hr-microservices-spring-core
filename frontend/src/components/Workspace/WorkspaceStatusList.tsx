@@ -21,8 +21,8 @@ export const WorkspaceStatusList = ({ items, selectedItem, onSelectItem }: Works
           type="button"
           onClick={() => onSelectItem(item)}
           className={cn(
-            'block w-full px-5 py-4 text-left transition-colors hover:bg-cyan-50/50',
-            isSelected ? 'bg-cyan-50' : 'bg-white'
+            'block w-full px-5 py-4 text-left transition-colors hover:bg-slate-50',
+            isSelected ? 'bg-slate-100/80' : 'bg-white'
           )}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

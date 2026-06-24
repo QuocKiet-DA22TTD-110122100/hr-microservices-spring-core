@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   AtSign,
+  ArrowLeft,
   BarChart3,
   Bell,
   Bot,
@@ -584,14 +585,23 @@ interface WorkShellProps {
 
 const WorkShell = ({ title, subtitle, children, navItems = [], currentView, onNavigate }: WorkShellProps) => (
   <div className="space-y-6">
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="surface-panel overflow-hidden rounded-xl">
+      <div className="bg-gradient-to-r from-white via-blue-50/60 to-sky-50/50 p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-semibold text-cyan-700">Work Management MVP</p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-950">{title}</h1>
+          <p className="text-sm font-semibold text-blue-700">Work Management MVP</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-[-0.02em] text-slate-950">{title}</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{subtitle}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/"
+            aria-label="Thoat Work Management ve menu chinh"
+            className="interactive-lift inline-flex h-8 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            <ArrowLeft size={14} />
+            Ve menu chinh
+          </Link>
           <Badge variant="info">Phase 3</Badge>
           <Badge variant="muted">Kanban</Badge>
           <Badge variant="muted">Advanced</Badge>
@@ -608,13 +618,15 @@ const WorkShell = ({ title, subtitle, children, navItems = [], currentView, onNa
                 type="button"
                 onClick={() => onNavigate?.(item.key)}
                 className={cn(
-                  'flex min-w-[170px] items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors',
+                  'interactive-lift flex min-w-[180px] items-center gap-3 rounded-xl border px-3 py-3 text-left',
                   active
-                    ? 'border-cyan-300 bg-cyan-50 text-cyan-950'
-                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                    ? 'border-blue-200 bg-white text-blue-800 shadow-[inset_0_-3px_0_#2563eb,0_8px_18px_rgba(37,99,235,0.08)]'
+                    : 'border-slate-200 bg-white/85 text-slate-700 hover:border-blue-200 hover:bg-white hover:text-slate-950'
                 )}
               >
-                <item.icon size={18} className="shrink-0" />
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', active ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500')}>
+                  <item.icon size={18} />
+                </span>
                 <span>
                   <span className="block text-sm font-semibold">{item.label}</span>
                   <span className="mt-0.5 block text-xs text-slate-500">{item.description}</span>
@@ -624,6 +636,7 @@ const WorkShell = ({ title, subtitle, children, navItems = [], currentView, onNa
           })}
         </div>
       )}
+      </div>
     </div>
 
     {children}
@@ -653,12 +666,12 @@ const DashboardView = ({ role, stats, projects, tasks }: DashboardViewProps) => 
     <div className="space-y-6">
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.label} className="p-5">
+          <Card key={stat.label} className="interactive-lift p-5 hover:border-blue-200 hover:shadow-[0_10px_22px_rgba(37,99,235,0.08)]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-slate-500">{stat.label}</p>
                 <p className="mt-1 text-3xl font-bold text-slate-950">{stat.value}</p>
-                <p className="mt-2 text-sm text-slate-500">{stat.hint}</p>
+                <p className="mt-2 text-sm leading-5 text-slate-600">{stat.hint}</p>
               </div>
               <div className={cn('flex h-11 w-11 items-center justify-center rounded-xl', stat.tone)}>
                 <stat.icon size={22} />
@@ -669,7 +682,7 @@ const DashboardView = ({ role, stats, projects, tasks }: DashboardViewProps) => 
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle>{role === 'employee' ? 'Hom nay can lam gi' : 'Suc khoe du an'}</CardTitle>
             <CardDescription>
@@ -689,7 +702,7 @@ const DashboardView = ({ role, stats, projects, tasks }: DashboardViewProps) => 
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle>Phase tiep theo</CardTitle>
             <CardDescription>Chi tao placeholder, khong trien khai that trong MVP.</CardDescription>
@@ -1230,7 +1243,7 @@ const FilesView = ({ tasks, projects, onNotice }: { tasks: Task[]; projects: Pro
           <button
             type="button"
             onClick={() => onNotice('[API endpoint: upload attachment] chua co backend storage/S3.')}
-            className="flex min-h-44 w-full flex-col items-center justify-center rounded-xl border border-dashed border-cyan-300 bg-cyan-50 px-4 text-center text-cyan-900 hover:bg-cyan-100"
+            className="flex min-h-44 w-full flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 text-center text-slate-800 transition hover:border-slate-400 hover:bg-white"
           >
             <Upload size={28} />
             <span className="mt-3 font-bold">Upload file</span>
@@ -1447,8 +1460,15 @@ const TimelineView = ({ projects, tasks }: { projects: ProjectSummary[]; tasks: 
             </div>
           ))
         )}
-        <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-          Backend contract: [task.startDate], [task.dueDate], [task.dependencies], [project.milestones], [API endpoint: burndown metrics].
+        <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-semibold">Backend contract dang cho bo sung</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {['task.startDate', 'task.dueDate', 'task.dependencies', 'project.milestones', 'burndown metrics API'].map((contract) => (
+              <span key={contract} className="rounded-full border border-amber-200 bg-white px-2.5 py-1 text-xs font-semibold text-amber-800">
+                {contract}
+              </span>
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -1680,35 +1700,38 @@ const TaskCard = ({ task, projectName, onDragStart }: { task: Task; projectName:
   <article
     draggable
     onDragStart={() => onDragStart(task.id)}
-    className="cursor-grab rounded-xl border border-slate-200 bg-white p-4 text-slate-900 shadow-sm active:cursor-grabbing"
+    className="interactive-lift cursor-grab rounded-xl border border-slate-200 bg-white p-4 text-slate-900 shadow-sm hover:border-blue-200 hover:shadow-[0_10px_20px_rgba(15,23,42,0.07)] active:cursor-grabbing"
   >
     <div className="flex items-start justify-between gap-3">
-      <h4 className="font-bold">{task.title}</h4>
+      <h4 className="min-w-0 text-sm font-bold leading-6 text-slate-950">{task.title}</h4>
       <Badge variant={priorityTone[task.priority]}>{priorityLabels[task.priority]}</Badge>
     </div>
-    <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{task.description || 'Chua co mo ta'}</p>
-    <div className="mt-4 grid gap-2 text-xs text-slate-500">
-      <span>{projectName}</span>
-      <span>Assignee #{task.assigneeId}</span>
-      <span>Due date: [placeholder]</span>
+    <p className="mt-2 text-sm leading-6 text-slate-600">{task.description || 'Chua co mo ta'}</p>
+    <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+      <span className="rounded-full bg-slate-100 px-2.5 py-1">{projectName}</span>
+      <span className="rounded-full bg-slate-100 px-2.5 py-1">Assignee #{task.assigneeId}</span>
+      <span className="rounded-full bg-slate-100 px-2.5 py-1">Due date: placeholder</span>
     </div>
   </article>
 );
 
 const TaskRow = ({ task, projectName, compact = false }: { task: Task; projectName: string; compact?: boolean }) => (
-  <div className={cn('min-w-0', !compact && 'rounded-xl border border-slate-200 bg-white p-4')}>
-    <div className="flex flex-wrap items-center gap-2">
-      <h3 className="font-bold text-slate-950">{task.title}</h3>
+  <div className={cn('min-w-0', !compact && 'interactive-lift rounded-xl border border-slate-200 bg-white p-4 hover:border-blue-200 hover:shadow-[0_10px_20px_rgba(15,23,42,0.06)]')}>
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <h3 className="min-w-0 flex-1 font-bold leading-6 text-slate-950">{task.title}</h3>
+      <div className="flex flex-wrap gap-2">
       <Badge variant={priorityTone[task.priority]}>{priorityLabels[task.priority]}</Badge>
       <Badge variant={task.status === 'COMPLETED' ? 'success' : task.status === 'IN_PROGRESS' ? 'warning' : 'info'}>
         {statusLabels[task.status]}
       </Badge>
+      </div>
     </div>
-    <p className="mt-1 text-sm text-slate-600">{projectName}</p>
-    <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
-      <span>Assignee #{task.assigneeId}</span>
-      <span>Created {formatDate(task.createdAt)}</span>
-      <span>Due date [placeholder]</span>
+    <p className="mt-2 text-sm leading-6 text-slate-600">{task.description || 'Chua co mo ta cong viec.'}</p>
+    <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+      <span className="rounded-full bg-slate-100 px-2.5 py-1">{projectName}</span>
+      <span className="rounded-full bg-slate-100 px-2.5 py-1">Assignee #{task.assigneeId}</span>
+      <span className="rounded-full bg-slate-100 px-2.5 py-1">Created {formatDate(task.createdAt)}</span>
+      <span className="rounded-full bg-slate-100 px-2.5 py-1">Due date placeholder</span>
     </div>
   </div>
 );
@@ -1717,7 +1740,7 @@ const ProjectRow = ({ project, expanded = false }: { project: ProjectSummary; ex
   const progress = getProgress(project);
 
   return (
-    <Card className={cn('p-5', !expanded && 'border-slate-200')}>
+    <Card className={cn('interactive-lift p-5 hover:border-blue-200 hover:shadow-[0_10px_22px_rgba(15,23,42,0.06)]', !expanded && 'border-slate-200')}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -1732,14 +1755,14 @@ const ProjectRow = ({ project, expanded = false }: { project: ProjectSummary; ex
           <Button type="button" variant="outline" size="sm">Mo board</Button>
         </Link>
       </div>
-      <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100">
-        <div className="h-full rounded-full bg-cyan-600" style={{ width: `${progress}%` }} />
+      <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-slate-100">
+        <div className="h-full rounded-full bg-blue-600 transition-[width] duration-300 ease-out" style={{ width: `${progress}%` }} />
       </div>
-      <div className="mt-3 grid gap-3 text-sm text-slate-600 sm:grid-cols-4">
-        <span>{progress}% done</span>
-        <span>{project.taskCount} task</span>
-        <span>{project.memberCount} thanh vien</span>
-        <span>{project.highPriorityTaskCount} uu tien cao</span>
+      <div className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-4">
+        <span className="rounded-lg bg-slate-50 px-3 py-2 font-semibold">{progress}% done</span>
+        <span className="rounded-lg bg-slate-50 px-3 py-2">{project.taskCount} task</span>
+        <span className="rounded-lg bg-slate-50 px-3 py-2">{project.memberCount} thanh vien</span>
+        <span className="rounded-lg bg-slate-50 px-3 py-2">{project.highPriorityTaskCount} uu tien cao</span>
       </div>
     </Card>
   );

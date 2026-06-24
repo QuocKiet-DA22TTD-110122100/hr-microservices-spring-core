@@ -698,7 +698,7 @@ export const UserManagementPage = () => {
                 e.stopPropagation();
                 openEditModal(record);
               }}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 active:translate-y-px"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:ring-offset-2 active:translate-y-px"
               title="Chỉnh sửa"
               aria-label={`Chỉnh sửa tài khoản ${record.username}`}
             >
@@ -713,7 +713,7 @@ export const UserManagementPage = () => {
                 e.stopPropagation();
                 openDeleteModal(record.id);
               }}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-2.5 text-sm font-semibold text-rose-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 active:translate-y-px"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-rose-200 bg-white px-2.5 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 active:translate-y-px"
               title="Xóa"
               aria-label={`Xóa tài khoản ${record.username}`}
             >
@@ -728,7 +728,7 @@ export const UserManagementPage = () => {
                 e.stopPropagation();
                 handleToggleLock(record.id);
               }}
-              className={`inline-flex h-8 items-center gap-1.5 rounded-lg border bg-white px-2.5 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-2 active:translate-y-px ${
+              className={`inline-flex h-8 items-center gap-1.5 rounded-md border bg-white px-2.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 active:translate-y-px ${
                 record.locked
                   ? 'border-emerald-200 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 focus:ring-emerald-500'
                   : 'border-amber-200 text-amber-700 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-800 focus:ring-amber-500'
@@ -871,10 +871,10 @@ export const UserManagementPage = () => {
                   onClick={() => setNewRole(role)}
                   aria-pressed={newRole === role}
                   aria-label={`Chọn vai trò ${role}`}
-                    className={`rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 active:translate-y-px ${
+                    className={`rounded-md border px-3 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:ring-offset-2 active:translate-y-px ${
                       newRole === role
-                        ? 'border-cyan-700 bg-cyan-800 text-white'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-900'
+                        ? 'border-slate-950 bg-slate-950 text-white'
+                        : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950'
                     }`}
                 >
                   {role}
@@ -931,10 +931,10 @@ export const UserManagementPage = () => {
                   disabled={isUpdating}
                   aria-pressed={editRole === role}
                   aria-label={`Chọn vai trò ${role}`}
-                  className={`rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 active:translate-y-px ${
+                  className={`rounded-md border px-3 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:ring-offset-2 active:translate-y-px ${
                     editRole === role
-                      ? 'border-cyan-700 bg-cyan-800 text-white'
-                      : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-900'
+                      ? 'border-slate-950 bg-slate-950 text-white'
+                      : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950'
                   } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {role}
@@ -957,11 +957,11 @@ export const UserManagementPage = () => {
                 disabled={isUpdating}
                 aria-pressed={!editLocked}
                 aria-label="Đặt trạng thái hoạt động"
-                className={`rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 active:translate-y-px ${
+                className={`rounded-md border px-3 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 active:translate-y-px ${
                   editLocked
                     ? 'border-slate-200 bg-white text-slate-700'
                     : 'border-emerald-700 bg-emerald-700 text-white'
-                } ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800'}`}
+                } ${isUpdating ? 'opacity-50 cursor-not-allowed' : editLocked ? 'hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950' : ''}`}
               >
                 Hoạt động
               </button>
@@ -971,11 +971,11 @@ export const UserManagementPage = () => {
                 disabled={isUpdating}
                 aria-pressed={editLocked}
                 aria-label="Đặt trạng thái bị khóa"
-                className={`rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 active:translate-y-px ${
+                className={`rounded-md border px-3 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 active:translate-y-px ${
                   editLocked
                     ? 'border-rose-700 bg-rose-700 text-white'
                     : 'border-slate-200 bg-white text-slate-700'
-                } ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800'}`}
+                } ${isUpdating ? 'opacity-50 cursor-not-allowed' : editLocked ? '' : 'hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950'}`}
               >
                 Bị khóa
               </button>
@@ -1011,7 +1011,7 @@ export const UserManagementPage = () => {
                           }
                         }}
                         aria-label={`${isGroupFullySelected(group) ? 'Bỏ chọn' : 'Chọn'} tất cả quyền trong nhóm ${group.category}`}
-                        className="rounded-md transition hover:text-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
+                        className="rounded-md transition hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:ring-offset-2"
                         disabled={isUpdating || group.permissions.every(p => p.inherited)}
                       >
                         {isGroupFullySelected(group) ? (
@@ -1036,7 +1036,7 @@ export const UserManagementPage = () => {
                       return (
                         <div
                           key={permission.id}
-                          className="border-t border-slate-100 px-4 py-3 transition hover:bg-cyan-50/40 first:border-t-0"
+                          className="border-t border-slate-100 px-4 py-3 transition hover:bg-slate-50 first:border-t-0"
                         >
                           <div className="flex items-start gap-3">
                             <div className="pt-0.5">

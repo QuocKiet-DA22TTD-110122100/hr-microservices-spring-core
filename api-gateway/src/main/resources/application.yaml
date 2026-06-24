@@ -112,32 +112,47 @@ spring:
                 requires-jwt: true
 
             # HR Service Routes - Employee
+            # StripPrefix=1 strips /api → /nhan-vien/** hits EmployeeController @RequestMapping("/nhan-vien")
             - id: hr-employee-route
               uri: ${HR_SERVICE_URL:lb://hr-service}
               predicates:
                 - Path=/api/nhan-vien/**
               filters:
-                - StripPrefix=2
+                - StripPrefix=1
               metadata:
                 requires-jwt: true
                 requires-hmac: false
 
             # HR Service Routes - Department
+            # StripPrefix=1 strips /api → /phong-ban/** hits DepartmentController @RequestMapping("/phong-ban")
             - id: hr-department-route
               uri: ${HR_SERVICE_URL:lb://hr-service}
               predicates:
                 - Path=/api/phong-ban/**
               filters:
-                - StripPrefix=2
+                - StripPrefix=1
               metadata:
                 requires-jwt: true
                 requires-hmac: false
 
             # HR Service Routes - Organization Unit
+            # RewritePath maps /api/don-vi-to-chuc/** → /organization-units/** (controller path)
             - id: hr-org-unit-route
               uri: ${HR_SERVICE_URL:lb://hr-service}
               predicates:
                 - Path=/api/don-vi-to-chuc/**
+              filters:
+                - RewritePath=/api/don-vi-to-chuc/(?<segment>.*), /organization-units/$\{segment}
+                - RewritePath=/api/don-vi-to-chuc, /organization-units
+              metadata:
+                requires-jwt: true
+                requires-hmac: false
+
+            # HR Service Routes - Documents
+            - id: hr-documents-route
+              uri: ${HR_SERVICE_URL:lb://hr-service}
+              predicates:
+                - Path=/api/hr/documents/**
               filters:
                 - StripPrefix=2
               metadata:

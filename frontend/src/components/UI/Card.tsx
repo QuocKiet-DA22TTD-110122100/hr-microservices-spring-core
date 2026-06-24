@@ -3,12 +3,15 @@ import { cn } from '@/utils/cn';
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
+  hoverable?: boolean;
 }
 
-export const Card = ({ className = '', children, ...props }: CardProps) => (
+export const Card = ({ className = '', children, hoverable = false, ...props }: CardProps) => (
   <div
     className={cn(
-      'rounded-xl border border-slate-200/80 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,0.05)] ring-1 ring-white/70',
+      'surface-panel-quiet rounded-xl',
+      'transition-[transform,box-shadow,border-color] duration-200 ease-out',
+      hoverable && 'card-hover cursor-pointer',
       className
     )}
     {...props}
@@ -17,25 +20,34 @@ export const Card = ({ className = '', children, ...props }: CardProps) => (
   </div>
 );
 
-export const CardHeader = ({ className = '', children, ...props }: CardProps) => (
-  <div className={cn('border-b border-slate-200/80 px-5 py-4', className)} {...props}>
+export const CardHeader = ({ className = '', children, ...props }: Omit<CardProps, 'hoverable'>) => (
+  <div
+    className={cn('border-b border-slate-200/80 bg-slate-50/70 px-5 py-4', className)}
+    {...props}
+  >
     {children}
   </div>
 );
 
-export const CardTitle = ({ className = '', children, ...props }: CardProps) => (
-  <h2 className={cn('text-base font-semibold tracking-[-0.01em] text-slate-950 sm:text-lg', className)} {...props}>
+export const CardTitle = ({ className = '', children, ...props }: Omit<CardProps, 'hoverable'>) => (
+  <h2
+    className={cn('text-base font-bold tracking-[-0.01em] text-slate-950 sm:text-lg', className)}
+    {...props}
+  >
     {children}
   </h2>
 );
 
-export const CardDescription = ({ className = '', children, ...props }: CardProps) => (
-  <p className={cn('mt-1 text-sm leading-6 text-slate-600', className)} {...props}>
+export const CardDescription = ({ className = '', children, ...props }: Omit<CardProps, 'hoverable'>) => (
+  <p
+    className={cn('mt-1 max-w-3xl text-sm leading-6 text-slate-600 text-pretty', className)}
+    {...props}
+  >
     {children}
   </p>
 );
 
-export const CardContent = ({ className = '', children, ...props }: CardProps) => (
+export const CardContent = ({ className = '', children, ...props }: Omit<CardProps, 'hoverable'>) => (
   <div className={cn('p-5', className)} {...props}>
     {children}
   </div>

@@ -42,6 +42,7 @@ const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage').then(
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const RoleWorkspacePage = lazy(() => import('./pages/RoleWorkspacePage').then(m => ({ default: m.RoleWorkspacePage })));
 const WorkManagementPage = lazy(() => import('./pages/WorkManagementPage').then(m => ({ default: m.WorkManagementPage })));
+const DocumentsPage = lazy(() => import('./pages/DocumentsPage').then(m => ({ default: m.DocumentsPage })));
 
 function App() {
   return (
@@ -296,6 +297,16 @@ function App() {
           }
         />
         
+        {/* Documents - all authenticated users */}
+        <Route
+          path="/documents"
+          element={
+            <ProtectedRoute>
+              <DocumentsPage />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" />} />
         </Routes>

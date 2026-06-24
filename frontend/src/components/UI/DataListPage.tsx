@@ -76,7 +76,7 @@ export const TablePagination = ({
               id="page-size-select"
               value={pageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
-              className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800 shadow-sm transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800 shadow-sm transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
               aria-label="Chọn số dòng trên mỗi trang"
             >
               {pageSizeOptions.map((option) => (
@@ -158,7 +158,7 @@ export function DataListPage<T extends object>({
 
         {filters && (
           <Card className="overflow-hidden bg-white/95">
-            <div className="h-1 bg-gradient-to-r from-cyan-600 via-slate-300 to-transparent" />
+            <div className="h-1 bg-gradient-to-r from-cyan-700 via-cyan-400 to-slate-200" />
             <CardContent>{filters}</CardContent>
           </Card>
         )}

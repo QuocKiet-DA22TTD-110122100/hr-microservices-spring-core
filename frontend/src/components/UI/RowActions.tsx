@@ -16,7 +16,7 @@ interface RowActionsProps {
 }
 
 const toneStyles = {
-  default: 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-900',
+  default: 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950',
   danger: 'border-rose-200 bg-white text-rose-700 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800',
   success: 'border-emerald-200 bg-white text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800',
 };
@@ -29,7 +29,7 @@ export const RowActions = ({ label, actions }: RowActionsProps) => (
         type="button"
         variant="outline"
         size="sm"
-        className={cn('h-8 gap-1.5 rounded-lg px-2.5 shadow-none', toneStyles[action.tone ?? 'default'])}
+        className={cn('h-8 gap-1.5 rounded-md px-2.5 shadow-none', toneStyles[action.tone ?? 'default'])}
         disabled={action.disabled}
         onClick={(event) => {
           event.stopPropagation();
