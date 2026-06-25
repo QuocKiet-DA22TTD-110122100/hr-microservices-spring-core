@@ -59,6 +59,9 @@ services:
     container_name: auth-service
     ports:
       - "8086:8086"
+    volumes:
+      # Override data.sql trong JAR bằng file local — chứa 20 users + hash đúng
+      - ./auth-service/src/main/resources/data.sql:/data.sql:ro
     environment:
       SERVER_PORT: "8086"
       DB_URL: ${AUTH_DB_URL}
@@ -78,6 +81,8 @@ services:
       LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
       JAVA_TOOL_OPTIONS: *java_tool_options
+      # Trỏ Spring Boot dùng data.sql từ volume mount thay vì file trong JAR
+      SPRING_SQL_INIT_DATA_LOCATIONS: "file:/data.sql"
     depends_on:
       auth-postgres:
         condition: service_healthy
