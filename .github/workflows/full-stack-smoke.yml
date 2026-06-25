@@ -67,28 +67,14 @@ jobs:
 
       - name: Pull pre-built images from GHCR
         run: |
-          docker compose -f compose.iam.yml pull --ignore-pull-failures
-          docker compose -f compose.hr.yml pull --ignore-pull-failures
-          docker compose -f compose.business.yml pull --ignore-pull-failures
-          docker compose -f compose.edge.yml pull --ignore-pull-failures
+          docker compose -f compose.backend.yml pull --ignore-pull-failures
+          docker compose -f compose.frontend.yml pull --ignore-pull-failures
 
-      - name: Start infra
-        run: docker compose -f compose.infra.yml up -d --wait --wait-timeout 900
+      - name: Start backend
+        run: docker compose -f compose.backend.yml up -d --wait --wait-timeout 900
 
-      - name: Start messaging
-        run: docker compose -f compose.messaging.yml up -d --wait --wait-timeout 900
-
-      - name: Start IAM
-        run: docker compose -f compose.iam.yml up -d --wait --wait-timeout 900
-
-      - name: Start HR
-        run: docker compose -f compose.hr.yml up -d --wait --wait-timeout 900
-
-      - name: Start business
-        run: docker compose -f compose.business.yml up -d --wait --wait-timeout 900
-
-      - name: Start edge
-        run: docker compose -f compose.edge.yml up -d --wait --wait-timeout 900
+      - name: Start frontend
+        run: docker compose -f compose.frontend.yml up -d --wait --wait-timeout 900
 
       - name: Show running containers
         run: docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
@@ -170,23 +156,9 @@ jobs:
         if: failure()
         run: |
           docker ps -a
-          docker compose \
-            -f compose.infra.yml \
-            -f compose.messaging.yml \
-            -f compose.iam.yml \
-            -f compose.hr.yml \
-            -f compose.business.yml \
-            -f compose.edge.yml \
-            logs --tail=250
+          docker compose -f compose.backend.yml -f compose.frontend.yml logs --tail=250
 
       - name: Stop stack
         if: always()
         run: |
-          docker compose \
-            -f compose.infra.yml \
-            -f compose.messaging.yml \
-            -f compose.iam.yml \
-            -f compose.hr.yml \
-            -f compose.business.yml \
-            -f compose.edge.yml \
-            down --remove-orphans --volumes
+          docker compose -f compose.backend.yml -f compose.frontend.yml down --remove-orphans --volumes

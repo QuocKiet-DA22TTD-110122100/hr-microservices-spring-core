@@ -1,0 +1,24 @@
+services:
+  frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/quockiet-da22ttd-110122100/hr-frontend:latest}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hr-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  microservices-network:
+    name: microservices-network
+    external: true

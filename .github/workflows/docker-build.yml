@@ -154,20 +154,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate infra compose
-        run: docker compose -f compose.infra.yml config
+      - name: Validate backend compose
+        run: docker compose -f compose.backend.yml config
 
-      - name: Validate messaging compose
-        run: docker compose -f compose.messaging.yml config
-
-      - name: Validate IAM compose
-        run: docker compose -f compose.iam.yml config
-
-      - name: Validate HR compose
-        run: docker compose -f compose.hr.yml config
-
-      - name: Validate business compose
-        run: docker compose -f compose.business.yml config
-
-      - name: Validate edge compose
-        run: docker compose -f compose.edge.yml config
+      - name: Validate frontend compose
+        run: docker compose -f compose.frontend.yml config
