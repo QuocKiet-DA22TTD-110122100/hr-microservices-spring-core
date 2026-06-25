@@ -12,6 +12,7 @@ import com.hrservice.auth.iam.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -89,7 +90,13 @@ public class AuthService {
         this.userSyncService = userSyncService;
         this.totpService = totpService;
         this.redisTemplate = redisTemplate;
-        this.kmsSignerClient = RestClient.builder().baseUrl(Objects.requireNonNull(kmsBaseUrl)).build();
+        SimpleClientHttpRequestFactory kmsRequestFactory = new SimpleClientHttpRequestFactory();
+        kmsRequestFactory.setConnectTimeout(Duration.ofSeconds(3));
+        kmsRequestFactory.setReadTimeout(Duration.ofSeconds(5));
+        this.kmsSignerClient = RestClient.builder()
+            .baseUrl(Objects.requireNonNull(kmsBaseUrl))
+            .requestFactory(kmsRequestFactory)
+            .build();
         this.jwtExpirationSeconds = jwtExpirationSeconds;
         this.passwordExpiryDays = passwordExpiryDays;
         this.jwksCacheSeconds = jwksCacheSeconds;

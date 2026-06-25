@@ -294,6 +294,9 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+    depends_on:
+      eureka-peer1:
+        condition: service_healthy
     networks:
       - microservices-network
     restart: on-failure
