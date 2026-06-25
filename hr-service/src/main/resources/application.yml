@@ -1,6 +1,10 @@
 spring:
   application:
     name: hr-service
+  sql:
+    init:
+      mode: ${SPRING_SQL_INIT_MODE:never}
+      data-locations: classpath:data.sql
   datasource:
     url: jdbc:mysql://localhost:3306/hr_service?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root

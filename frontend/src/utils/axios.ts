@@ -25,6 +25,9 @@ const redirectToLogin = () => {
   }
 };
 
+const isAuthLoginRequest = (url?: string) =>
+  !!url && (url.includes('/xac-thuc/dang-nhap') || url.includes('/xac-thuc/oauth2/token'));
+
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = storage.getAccessToken();
@@ -49,6 +52,10 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<ApiError>) => {
     if (error.response?.status === 401) {
+      if (isAuthLoginRequest(error.config?.url)) {
+        throw error;
+      }
+
       redirectToLogin();
       throw toApiError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', error);
     }

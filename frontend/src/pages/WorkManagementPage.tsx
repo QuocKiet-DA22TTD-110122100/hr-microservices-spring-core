@@ -1664,10 +1664,10 @@ const I18nMobileView = () => (
 const AdminShellView = () => (
   <section className="grid gap-4 lg:grid-cols-2">
     {[
-      { title: 'Identity & Access', description: 'Quản lý tài khoản, vai trò, quyền truy cập và trạng thái khóa.', href: '/users', icon: ShieldCheck, status: 'Đang dùng' },
-      { title: 'Organization Settings', description: 'Điều chỉnh phòng ban, đơn vị và cấu trúc tổ chức.', href: '/departments', icon: Users, status: 'Đang dùng' },
-      { title: 'Company Analytics', description: 'Theo dõi năng suất, tổng giờ làm và báo cáo phòng ban.', href: undefined, icon: BarChart3, status: 'Phase 3' },
-      { title: 'Billing', description: 'Khu vực cấu hình thanh toán khi triển khai mô hình SaaS.', href: undefined, icon: FileText, status: 'Dự kiến' },
+      { title: 'Identity & Access', description: 'Quan ly tai khoan, vai tro, quyen truy cap va trang thai khoa.', href: '/users', icon: ShieldCheck, status: 'Dang dung' },
+      { title: 'Organization Settings', description: 'Dieu chinh phong ban, don vi va cau truc to chuc.', href: '/departments', icon: Users, status: 'Dang dung' },
+      { title: 'Company Analytics', description: 'Theo doi nang suat, tong gio lam va bao cao phong ban.', href: undefined, icon: BarChart3, status: 'Phase 3' },
+      { title: 'Billing', description: 'Khu vuc cau hinh thanh toan khi trien khai mo hinh SaaS.', href: undefined, icon: FileText, status: 'Du kien' },
     ].map((item) => (
       <Card key={item.title} className="group p-5 transition duration-150 hover:-translate-y-0.5 hover:bg-slate-50">
         <div className="flex items-start gap-4">
@@ -1682,11 +1682,11 @@ const AdminShellView = () => (
             <p className="mt-1 text-sm leading-6 text-slate-600">{item.description}</p>
             {item.href ? (
               <Link to={item.href} className="mt-4 inline-flex">
-                <Button type="button" variant="outline" size="sm">Mở trang</Button>
+                <Button type="button" variant="outline" size="sm">Mo trang</Button>
               </Link>
             ) : (
               <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-500">
-                Chưa mở trong phiên bản này
+                Chua mo trong phien ban nay
               </div>
             )}
           </div>

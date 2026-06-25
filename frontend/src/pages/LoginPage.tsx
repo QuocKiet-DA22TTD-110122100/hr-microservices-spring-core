@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { AxiosError } from 'axios';
 import { ArrowRight, LockKeyhole, ShieldCheck, UserRound } from 'lucide-react';
 import { authApi } from '@/api/auth.api';
 import { AuthShell } from '@/components/Auth/AuthShell';
@@ -12,11 +13,41 @@ import { LoginRequest } from '@/types/auth';
 import { decodeJwtClaims, mapClaimsToUser } from '@/utils/authSession';
 import { getApiErrorMessage } from '@/utils/error';
 
+const getLoginErrorMessage = (error: unknown) => {
+  const axiosError = error as AxiosError<{ message?: string; error?: string }>;
+  const status = axiosError.response?.status;
+  const serverMessage = axiosError.response?.data?.message || axiosError.response?.data?.error || '';
+  const normalizedMessage = serverMessage.toLowerCase();
+
+  if (normalizedMessage.includes('too many failed attempts')) {
+    return 'Tai khoan bi khoa do dang nhap sai qua nhieu lan. Vui long thu lai sau 30 phut.';
+  }
+
+  if (normalizedMessage.includes('locked by administrator')) {
+    return 'Tai khoan da bi khoa boi quan tri vien.';
+  }
+
+  if (normalizedMessage.includes('invalid credentials') || status === 401) {
+    return 'Sai ten dang nhap hoac mat khau.';
+  }
+
+  if (normalizedMessage.includes('password expired') || status === 403) {
+    return 'Mat khau da het han. Vui long doi mat khau.';
+  }
+
+  if (status === 429) {
+    return 'Dang nhap qua nhieu lan. Vui long thu lai sau.';
+  }
+
+  return getApiErrorMessage(error, 'Dang nhap that bai. Vui long thu lai.');
+};
+
 export const LoginPage = () => {
   const navigate = useNavigate();
   const { setTokens, setUser } = useAuthStore();
   const { addNotification } = useUIStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const lastSubmitAtRef = useRef(0);
 
   const {
@@ -31,6 +62,7 @@ export const LoginPage = () => {
 
     lastSubmitAtRef.current = now;
     setIsLoading(true);
+    setFormError(null);
 
     try {
       const loginResponse = await authApi.login(data);
@@ -55,9 +87,11 @@ export const LoginPage = () => {
 
       navigate('/');
     } catch (error: unknown) {
+      const message = getLoginErrorMessage(error);
+      setFormError(message);
       addNotification({
         type: 'error',
-        message: getApiErrorMessage(error, 'Đăng nhập thất bại. Vui lòng thử lại.'),
+        message,
       });
     } finally {
       setIsLoading(false);
@@ -110,6 +144,12 @@ export const LoginPage = () => {
             required: 'Vui lòng nhập mật khẩu.',
           })}
         />
+
+        {formError && (
+          <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium leading-6 text-rose-800">
+            {formError}
+          </div>
+        )}
 
         <Button type="submit" className="w-full" isLoading={isLoading}>
           Đăng nhập

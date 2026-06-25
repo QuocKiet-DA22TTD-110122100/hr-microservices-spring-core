@@ -1,6 +1,10 @@
 spring:
   application:
     name: task-service
+  sql:
+    init:
+      mode: ${SPRING_SQL_INIT_MODE:never}
+      data-locations: classpath:data.sql
   datasource:
     url: jdbc:mysql://localhost:3306/task_db?useSSL=false&serverTimezone=UTC
     username: root

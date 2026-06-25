@@ -27,10 +27,10 @@ public class LoginAttemptService {
         this.lockDuration = Duration.ofMinutes(lockMinutes);
     }
 
-    public void recordFailure(String username) {
+    public boolean recordFailure(String username) {
         String normalizedUsername = normalize(username);
         if (normalizedUsername == null || isBlocked(normalizedUsername)) {
-            return;
+            return false;
         }
 
         String attemptKey = Objects.requireNonNull(attemptKey(normalizedUsername), "attemptKey must not be null");
@@ -38,7 +38,7 @@ public class LoginAttemptService {
         Long attempts = redisTemplate.opsForValue().increment(attemptKey);
 
         if (attempts == null) {
-            return;
+            return false;
         }
 
         if (attempts == 1L) {
@@ -48,7 +48,10 @@ public class LoginAttemptService {
         if (attempts >= maxFailures) {
             redisTemplate.opsForValue().set(Objects.requireNonNull(blockKey(normalizedUsername), "blockKey must not be null"), "1", lockTtl);
             redisTemplate.delete(attemptKey);
+            return true;
         }
+
+        return false;
     }
 
     public boolean isBlocked(String username) {

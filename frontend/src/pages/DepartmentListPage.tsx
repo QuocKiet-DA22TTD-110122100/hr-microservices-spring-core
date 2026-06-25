@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Building2, Edit2, Plus, Search, Trash2, Users } from 'lucide-react';
 import { departmentApi } from '@/api/department.api';
 import { Button } from '@/components/UI/Button';
+import { ConfirmModal } from '@/components/UI/ConfirmModal';
 import { DataListPage } from '@/components/UI/DataListPage';
 import { Input } from '@/components/UI/Input';
 import { RowActions } from '@/components/UI/RowActions';
@@ -21,6 +22,13 @@ export const DepartmentListPage = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [confirmTargetId, setConfirmTargetId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const confirmTarget = useMemo(
+    () => departments.find((d) => d.id === confirmTargetId) ?? null,
+    [departments, confirmTargetId]
+  );
 
   const fetchDepartments = useCallback(async () => {
     setLoading(true);
@@ -41,26 +49,20 @@ export const DepartmentListPage = () => {
     fetchDepartments();
   }, [fetchDepartments]);
 
-  const handleDelete = useCallback(
-    async (deptId: number) => {
-      if (!confirm('Bạn chắc chắn muốn xóa phòng ban này?')) return;
-
-      try {
-        await departmentApi.delete(deptId);
-        setDepartments((current) => current.filter((department) => department.id !== deptId));
-        addNotification({
-          type: 'success',
-          message: 'Xóa phòng ban thành công.',
-        });
-      } catch (error: unknown) {
-        addNotification({
-          type: 'error',
-          message: getApiErrorMessage(error, 'Lỗi khi xóa phòng ban.'),
-        });
-      }
-    },
-    [addNotification]
-  );
+  const handleDeleteConfirm = useCallback(async () => {
+    if (confirmTargetId === null) return;
+    setDeletingId(confirmTargetId);
+    try {
+      await departmentApi.delete(confirmTargetId);
+      setDepartments((current) => current.filter((d) => d.id !== confirmTargetId));
+      setConfirmTargetId(null);
+      addNotification({ type: 'success', message: 'Xóa phòng ban thành công.' });
+    } catch (error: unknown) {
+      addNotification({ type: 'error', message: getApiErrorMessage(error, 'Lỗi khi xóa phòng ban.') });
+    } finally {
+      setDeletingId(null);
+    }
+  }, [confirmTargetId, addNotification]);
 
   const filteredDepartments = useMemo(() => {
     const keyword = searchKeyword.trim().toLowerCase();
@@ -82,6 +84,7 @@ export const DepartmentListPage = () => {
     () => [
       { key: 'code', title: 'Mã phòng ban' },
       { key: 'name', title: 'Tên phòng ban' },
+
       {
         key: 'organizationUnitName',
         title: 'Tổ chức',
@@ -112,17 +115,19 @@ export const DepartmentListPage = () => {
               {
                 icon: <Trash2 size={16} />,
                 label: 'Xóa',
-                onClick: () => handleDelete(record.id),
+                disabled: deletingId === record.id,
+                onClick: () => setConfirmTargetId(record.id),
               },
             ]}
           />
         ),
       },
     ],
-    [handleDelete, navigate]
+    [deletingId, navigate]
   );
 
   return (
+    <>
     <DataListPage
       icon={Building2}
       title="Quản lý phòng ban"
@@ -149,5 +154,17 @@ export const DepartmentListPage = () => {
       loading={loading}
       onRowClick={(record) => navigate(`/departments/edit/${record.id}`)}
     />
+
+    <ConfirmModal
+      isOpen={confirmTarget !== null}
+      title="Xóa phòng ban"
+      message={`Bạn có chắc muốn xóa phòng ban "${confirmTarget?.name}"? Hành động này không thể hoàn tác.`}
+      confirmLabel="Xóa phòng ban"
+      variant="danger"
+      isLoading={deletingId !== null}
+      onConfirm={() => void handleDeleteConfirm()}
+      onCancel={() => setConfirmTargetId(null)}
+    />
+    </>
   );
 };

@@ -316,7 +316,9 @@ public class AuthService {
 
         User user = userRepository.findByUsernameIgnoreCase(normalizedUsername)
             .orElseGet(() -> {
-                loginAttemptService.recordFailure(normalizedUsername);
+                if (loginAttemptService.recordFailure(normalizedUsername)) {
+                    throw new AccountLockedException("Account is locked due to too many failed attempts. Try again after 30 minutes");
+                }
                 throw new SecurityException("Invalid credentials");
             });
 
@@ -325,7 +327,9 @@ public class AuthService {
         }
 
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            loginAttemptService.recordFailure(normalizedUsername);
+            if (loginAttemptService.recordFailure(normalizedUsername)) {
+                throw new AccountLockedException("Account is locked due to too many failed attempts. Try again after 30 minutes");
+            }
             throw new SecurityException("Invalid credentials");
         }
 
