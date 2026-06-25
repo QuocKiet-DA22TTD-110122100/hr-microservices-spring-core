@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, Search, UserCheck, UserMinus, UserX, Users } from 'lucide-react';
+import { Building2, Plus, Search, UserCheck, UserMinus, Users } from 'lucide-react';
 import { employeeApi } from '@/api/employee.api';
 import { PermissionGate } from '@/components/Auth/PermissionGate';
 import { Badge } from '@/components/UI/Badge';
