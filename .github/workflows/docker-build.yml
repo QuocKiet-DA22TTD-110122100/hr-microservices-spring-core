@@ -1,4 +1,4 @@
-name: Docker Build
+name: Docker Build & Publish
 
 concurrency:
   group: docker-build-${{ github.ref }}
@@ -35,10 +35,20 @@ on:
       - '.github/workflows/docker-build.yml'
   workflow_dispatch:
 
+env:
+  REGISTRY: ghcr.io
+  # github.repository = "QuocKiet-DA22TTD-110122100/hr-microservices-spring-core" (ví dụ)
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
+
 jobs:
   build-images:
     name: Build ${{ matrix.image }}
     runs-on: ubuntu-latest
+    # Cấp quyền ghi packages để push lên GHCR
+    permissions:
+      contents: read
+      packages: write
+
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -73,16 +83,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Log in to GitHub Container Registry
+        # Chỉ login khi push lên main (không login khi PR để tránh lỗi permission)
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          # GITHUB_TOKEN có sẵn, không cần tạo secret thủ công
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image
+      - name: Extract metadata (tags & labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}/hr-${{ matrix.image }}
+          tags: |
+            # Tag :latest khi push lên main
+            type=raw,value=latest,enable={{is_default_branch}}
+            # Tag theo SHA commit (7 ký tự đầu)
+            type=sha,prefix=sha-,format=short
+            # Tag theo branch name (cho nhánh khác main)
+            type=ref,event=branch
+            # Tag theo PR number
+            type=ref,event=pr
+
+      - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
-          tags: hr-${{ matrix.image }}:${{ github.sha }}
-          push: false
+          # Push lên GHCR khi merge vào main; chỉ build (không push) khi PR
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
 

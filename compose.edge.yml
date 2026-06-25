@@ -4,7 +4,7 @@ x-logging-level: &logging_level WARN
 
 services:
   api-gateway:
-    image: ${API_GATEWAY_IMAGE:-hr-api-gateway:latest}
+    image: ${API_GATEWAY_IMAGE:-ghcr.io/quockiet-da22ttd-110122100/hr-api-gateway:latest}
     build:
       context: ./api-gateway
       dockerfile: Dockerfile
@@ -40,7 +40,7 @@ services:
       start_period: 240s
 
   frontend:
-    image: ${FRONTEND_IMAGE:-hr-frontend:latest}
+    image: ${FRONTEND_IMAGE:-ghcr.io/quockiet-da22ttd-110122100/hr-frontend:latest}
     build:
       context: ./frontend
       dockerfile: Dockerfile

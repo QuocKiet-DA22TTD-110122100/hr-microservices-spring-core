@@ -27,6 +27,7 @@ services:
       start_period: 30s
 
   kms-service:
+    image: ghcr.io/quockiet-da22ttd-110122100/hr-kms-service:${IMAGE_TAG:-latest}
     build:
       context: ./kms
       dockerfile: Dockerfile
@@ -53,6 +54,7 @@ services:
       start_period: 240s
 
   auth-service:
+    image: ghcr.io/quockiet-da22ttd-110122100/hr-auth-service:${IMAGE_TAG:-latest}
     build:
       context: ./auth-service
       dockerfile: Dockerfile

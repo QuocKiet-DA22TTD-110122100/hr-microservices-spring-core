@@ -12,6 +12,9 @@ jobs:
     name: Run full stack on GitHub runner
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: read
 
     env:
       API_GATEWAY_IMAGE: hr-api-gateway:ci
@@ -50,28 +53,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Show Docker versions
         run: |
           docker version
           docker compose version
 
+      - name: Pull pre-built images from GHCR
+        run: |
+          docker compose -f compose.iam.yml pull --ignore-pull-failures
+          docker compose -f compose.hr.yml pull --ignore-pull-failures
+          docker compose -f compose.business.yml pull --ignore-pull-failures
+          docker compose -f compose.edge.yml pull --ignore-pull-failures
+
       - name: Start infra
-        run: docker compose -f compose.infra.yml up -d --build --wait --wait-timeout 900
+        run: docker compose -f compose.infra.yml up -d --wait --wait-timeout 900
 
       - name: Start messaging
         run: docker compose -f compose.messaging.yml up -d --wait --wait-timeout 900
 
       - name: Start IAM
-        run: docker compose -f compose.iam.yml up -d --build --wait --wait-timeout 900
+        run: docker compose -f compose.iam.yml up -d --wait --wait-timeout 900
 
       - name: Start HR
-        run: docker compose -f compose.hr.yml up -d --build --wait --wait-timeout 900
+        run: docker compose -f compose.hr.yml up -d --wait --wait-timeout 900
 
       - name: Start business
-        run: docker compose -f compose.business.yml up -d --build --wait --wait-timeout 900
+        run: docker compose -f compose.business.yml up -d --wait --wait-timeout 900
 
       - name: Start edge
-        run: docker compose -f compose.edge.yml up -d --build --wait --wait-timeout 900
+        run: docker compose -f compose.edge.yml up -d --wait --wait-timeout 900
 
       - name: Show running containers
         run: docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'

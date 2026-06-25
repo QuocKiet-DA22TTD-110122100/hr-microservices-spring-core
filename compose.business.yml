@@ -27,6 +27,7 @@ services:
       start_period: 60s
 
   project-service:
+    image: ghcr.io/quockiet-da22ttd-110122100/hr-project-service:${IMAGE_TAG:-latest}
     build:
       context: ./project-service
       dockerfile: Dockerfile
@@ -78,6 +79,7 @@ services:
       start_period: 240s
 
   task-service:
+    image: ghcr.io/quockiet-da22ttd-110122100/hr-task-service:${IMAGE_TAG:-latest}
     build:
       context: ./task-service
       dockerfile: Dockerfile
