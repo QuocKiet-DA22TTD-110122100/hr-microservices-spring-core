@@ -572,6 +572,11 @@ services:
       LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
+    depends_on:
+      eureka-peer1:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - microservices-network
     restart: on-failure
