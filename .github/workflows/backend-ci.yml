@@ -22,10 +22,6 @@ on:
       - 'compose*.yml'
       - 'docker-compose.yml'
       - '.github/workflows/backend-ci.yml'
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - 'README.md'
   pull_request:
     branches: [main]
     paths:
@@ -43,10 +39,6 @@ on:
       - 'compose*.yml'
       - 'docker-compose.yml'
       - '.github/workflows/backend-ci.yml'
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - 'README.md'
   workflow_dispatch:
 
 jobs:
