@@ -1,29 +1,31 @@
 package com.hrservice.gateway.client;
 
-import org.springframework.web.client.RestTemplate;
-import org.springframework.http.*;
 import com.hrservice.gateway.util.HmacUtils;
-
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 @SuppressWarnings({"java:S2187", "null"})
+@Slf4j
 public class HmacClientTest {
     public static void main(String[] args) {
         String url = "http://localhost:8080/iam/register";
         String secret = "your_internal_secret";
         String apiKey = "client-app-001";
 
-        // 1. Chuẩn bị dữ liệu
         String timestamp = String.valueOf(System.currentTimeMillis() / 1000);
         String nonce = "co-dinh-mot-ma-nonce-de-test";
         String method = "POST";
         String path = "/iam/register";
 
-        // 2. Tính toán HMAC
         String dataToSign = HmacUtils.buildCanonicalString(method, path, timestamp, nonce, "");
         String signature = HmacUtils.generateSignature(dataToSign, secret);
 
-        // 3. Thiết lập Header
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Access-Key-Id", apiKey);
         headers.set("X-Timestamp", timestamp);
@@ -33,14 +35,12 @@ public class HmacClientTest {
         HttpEntity<String> entity = new HttpEntity<>(headers);
         RestTemplate restTemplate = new RestTemplate();
 
-        // 4. Gửi Request
         try {
             HttpMethod httpMethod = Objects.requireNonNull(HttpMethod.POST, "httpMethod must not be null");
             ResponseEntity<String> response = restTemplate.exchange(url, httpMethod, entity, String.class);
-            System.out.println("Status: " + response.getStatusCode());
-            System.out.println("Body: " + response.getBody());
-        } catch (Exception e) {
-            System.err.println("Lỗi: " + e.getMessage());
+            log.info("HMAC client response status={}, body={}", response.getStatusCode(), response.getBody());
+        } catch (RestClientException ex) {
+            log.warn("HMAC client request failed: {}", ex.getMessage());
         }
     }
 }

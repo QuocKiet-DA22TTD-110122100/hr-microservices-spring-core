@@ -11,19 +11,23 @@ import {
   userApi,
 } from './user.api';
 
-const get = vi.fn();
-const post = vi.fn();
-const put = vi.fn();
-const del = vi.fn();
+const apiClientMock = vi.hoisted(() => ({
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  del: vi.fn(),
+}));
 
 vi.mock('@/utils/axios', () => ({
   default: {
-    get,
-    post,
-    put,
-    delete: del,
+    get: apiClientMock.get,
+    post: apiClientMock.post,
+    put: apiClientMock.put,
+    delete: apiClientMock.del,
   },
 }));
+
+const { get, post } = apiClientMock;
 
 describe('user.api helpers', () => {
   it('maps HTTP status codes to api error codes', () => {

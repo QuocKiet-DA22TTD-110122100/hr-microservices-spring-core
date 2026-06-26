@@ -1,5 +1,6 @@
 x-eureka-default-zone: &eureka_default_zone http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/
-x-java-opts: &java_opts -Xmx384m -Xms256m -XX:TieredStopAtLevel=1
+# Reduced heap for 8GB dev machines: 6 services × 256m = 1.5GB vs old 6 × 384m = 2.3GB
+x-java-opts: &java_opts -Xmx256m -Xms128m -XX:TieredStopAtLevel=1
 x-java-tool-options: &java_tool_options -Djava.security.egd=file:/dev/./urandom
 x-logging-level: &logging_level WARN
 
@@ -163,6 +164,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.54.1
+    profiles: ["observability"]
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
@@ -184,6 +186,7 @@ services:
 
   grafana:
     image: grafana/grafana:11.2.0
+    profiles: ["observability"]
     ports:
       - "3001:3000"
     environment:
@@ -209,6 +212,7 @@ services:
 
   jaeger:
     image: jaegertracing/all-in-one:1.62.0
+    profiles: ["observability"]
     ports:
       - "16686:16686"
       - "4317:4317"
@@ -250,6 +254,7 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
+    mem_limit: 256m
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - rabbitmq_logs:/var/log/rabbitmq
@@ -444,7 +449,7 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
-    mem_limit: 1g
+    mem_limit: 300m
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 15s

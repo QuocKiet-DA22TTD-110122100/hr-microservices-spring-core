@@ -195,7 +195,6 @@ export function extractErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === 'object' && error !== null) {
     const axiosError = error as Record<string, unknown>;
-    if (typeof axiosError.message === 'string') return axiosError.message;
     const response = axiosError.response;
     if (response && typeof response === 'object') {
       const data = (response as Record<string, unknown>).data;
@@ -203,6 +202,7 @@ export function extractErrorMessage(error: unknown): string {
         return (data as Record<string, unknown>).message as string;
       }
     }
+    if (typeof axiosError.message === 'string') return axiosError.message;
   }
   return 'Không thể tải dữ liệu vai trò.';
 }
@@ -211,19 +211,65 @@ export function extractErrorMessage(error: unknown): string {
 // Role API Client
 // ============================================================================
 
+export const FALLBACK_ROLES: RoleDefinition[] = [
+  {
+    id: 'ADMIN',
+    name: 'Admin',
+    description: 'System administrator',
+    permissions: ['ALL'],
+    userCount: 0,
+  },
+  {
+    id: 'HR_MANAGER',
+    name: 'HR Manager',
+    description: 'Human resources manager',
+    permissions: [
+      'READ_EMPLOYEE',
+      'WRITE_EMPLOYEE',
+      'READ_DEPARTMENT',
+      'WRITE_DEPARTMENT',
+      'READ_USER',
+      'WRITE_USER',
+      'READ_ROLE',
+    ],
+    userCount: 0,
+  },
+  {
+    id: 'USER',
+    name: 'User',
+    description: 'Standard user',
+    permissions: ['READ_EMPLOYEE', 'READ_DEPARTMENT', 'READ_PROJECT', 'READ_TASK'],
+    userCount: 0,
+  },
+];
+
 export const roleApi = {
   getAll: async (): Promise<RoleApiResult<RoleDefinition[]>> => {
-    const response = await apiClient.get<RoleDto[]>('/xac-thuc/quan-tri/vai-tro', {
-      timeout: ROLE_API_CONFIG.REQUEST_TIMEOUT_MS,
-    });
+    try {
+      const response = await apiClient.get<RoleDto[]>('/xac-thuc/quan-tri/vai-tro', {
+        timeout: ROLE_API_CONFIG.REQUEST_TIMEOUT_MS,
+      });
 
-    const normalizedData = normalizeRoleList(response.data);
+      const normalizedData = normalizeRoleList(response.data);
 
-    return {
-      success: true,
-      data: normalizedData,
-      timestamp: new Date().toISOString(),
-    };
+      return {
+        success: true,
+        data: normalizedData,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      const message = extractErrorMessage(error);
+      console.warn('Falling back to sample roles:', message);
+
+      return {
+        success: true,
+        data: FALLBACK_ROLES,
+        message,
+        timestamp: new Date().toISOString(),
+        _fallback: true,
+        _fallbackReason: message,
+      };
+    }
   },
 
   getAvailableRoleNames: async (): Promise<string[]> => {

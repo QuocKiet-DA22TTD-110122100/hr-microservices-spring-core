@@ -125,7 +125,7 @@ jobs:
     needs: detect-changes
     strategy:
       fail-fast: false
-      max-parallel: 3
+      max-parallel: 2
       matrix: ${{ fromJSON(needs.detect-changes.outputs.service-matrix) }}
 
     steps:
@@ -143,4 +143,4 @@ jobs:
         run: chmod +x mvnw
 
       - name: Build service
-        run: ./mvnw -B -ntp -pl ${{ matrix.service }} -am clean install -DskipTests
+        run: ./mvnw -B -ntp -T 1 -pl ${{ matrix.service }} -am clean install -DskipTests

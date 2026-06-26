@@ -141,6 +141,10 @@ export const getApiErrorMessage = (
   error: unknown,
   fallback: string
 ): string => {
+  if (!error || typeof error !== 'object') {
+    return fallback;
+  }
+
   try {
     const errorDetails = extractErrorDetails(error);
     const message = formatErrorMessage(errorDetails);

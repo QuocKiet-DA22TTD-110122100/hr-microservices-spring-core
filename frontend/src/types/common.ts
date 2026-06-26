@@ -3,6 +3,8 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
   timestamp: string;
+  _fallback?: boolean;
+  _fallbackReason?: string;
 }
 
 export type RoleApiResult<T> = ApiResponse<T>;
