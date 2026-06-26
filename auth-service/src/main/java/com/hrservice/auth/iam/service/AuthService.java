@@ -91,8 +91,8 @@ public class AuthService {
         this.totpService = totpService;
         this.redisTemplate = redisTemplate;
         SimpleClientHttpRequestFactory kmsRequestFactory = new SimpleClientHttpRequestFactory();
-        kmsRequestFactory.setConnectTimeout(Duration.ofSeconds(3));
-        kmsRequestFactory.setReadTimeout(Duration.ofSeconds(5));
+        kmsRequestFactory.setConnectTimeout(Duration.ofSeconds(5));
+        kmsRequestFactory.setReadTimeout(Duration.ofSeconds(15));
         this.kmsSignerClient = RestClient.builder()
             .baseUrl(Objects.requireNonNull(kmsBaseUrl))
             .requestFactory(kmsRequestFactory)

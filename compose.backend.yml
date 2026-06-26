@@ -294,6 +294,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "0.0"
     depends_on:
       eureka-peer1:
         condition: service_healthy
@@ -334,6 +335,7 @@ services:
       HR_SYNC_ENABLED: "true"
       HR_SYNC_BASE_URL: http://hr-service:8082
       HR_SYNC_INTERNAL_SECRET: ${INTERNAL_SECRET}
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "0.0"
       LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
       JAVA_TOOL_OPTIONS: *java_tool_options
@@ -406,6 +408,7 @@ services:
       EUREKA_FETCH_REGISTRY: "true"
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
       SPRING_SQL_INIT_MODE: always
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "0.0"
       LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
       JAVA_TOOL_OPTIONS: *java_tool_options
@@ -481,6 +484,7 @@ services:
       EUREKA_FETCH_REGISTRY: "true"
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
       SPRING_SQL_INIT_MODE: always
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "0.0"
       LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
       JAVA_TOOL_OPTIONS: *java_tool_options
@@ -526,6 +530,7 @@ services:
       EUREKA_FETCH_REGISTRY: "true"
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
       SPRING_SQL_INIT_MODE: always
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "0.0"
       LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
       JAVA_TOOL_OPTIONS: *java_tool_options
