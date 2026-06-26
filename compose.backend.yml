@@ -366,6 +366,14 @@ services:
   hr-mysql:
     image: mysql:8.0
     container_name: hr-mysql
+    # Lean memory profile: disables performance_schema (~200MB saved) and shrinks InnoDB
+    command: >
+      --performance-schema=OFF
+      --innodb-buffer-pool-size=64m
+      --innodb-log-buffer-size=8m
+      --max-connections=25
+      --tmp-table-size=16m
+      --max-heap-table-size=16m
     ports:
       - "3306:3306"
     environment:
@@ -438,6 +446,14 @@ services:
   business-mysql:
     image: mysql:8.0
     container_name: business-mysql
+    # Lean memory profile: disables performance_schema (~200MB saved) and shrinks InnoDB
+    command: >
+      --performance-schema=OFF
+      --innodb-buffer-pool-size=64m
+      --innodb-log-buffer-size=8m
+      --max-connections=25
+      --tmp-table-size=16m
+      --max-heap-table-size=16m
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: project_db
