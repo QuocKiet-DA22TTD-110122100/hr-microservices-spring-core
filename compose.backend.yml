@@ -571,6 +571,8 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       LOGGING_LEVEL_ROOT: *logging_level
       JAVA_OPTS: *java_opts
+      EUREKA_USERNAME: ${EUREKA_USERNAME}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
     depends_on:
       eureka-peer1:
