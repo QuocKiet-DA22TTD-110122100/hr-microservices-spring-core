@@ -293,7 +293,8 @@ services:
       - "8083:8083"
     environment:
       LOGGING_LEVEL_ROOT: *logging_level
-      JAVA_OPTS: *java_opts
+      # KMS does RSA/AES crypto at startup — needs more heap than other services
+      JAVA_OPTS: -Xmx384m -Xms192m -XX:TieredStopAtLevel=1
       JAVA_TOOL_OPTIONS: *java_tool_options
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
       REDIS_HOST: redis
@@ -311,8 +312,8 @@ services:
       test: ["CMD", "curl", "-sf", "http://localhost:8083/actuator/health"]
       interval: 20s
       timeout: 30s
-      retries: 8
-      start_period: 240s
+      retries: 10
+      start_period: 360s
 
   auth-service:
     image: ghcr.io/quockiet-da22ttd-110122100/hr-auth-service:${IMAGE_TAG:-latest}
