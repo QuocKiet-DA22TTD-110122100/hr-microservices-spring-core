@@ -6,13 +6,19 @@ import {
   CheckCircle2,
   Clock3,
   Copy,
+  FolderKanban,
   FolderTree,
   Hourglass,
+  ListChecks,
   LucideIcon,
   Mail,
   ShieldCheck,
   Sparkles,
+  Users,
 } from 'lucide-react';
+import { employeeApi } from '@/api/employee.api';
+import { projectApi } from '@/api/project.api';
+import { taskApi } from '@/api/task.api';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { Badge } from '@/components/UI/Badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/UI/Card';
@@ -21,6 +27,7 @@ import { useUIStore } from '@/store/uiStore';
 import { usePermissions } from '@/hooks/usePermissions';
 import { resolveWorkspaceRole, roleProfiles, WorkspaceRole } from '@/config/roleExperience';
 import { formatDate, getPasswordExpiryWarning } from '@/utils/format';
+import { PERMISSIONS } from '@/utils/permissions';
 import { cn } from '@/utils/cn';
 
 type Priority = 'high' | 'medium' | 'normal';
@@ -309,6 +316,92 @@ const dashboardExperience: Record<WorkspaceRole, RoleDashboardExperience> = {
   },
 };
 
+interface LiveStats {
+  employees: number;
+  activeProjects: number;
+  openTasks: number;
+  loading: boolean;
+}
+
+const useLiveDashboardStats = (canViewEmployees: boolean, canViewProjects: boolean, canViewTasks: boolean): LiveStats => {
+  const [stats, setStats] = useState<LiveStats>({ employees: 0, activeProjects: 0, openTasks: 0, loading: true });
+
+  useEffect(() => {
+    const fetches = [
+      canViewEmployees
+        ? employeeApi.getAll({ page: 0, size: 1 }).then((r) => r.data.totalElements).catch(() => 0)
+        : Promise.resolve(0),
+      canViewProjects
+        ? projectApi.getAll().then((p) => p.filter((x) => x.status === 'ACTIVE').length).catch(() => 0)
+        : Promise.resolve(0),
+      canViewTasks
+        ? taskApi.getAll().then((t) => t.filter((x) => x.status === 'OPEN' || x.status === 'IN_PROGRESS').length).catch(() => 0)
+        : Promise.resolve(0),
+    ] as Promise<number>[];
+
+    void Promise.all(fetches).then(([employees, activeProjects, openTasks]) => {
+      setStats({ employees, activeProjects, openTasks, loading: false });
+    });
+  }, [canViewEmployees, canViewProjects, canViewTasks]);
+
+  return stats;
+};
+
+const LiveStatsBar = ({ stats, canViewEmployees, canViewProjects, canViewTasks }: {
+  stats: LiveStats;
+  canViewEmployees: boolean;
+  canViewProjects: boolean;
+  canViewTasks: boolean;
+}) => {
+  const items = [
+    canViewEmployees && {
+      label: 'Nhân viên',
+      value: stats.loading ? '—' : stats.employees.toString(),
+      icon: Users,
+      gradient: 'from-cyan-600 to-teal-500',
+      bg: 'bg-cyan-50',
+      text: 'text-cyan-700',
+    },
+    canViewProjects && {
+      label: 'Dự án đang chạy',
+      value: stats.loading ? '—' : stats.activeProjects.toString(),
+      icon: FolderKanban,
+      gradient: 'from-violet-600 to-purple-500',
+      bg: 'bg-violet-50',
+      text: 'text-violet-700',
+    },
+    canViewTasks && {
+      label: 'Task cần xử lý',
+      value: stats.loading ? '—' : stats.openTasks.toString(),
+      icon: ListChecks,
+      gradient: 'from-amber-500 to-orange-400',
+      bg: 'bg-amber-50',
+      text: 'text-amber-700',
+    },
+  ].filter(Boolean) as NonNullable<(typeof items)[number]>[];
+
+  if (items.length === 0) return null;
+
+  return (
+    <section className="grid grid-cols-1 gap-3 sm:grid-cols-3 animate-fade-up">
+      {items.map((item) => (
+        <Card key={item.label} className="relative overflow-hidden p-4">
+          <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${item.gradient}`} />
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-medium text-slate-500">{item.label}</p>
+              <p className="mt-0.5 text-3xl font-bold tracking-tight text-slate-900">{item.value}</p>
+            </div>
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${item.bg} ${item.text}`}>
+              <item.icon size={20} />
+            </div>
+          </div>
+        </Card>
+      ))}
+    </section>
+  );
+};
+
 const ActionCard = ({
   title,
   description,
@@ -490,6 +583,11 @@ export const DashboardPage = () => {
   const experience = dashboardExperience[workspaceRole];
   const isPendingUser = workspaceRole === 'user';
 
+  const canViewEmployees = can(PERMISSIONS.EMPLOYEE_VIEW);
+  const canViewProjects  = can(PERMISSIONS.PROJECT_VIEW);
+  const canViewTasks     = can(PERMISSIONS.TASK_VIEW);
+  const liveStats = useLiveDashboardStats(canViewEmployees, canViewProjects, canViewTasks);
+
   const visibleActions = useMemo(
     () => roleProfile.actions.filter((action) => !action.permission || can(action.permission)),
     [can, roleProfile.actions]
@@ -557,6 +655,15 @@ export const DashboardPage = () => {
         )}
 
         {isPendingUser && <PendingApprovalPanel user={user} onCopyEmail={handleCopyApproverEmail} />}
+
+        {!isPendingUser && (canViewEmployees || canViewProjects || canViewTasks) && (
+          <LiveStatsBar
+            stats={liveStats}
+            canViewEmployees={canViewEmployees}
+            canViewProjects={canViewProjects}
+            canViewTasks={canViewTasks}
+          />
+        )}
 
         {!isPendingUser && (
         <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
