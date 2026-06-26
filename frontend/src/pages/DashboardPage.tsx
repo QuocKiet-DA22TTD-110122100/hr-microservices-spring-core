@@ -353,32 +353,10 @@ const LiveStatsBar = ({ stats, canViewEmployees, canViewProjects, canViewTasks }
   canViewProjects: boolean;
   canViewTasks: boolean;
 }) => {
-  const items = [
-    canViewEmployees && {
-      label: 'Nhân viên',
-      value: stats.loading ? '—' : stats.employees.toString(),
-      icon: Users,
-      gradient: 'from-cyan-600 to-teal-500',
-      bg: 'bg-cyan-50',
-      text: 'text-cyan-700',
-    },
-    canViewProjects && {
-      label: 'Dự án đang chạy',
-      value: stats.loading ? '—' : stats.activeProjects.toString(),
-      icon: FolderKanban,
-      gradient: 'from-violet-600 to-purple-500',
-      bg: 'bg-violet-50',
-      text: 'text-violet-700',
-    },
-    canViewTasks && {
-      label: 'Task cần xử lý',
-      value: stats.loading ? '—' : stats.openTasks.toString(),
-      icon: ListChecks,
-      gradient: 'from-amber-500 to-orange-400',
-      bg: 'bg-amber-50',
-      text: 'text-amber-700',
-    },
-  ].filter(Boolean) as NonNullable<(typeof items)[number]>[];
+  const items: Array<{ label: string; value: string; icon: LucideIcon; gradient: string; bg: string; text: string }> = [];
+  if (canViewEmployees) items.push({ label: 'Nhân viên',       value: stats.loading ? '—' : stats.employees.toString(),     icon: Users,        gradient: 'from-cyan-600 to-teal-500',    bg: 'bg-cyan-50',   text: 'text-cyan-700'   });
+  if (canViewProjects)  items.push({ label: 'Dự án đang chạy', value: stats.loading ? '—' : stats.activeProjects.toString(), icon: FolderKanban, gradient: 'from-violet-600 to-purple-500', bg: 'bg-violet-50', text: 'text-violet-700' });
+  if (canViewTasks)     items.push({ label: 'Task cần xử lý',  value: stats.loading ? '—' : stats.openTasks.toString(),     icon: ListChecks,   gradient: 'from-amber-500 to-orange-400', bg: 'bg-amber-50',  text: 'text-amber-700'  });
 
   if (items.length === 0) return null;
 
