@@ -574,6 +574,7 @@ services:
       EUREKA_USERNAME: ${EUREKA_USERNAME}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD}
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: *eureka_default_zone
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "0.0"
     depends_on:
       eureka-peer1:
         condition: service_healthy
