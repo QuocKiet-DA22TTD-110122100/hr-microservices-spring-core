@@ -343,7 +343,8 @@ services:
       HR_SYNC_INTERNAL_SECRET: ${INTERNAL_SECRET}
       MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "0.0"
       LOGGING_LEVEL_ROOT: *logging_level
-      JAVA_OPTS: *java_opts
+      # auth-service verifies Argon2id hashes — needs more heap to avoid GC stalls
+      JAVA_OPTS: -Xmx384m -Xms192m -XX:TieredStopAtLevel=1
       JAVA_TOOL_OPTIONS: *java_tool_options
       SPRING_SQL_INIT_DATA_LOCATIONS: "file:/data.sql"
     depends_on:

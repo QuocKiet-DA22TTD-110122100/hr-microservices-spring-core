@@ -11,7 +11,7 @@ const toApiError = (message: string, source: unknown): Error => {
 
 const apiClient = axios.create({
   baseURL: '/api',
-  timeout: 10000,
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
   },
