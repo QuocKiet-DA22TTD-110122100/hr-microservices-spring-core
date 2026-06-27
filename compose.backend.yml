@@ -347,6 +347,7 @@ services:
       JAVA_OPTS: -Xmx384m -Xms192m -XX:TieredStopAtLevel=1
       JAVA_TOOL_OPTIONS: *java_tool_options
       SPRING_SQL_INIT_DATA_LOCATIONS: "file:/data.sql"
+      SPRING_SQL_INIT_MODE: always
     depends_on:
       auth-postgres:
         condition: service_healthy
