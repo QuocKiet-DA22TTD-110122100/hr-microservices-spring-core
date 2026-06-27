@@ -115,3 +115,94 @@ For multi-step tasks, state a brief plan:
 ```
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+---
+
+# Spring Boot Patterns (Backend)
+
+## Controller Layer
+- Annotate with `@RestController` + `@RequestMapping`
+- Return `ResponseEntity<T>` for explicit status codes
+- Validate input with `@Valid` + Bean Validation (`@NotBlank`, `@NotNull`, `@Size`)
+- Never put business logic in controllers — delegate to `@Service`
+
+```java
+@PostMapping
+public ResponseEntity<EmployeeResponse> create(@Valid @RequestBody CreateEmployeeRequest req) {
+    return ResponseEntity.status(HttpStatus.CREATED).body(service.create(req));
+}
+```
+
+## Service Layer
+- Annotate with `@Service` + `@Transactional` where DB writes happen
+- Use constructor injection (not `@Autowired` on fields)
+- Throw domain exceptions (`ResourceNotFoundException`, `BusinessRuleException`) — never return null
+- Map entities ↔ DTOs inside service, never expose JPA entities to controllers
+
+## Repository Layer
+- Extend `JpaRepository<Entity, ID>` — don't write boilerplate CRUD
+- Use `@Query` for complex queries, not native SQL unless necessary
+- Return `Optional<T>` from findBy methods, never null
+
+## Exception Handling
+- One `@RestControllerAdvice` class handles all exceptions globally
+- Map domain exceptions to HTTP status codes there, not in controllers
+- Always include `timestamp`, `status`, `message`, `path` in error response body
+
+## Security / RBAC
+- Check permissions via `@PreAuthorize("hasAuthority('PERMISSION_NAME')")` on service methods
+- Extract user from `SecurityContextHolder` in service, not controller
+- Never trust data from request body for userId — always use authenticated principal
+
+## Testing
+- Unit test services with Mockito: `@ExtendWith(MockitoExtension.class)`
+- Integration test controllers with `@SpringBootTest` + `MockMvc`
+- Use `@DataJpaTest` for repository tests with in-memory DB
+- Test unhappy paths: not found, validation failure, permission denied
+
+---
+
+# React / TypeScript Patterns (Frontend)
+
+## Component Structure
+- Functional components only — no class components
+- Keep components small: if > 150 lines, split into sub-components
+- Co-locate component logic: state + handlers in same file as JSX
+- Props interface defined directly above component, not in separate file unless shared
+
+```tsx
+interface Props {
+  userId: string;
+  onSave: (data: UserData) => void;
+}
+
+export const UserForm = ({ userId, onSave }: Props) => { ... };
+```
+
+## State Management (Zustand)
+- One store per domain (`authStore`, `uiStore`) — don't put everything in one store
+- Store only serializable state — no functions, no class instances
+- Selectors inline: `const user = useAuthStore(s => s.user)` — avoid subscribing to whole store
+
+## API Calls
+- All API calls go through `apiClient` (`src/utils/axios.ts`) — never raw `fetch`
+- Each domain has its own API file (`employee.api.ts`, `project.api.ts`)
+- Handle errors with `getApiErrorMessage()` from `src/utils/error.ts`
+- Show loading state during async operations — never leave UI frozen
+
+## TypeScript
+- `strict: true` always — no `any` unless wrapping third-party code
+- Define response types matching backend DTOs exactly
+- Use `unknown` + type narrowing instead of `any` for error handling
+- Prefer `interface` for object shapes, `type` for unions/intersections
+
+## Forms
+- Use `react-hook-form` + `zod` for all forms — no manual state for form fields
+- Validate on submit, show inline errors per field
+- Disable submit button while loading to prevent double-submit
+
+## Testing (Vitest)
+- Mock API calls with `vi.mock('@/utils/axios')` — never hit real backend in unit tests
+- Test user interactions with `@testing-library/user-event`, not `fireEvent`
+- Each test: arrange → act → assert, one assertion per logical outcome
+- `beforeEach` must be `async` if it uses `await import()`
