@@ -52,6 +52,16 @@ spring:
 
           # Default filters
           default-filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,BAD_GATEWAY,GATEWAY_TIMEOUT
+                methods: GET,HEAD
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 500ms
+                  factor: 2
+                  basedOnPreviousValue: false
             - name: AddRequestHeader
               args:
                 name: X-Internal-Secret
@@ -93,7 +103,7 @@ spring:
 
             # Public IAM endpoints - no JWT required
             - id: auth-public-route
-              uri: ${AUTH_SERVICE_URL:http://localhost:8087}
+              uri: ${AUTH_SERVICE_URL:lb://auth-service}
               predicates:
                 - Path=/api/xac-thuc/dang-nhap,/api/xac-thuc/dang-ky,/api/xac-thuc/dang-xuat,/api/xac-thuc/oauth2/token,/api/xac-thuc/2fa/**
               filters:
@@ -103,7 +113,7 @@ spring:
 
             # Protected IAM endpoints - JWT required
             - id: auth-protected-route
-              uri: ${AUTH_SERVICE_URL:http://localhost:8087}
+              uri: ${AUTH_SERVICE_URL:lb://auth-service}
               predicates:
                 - Path=/api/xac-thuc/kiem-tra,/api/xac-thuc/doi-mat-khau,/api/xac-thuc/quan-tri/**,/api/xac-thuc/trang-thai-dong-bo/**,/api/xac-thuc/thu-lai-dong-bo/**
               filters:
@@ -161,7 +171,7 @@ spring:
 
             # HR Service Routes - Browser API (English)
             - id: hr-browser-api-route
-              uri: ${HR_SERVICE_URL:http://localhost:8082}
+              uri: ${HR_SERVICE_URL:lb://hr-service}
               predicates:
                 - Path=/api/hr/**
               filters:
@@ -256,11 +266,11 @@ eureka:
     fetch-registry: true
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer1:${EUREKA_PEER1_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer2:${EUREKA_PEER2_PORT}/eureka/,http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@eureka-peer3:${EUREKA_PEER3_PORT}/eureka/}
-    registry-fetch-interval-seconds: 30
+    registry-fetch-interval-seconds: 5
   instance:
     prefer-ip-address: true
-    lease-renewal-interval-in-seconds: 30
-    lease-expiration-duration-in-seconds: 90
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
     metadata-map:
       zone: us-east-1a
       version: 1.0.0
