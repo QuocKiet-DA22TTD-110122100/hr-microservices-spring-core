@@ -1,15 +1,13 @@
-import { FormEvent, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   BarChart3,
   Briefcase,
   CalendarCheck,
-  CheckCircle2,
   ClipboardCheck,
   Clock3,
   FileText,
-  KanbanSquare,
   ShieldAlert,
   ShieldCheck,
   Users,
@@ -18,168 +16,14 @@ import {
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { Button } from '@/components/UI/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/UI/Card';
-import { Modal } from '@/components/UI/Modal';
 import { WorkspaceActionPanel } from '@/components/Workspace/WorkspaceActionPanel';
 import { WorkspaceMetricCards } from '@/components/Workspace/WorkspaceMetricCards';
 import { WorkspaceStatusFilters, WorkspaceFilter } from '@/components/Workspace/WorkspaceStatusFilters';
 import { WorkspaceStatusList } from '@/components/Workspace/WorkspaceStatusList';
-import { WorkspaceDefinition, WorkspaceItem, WorkspacePriority, WorkspaceAssignee } from '@/components/Workspace/types';
+import { WorkspaceDefinition, WorkspaceItem } from '@/components/Workspace/types';
 import { resolveWorkspaceRole } from '@/config/roleExperience';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/utils/cn';
-
-// ── Team member roster (used by team-tasks dispatch modal) ───────────────────
-const TEAM_MEMBERS: (WorkspaceAssignee & { role: string })[] = [
-  { name: 'Nguyễn Văn A', initial: 'A', color: 'bg-blue-600',    role: 'Frontend' },
-  { name: 'Trần Thị B',   initial: 'B', color: 'bg-emerald-600', role: 'Backend' },
-  { name: 'Lê Văn C',     initial: 'C', color: 'bg-amber-600',   role: 'QA' },
-  { name: 'Hoàng Minh D', initial: 'D', color: 'bg-violet-600',  role: 'DevOps' },
-];
-
-// ── Dispatch Modal ───────────────────────────────────────────────────────────
-interface DispatchTaskModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  items: WorkspaceItem[];
-}
-
-const DispatchTaskModal = ({ isOpen, onClose, items }: DispatchTaskModalProps) => {
-  const [taskTitle, setTaskTitle] = useState(items[0]?.title ?? '');
-  const [assigneeName, setAssigneeName] = useState(TEAM_MEMBERS[0].name);
-  const [priority, setPriority] = useState<WorkspacePriority>('medium');
-  const [note, setNote] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setNote('');
-      onClose();
-    }, 1600);
-  };
-
-  const priorityOptions: Array<{ value: WorkspacePriority; label: string; style: string; active: string }> = [
-    { value: 'high',   label: 'Cao',         style: 'border-rose-200 bg-white text-rose-700',   active: 'border-rose-400 bg-rose-50 ring-2 ring-rose-300/50' },
-    { value: 'medium', label: 'Vừa',         style: 'border-amber-200 bg-white text-amber-700', active: 'border-amber-400 bg-amber-50 ring-2 ring-amber-300/50' },
-    { value: 'normal', label: 'Bình thường', style: 'border-slate-200 bg-white text-slate-700', active: 'border-slate-400 bg-slate-50 ring-2 ring-slate-300/50' },
-  ];
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Điều phối công việc" size="lg">
-      {submitted ? (
-        <div className="flex flex-col items-center gap-3 py-12 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
-            <CheckCircle2 size={36} className="text-emerald-500" />
-          </div>
-          <p className="text-lg font-semibold text-slate-800">Đã giao việc thành công!</p>
-          <p className="text-sm text-slate-500">Thông báo sẽ được gửi đến thành viên được phân công.</p>
-        </div>
-      ) : (
-        <form className="space-y-5" onSubmit={handleSubmit}>
-          {/* Công việc */}
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-              Công việc cần điều phối <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={taskTitle}
-              onChange={(e) => setTaskTitle(e.target.value)}
-              required
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-            >
-              {items.map((item) => (
-                <option key={item.title} value={item.title}>
-                  {item.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Giao cho */}
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-              Giao cho <span className="text-rose-500">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {TEAM_MEMBERS.map((member) => {
-                const active = assigneeName === member.name;
-                return (
-                  <button
-                    key={member.name}
-                    type="button"
-                    onClick={() => setAssigneeName(member.name)}
-                    className={cn(
-                      'flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-sm transition-all',
-                      active
-                        ? 'border-cyan-300 bg-cyan-50 text-cyan-900 ring-2 ring-cyan-200/50'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                    )}
-                  >
-                    <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white', member.color)}>
-                      {member.initial}
-                    </div>
-                    <div>
-                      <p className="font-semibold">{member.name}</p>
-                      <p className="text-xs text-slate-500">{member.role}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Mức ưu tiên */}
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Mức ưu tiên</label>
-            <div className="flex gap-2">
-              {priorityOptions.map((p) => (
-                <button
-                  key={p.value}
-                  type="button"
-                  onClick={() => setPriority(p.value)}
-                  className={cn(
-                    'flex-1 rounded-lg border px-3 py-2 text-xs font-semibold transition-all',
-                    priority === p.value ? p.active : p.style + ' hover:bg-slate-50'
-                  )}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Ghi chú */}
-          <div>
-            <label htmlFor="dispatch-note" className="mb-1.5 block text-sm font-semibold text-slate-700">
-              Ghi chú / Hướng dẫn thêm
-            </label>
-            <textarea
-              id="dispatch-note"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={3}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              placeholder="Mô tả yêu cầu hoặc deadline cụ thể..."
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3 border-t border-slate-100 pt-3">
-            <Button type="submit">
-              <CheckCircle2 size={15} />
-              Xác nhận giao việc
-            </Button>
-            <Button type="button" variant="secondary" onClick={onClose}>
-              Hủy
-            </Button>
-          </div>
-        </form>
-      )}
-    </Modal>
-  );
-};
 
 const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
   'account-security': {
