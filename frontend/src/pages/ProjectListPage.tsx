@@ -72,21 +72,35 @@ export const ProjectListPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const projectList = await projectApi.getAll();
-      const rows = await Promise.all(
-        projectList.map(async (project) => {
-          const [assignments, tasks] = await Promise.all([
-            projectApi.getAssignments(project.id),
-            taskApi.getByProject(project.id),
-          ]);
-          return {
-            ...project,
-            memberCount: assignments.filter((a) => a.active).length,
-            taskCount: tasks.length,
-          };
-        })
+      // Fetch project list + ALL tasks in one parallel shot (2 requests instead of 1 + 2N)
+      const [projectList, allTasks] = await Promise.all([
+        projectApi.getAll(),
+        taskApi.getAll().catch(() => [] as import('@/types/task').Task[]),
+      ]);
+
+      // Group task counts by projectId in memory — zero extra requests
+      const taskCountMap = allTasks.reduce<Record<number, number>>((acc, t) => {
+        acc[t.projectId] = (acc[t.projectId] ?? 0) + 1;
+        return acc;
+      }, {});
+
+      // Fetch assignments concurrently; each failure gracefully defaults to 0
+      const memberCounts = await Promise.all(
+        projectList.map((p) =>
+          projectApi
+            .getAssignments(p.id)
+            .then((list) => list.filter((a) => a.active).length)
+            .catch(() => 0)
+        )
       );
-      setProjects(rows);
+
+      setProjects(
+        projectList.map((p, i) => ({
+          ...p,
+          memberCount: memberCounts[i],
+          taskCount: taskCountMap[p.id] ?? 0,
+        }))
+      );
     } catch {
       setError('Không thể tải danh sách dự án. Vui lòng kiểm tra gateway và project-service.');
     } finally {
@@ -156,11 +170,7 @@ export const ProjectListPage = () => {
               <Link to="/projects/add">
                 <Button><Plus size={16} />Tạo dự án</Button>
               </Link>
-            ) : (
-              <Button disabled title="Bạn không có quyền tạo dự án">
-                <Plus size={16} />Tạo dự án
-              </Button>
-            )
+            ) : undefined
           }
         />
 

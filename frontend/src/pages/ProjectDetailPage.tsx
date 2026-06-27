@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   AlertCircle,
@@ -175,7 +175,7 @@ export const ProjectDetailPage = () => {
 
   const handleAddMember = async () => {
     if (!canManageMembers) {
-      setError('Tai khoan hien tai khong co quyen phan cong thanh vien du an.');
+      setError('Tài khoản hiện tại không có quyền phân công thành viên dự án.');
       return;
     }
 
@@ -198,7 +198,7 @@ export const ProjectDetailPage = () => {
 
   const handleRemoveMember = async (assignment: ProjectAssignment) => {
     if (!canManageMembers) {
-      setError('Tai khoan hien tai khong co quyen go thanh vien khoi du an.');
+      setError('Tài khoản hiện tại không có quyền gỡ thành viên khỏi dự án.');
       return;
     }
 

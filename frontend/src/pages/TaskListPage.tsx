@@ -280,12 +280,7 @@ export const TaskListPage = () => {
                   Tạo task
                 </Button>
               </Link>
-            ) : (
-              <Button disabled className="rounded-xl shadow-sm" title="Bạn không có quyền tạo task">
-                <Plus size={16} />
-                Tạo task
-              </Button>
-            )
+            ) : undefined
           }
         />
 

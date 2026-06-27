@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+﻿import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   AtSign,
@@ -90,14 +90,14 @@ const workNavItems: WorkNavItem[] = [
   {
     key: 'my-tasks',
     label: 'My Tasks',
-    description: 'Tat ca cong viec ca nhan theo trang thai.',
+    description: 'Tất cả công việc cá nhân theo trạng thái.',
     icon: ListChecks,
     roles: ['employee', 'manager', 'departmentHead'],
   },
   {
     key: 'projects',
     label: 'Projects',
-    description: 'Du an tham gia va bang Kanban.',
+    description: 'Dự án tham gia va bang Kanban.',
     icon: FolderKanban,
     roles: ['employee', 'manager', 'departmentHead', 'admin'],
   },
@@ -139,14 +139,14 @@ const workNavItems: WorkNavItem[] = [
   {
     key: 'files',
     label: 'Files',
-    description: 'Tai lieu task va san pham ban giao.',
+    description: 'Tài liệu task va san pham ban giao.',
     icon: Paperclip,
     roles: ['employee', 'manager', 'departmentHead', 'admin'],
   },
   {
     key: 'activity',
     label: 'Activity Log',
-    description: 'Dong thoi gian hanh dong tren task/project.',
+    description: 'Đóng thoi gian hanh dong tren task/project.',
     icon: History,
     roles: ['employee', 'manager', 'departmentHead', 'admin'],
   },
@@ -160,7 +160,7 @@ const workNavItems: WorkNavItem[] = [
   {
     key: 'analytics',
     label: 'Analytics',
-    description: 'Bao cao nang suat va tien do du an.',
+    description: 'Báo cáo năng suất và tiến độ dự án.',
     icon: BarChart3,
     roles: ['manager', 'departmentHead', 'admin'],
   },
@@ -174,7 +174,7 @@ const workNavItems: WorkNavItem[] = [
   {
     key: 'ai',
     label: 'AI Suggestions',
-    description: 'Goi y phan cong theo tai cong viec.',
+    description: 'Gợi ý phân công theo tải công việc.',
     icon: Bot,
     roles: ['manager', 'departmentHead', 'admin'],
   },
@@ -202,7 +202,7 @@ const workNavItems: WorkNavItem[] = [
   {
     key: 'admin',
     label: 'Identity & Access',
-    description: 'Quan ly tai khoan, role va cac placeholder admin.',
+    description: 'Quản lý tài khoản, role và các placeholder admin.',
     icon: ShieldCheck,
     roles: ['admin'],
   },
@@ -282,7 +282,7 @@ const priorityTone: Record<TaskPriority, 'muted' | 'info' | 'warning' | 'danger'
 
 const boardColumns: BoardStatus[] = ['OPEN', 'IN_PROGRESS', 'REVIEW', 'COMPLETED'];
 
-const formatDate = (value?: string | null) => (value ? new Date(value).toLocaleDateString('vi-VN') : 'Chua co');
+const formatDate = (value?: string | null) => (value ? new Date(value).toLocaleDateString('vi-VN') : 'Chưa có');
 
 const getProgress = (project: ProjectSummary) => {
   if (project.taskCount === 0) return 0;
@@ -354,7 +354,7 @@ export const WorkManagementPage = () => {
         projectId: projectRows[0]?.id ?? current.projectId,
       }));
     } catch {
-      setError('Khong the tai du lieu cong viec. Vui long kiem tra gateway, project-service va task-service.');
+      setError('Không thể tải dữ liệu công việc. Vui lòng kiểm tra gateway, project-service và task-service.');
     } finally {
       setLoading(false);
     }
@@ -408,7 +408,7 @@ export const WorkManagementPage = () => {
     }
 
     if (!canUpdateTask) {
-      setNotice('Tai khoan hien tai chi duoc xem board, chua co quyen cap nhat trang thai.');
+      setNotice('Tài khoản hiện tại chỉ được xem board, chưa có quyền cập nhật trạng thái.');
       return;
     }
 
@@ -426,7 +426,7 @@ export const WorkManagementPage = () => {
       });
     } catch {
       setTasks(previous);
-      setNotice('Khong the cap nhat trang thai task. Vui long thu lai.');
+      setNotice('Không thể cập nhật trạng thái task. Vui lòng thử lại.');
     }
   };
 
@@ -441,12 +441,12 @@ export const WorkManagementPage = () => {
     event.preventDefault();
 
     if (!canCreateTask) {
-      setNotice('Tai khoan hien tai chua co quyen tao task.');
+      setNotice('Tài khoản hiện tại chưa có quyền tạo task.');
       return;
     }
 
     if (!form.title.trim()) {
-      setNotice('Vui long nhap ten task.');
+      setNotice('Vui lòng nhập tên task.');
       return;
     }
 
@@ -460,22 +460,22 @@ export const WorkManagementPage = () => {
       setNotice('Da tao task moi.');
       await loadWorkData();
     } catch {
-      setNotice('Khong the tao task. Kiem tra project, assignee va quyen truy cap.');
+      setNotice('Không thể tạo task. Kiểm tra project, assignee và quyền truy cập.');
     }
   };
 
   if (!isWorkRole(workspaceRole)) {
     return (
-      <WorkShell title="Khong gian lam viec chua duoc cap" subtitle="Tai khoan can duoc duyet sang EMPLOYEE, MANAGER, DEPARTMENT_HEAD hoac ADMIN de su dung module cong viec.">
+      <WorkShell title="Không gian làm việc chưa được cấp" subtitle="Tài khoản cần được duyệt sang EMPLOYEE, MANAGER, DEPARTMENT_HEAD hoặc ADMIN để sử dụng module công việc.">
         <Card className="p-6">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
               <LockKeyhole size={24} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Dang o trang thai gioi han</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Đang ở trạng thái giới hạn</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                Role hien tai khong nam trong pham vi dashboard Member, Manager hoac Admin. Day la hanh vi dung cho tai khoan chua duoc phe duyet hoac role khong thuoc module cong viec.
+                Role hiện tại không nằm trong phạm vi dashboard Member, Manager hoặc Admin. Đây là hành vi đúng cho tài khoản chưa được phê duyệt hoặc role không thuộc module công việc.
               </p>
               <Link to="/" className="mt-4 inline-flex">
                 <Button type="button" variant="outline">Ve dashboard tai khoan</Button>
@@ -500,7 +500,7 @@ export const WorkManagementPage = () => {
           <div className="flex items-center justify-between gap-4">
             <span>{notice}</span>
             <button type="button" className="font-semibold" onClick={() => setNotice(null)}>
-              Dong
+              Đóng
             </button>
           </div>
         </div>
@@ -508,10 +508,10 @@ export const WorkManagementPage = () => {
 
       {error && (
         <Card className="border-rose-200 bg-rose-50 p-5 text-rose-800">
-          <p className="font-semibold">Khong tai duoc du lieu</p>
+          <p className="font-semibold">Không tải được dữ liệu</p>
           <p className="mt-1 text-sm">{error}</p>
           <Button type="button" variant="outline" className="mt-4 bg-white" onClick={() => void loadWorkData()}>
-            Tai lai
+            Tải lại
           </Button>
         </Card>
       )}
@@ -694,7 +694,7 @@ const DashboardView = ({ role, stats, projects, tasks }: DashboardViewProps) => 
           </CardHeader>
           <CardContent className="space-y-3">
             {(role === 'employee' ? urgentTasks : riskyProjects).length === 0 ? (
-              <EmptyState title="Chua co viec can canh bao" description="Khi co task uu tien cao hoac du an rui ro, khu vuc nay se hien thi truoc." />
+              <EmptyState title="Chưa có việc cần cảnh báo" description="Khi có task ưu tiên cao hoặc dự án rủi ro, khu vực này sẽ hiển thị trước." />
             ) : role === 'employee' ? (
               urgentTasks.map((task) => <TaskRow key={task.id} task={task} projectName={getTaskProjectName(projects, task)} />)
             ) : (
@@ -740,7 +740,7 @@ const MyTasksView = ({ tasks, projects, taskFilter, onFilterChange }: MyTasksVie
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <CardTitle>My Tasks</CardTitle>
-          <CardDescription>Gom task tu moi project ve mot noi. Due date dang la placeholder vi backend chua co truong nay.</CardDescription>
+          <CardDescription>Gom task từ mọi project về một nơi. Due date đang là placeholder vì backend chưa có trường này.</CardDescription>
         </div>
         <div className="flex flex-wrap gap-2">
           {[
@@ -766,7 +766,7 @@ const MyTasksView = ({ tasks, projects, taskFilter, onFilterChange }: MyTasksVie
     </CardHeader>
     <CardContent className="space-y-3">
       {tasks.length === 0 ? (
-        <EmptyState title="Chua co task phu hop" description="Thu doi filter hoac kiem tra phan cong task trong project." />
+        <EmptyState title="Chưa có task phù hợp" description="Thử đổi filter hoặc kiểm tra phân công task trong project." />
       ) : (
         tasks.map((task) => <TaskRow key={task.id} task={task} projectName={getTaskProjectName(projects, task)} />)
       )}
@@ -779,7 +779,7 @@ const ProjectsView = ({ projects }: { projects: ProjectSummary[] }) => (
     {projects.map((project) => <ProjectRow key={project.id} project={project} expanded />)}
     {projects.length === 0 && (
       <Card className="p-6">
-        <EmptyState title="Chua co du an" description="Project se xuat hien khi backend tra ve danh sach du an duoc phep xem." />
+        <EmptyState title="Chưa có dự án" description="Project sẽ xuất hiện khi backend trả về danh sách dự án được phép xem." />
       </Card>
     )}
   </section>
@@ -877,7 +877,7 @@ const TaskManagementView = ({ form, projects, canCreateTask, onChange, onSubmit 
     <Card>
       <CardHeader>
         <CardTitle>Tao task moi</CardTitle>
-        <CardDescription>Phase 1 gom giao viec, mo ta, assignee, project va uu tien. Due date chua co API nen duoc ghi ro la placeholder.</CardDescription>
+        <CardDescription>Phase 1 gồm giao việc, mô tả, assignee, project và ưu tiên. Due date chưa có API nên được ghi rõ là placeholder.</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={onSubmit}>
@@ -897,7 +897,7 @@ const TaskManagementView = ({ form, projects, canCreateTask, onChange, onSubmit 
               onChange={(event) => onChange({ ...form, description: event.target.value })}
               rows={4}
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              placeholder="Mo ta chi tiet cong viec can lam"
+              placeholder="Mô tả chi tiết công việc cần làm"
             />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -1113,7 +1113,7 @@ const NotificationsView = ({ tasks, projects, onNotice }: { tasks: Task[]; proje
       .slice(0, 4)
       .map((task) => ({
         id: `done-${task.id}`,
-        title: `Task da hoan thanh: ${task.title}`,
+        title: `Task da hoàn thành: ${task.title}`,
         description: `${getTaskProjectName(projects, task)} co thay doi trang thai.`,
         tone: 'success' as const,
         icon: CheckCircle2,
@@ -1126,11 +1126,11 @@ const NotificationsView = ({ tasks, projects, onNotice }: { tasks: Task[]; proje
       <Card>
         <CardHeader>
           <CardTitle>Notification Center</CardTitle>
-          <CardDescription>Phase 2 shell cho thong bao giao viec, @mention va cap nhat trang thai. Realtime can websocket/SSE backend.</CardDescription>
+          <CardDescription>Phase 2 shell cho thông báo giao viec, @mention va cap nhat trang thai. Realtime can websocket/SSE backend.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {notifications.length === 0 ? (
-            <EmptyState title="Chua co thong bao" description="Thong bao se duoc tao tu task uu tien cao, task hoan thanh va mention khi backend co event stream." />
+            <EmptyState title="Chưa có thông báo" description="Thông báo sẽ được tạo từ task ưu tiên cao, task hoàn thành và mention khi backend có event stream." />
           ) : (
             notifications.map((item) => (
               <div key={item.id} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4">
@@ -1247,7 +1247,7 @@ const DiscussionsView = ({
               <span className="mt-1 block text-xs text-slate-500">{getTaskProjectName(projects, task)}</span>
             </button>
           ))}
-          {tasks.length === 0 && <EmptyState title="Chua co task" description="Discussion can task de gan comment." />}
+          {tasks.length === 0 && <EmptyState title="Chưa có task" description="Discussion cần task để gắn comment." />}
         </CardContent>
       </Card>
 
@@ -1296,8 +1296,8 @@ const FilesView = ({ tasks, projects, onNotice }: { tasks: Task[]; projects: Pro
     id: task.id,
     name: `${task.title.slice(0, 34)}${task.title.length > 34 ? '...' : ''}`,
     project: getTaskProjectName(projects, task),
-    type: index % 2 === 0 ? 'Bao cao ket qua' : 'Tai lieu task',
-    status: task.status === 'COMPLETED' ? 'San sang ban giao' : 'Dang cho upload',
+    type: index % 2 === 0 ? 'Báo cáo kết quả' : 'Tài liệu task',
+    status: task.status === 'COMPLETED' ? 'Sẵn sàng bàn giao' : 'Đang chờ upload',
   }));
 
   return (
@@ -1305,18 +1305,18 @@ const FilesView = ({ tasks, projects, onNotice }: { tasks: Task[]; projects: Pro
       <Card>
         <CardHeader>
           <CardTitle>File handoff</CardTitle>
-          <CardDescription>Quan ly tai lieu va file san pham theo task. Upload/download can storage backend rieng.</CardDescription>
+          <CardDescription>Quản lý tài liệu và file sản phẩm theo task. Upload/download cần storage backend riêng.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {fileRows.length === 0 ? (
-            <EmptyState title="Chua co file" description="Khi task co attachment, danh sach file se hien thi o day." />
+            <EmptyState title="Chưa có file" description="Khi task có attachment, danh sách file sẽ hiển thị ở đây." />
           ) : (
             fileRows.map((file) => (
               <div key={file.id} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-bold text-slate-950">{file.name}</p>
-                    <Badge variant={file.status === 'San sang ban giao' ? 'success' : 'muted'}>{file.status}</Badge>
+                    <Badge variant={file.status === 'Sẵn sàng bàn giao' ? 'success' : 'muted'}>{file.status}</Badge>
                   </div>
                   <p className="mt-1 text-sm text-slate-600">{file.project}</p>
                   <p className="mt-1 text-xs text-slate-500">{file.type}</p>
@@ -1354,15 +1354,15 @@ const FilesView = ({ tasks, projects, onNotice }: { tasks: Task[]; projects: Pro
 const ActivityLogView = ({ tasks, projects }: { tasks: Task[]; projects: ProjectSummary[] }) => {
   const taskEvents = tasks.slice(0, 10).map((task) => ({
     id: `task-${task.id}`,
-    title: `Cap nhat task ${task.title}`,
-    description: `${getTaskProjectName(projects, task)} dang o trang thai ${statusLabels[task.status]}.`,
+    title: `Cập nhật task ${task.title}`,
+    description: `${getTaskProjectName(projects, task)} đang ở trạng thái ${statusLabels[task.status]}.`,
     time: formatDate(task.updatedAt || task.createdAt),
     icon: ListChecks,
   }));
   const projectEvents = projects.slice(0, 5).map((project) => ({
     id: `project-${project.id}`,
-    title: `Du an ${project.name}`,
-    description: `${project.taskCount} task, ${project.memberCount} thanh vien, ${getProgress(project)}% hoan thanh.`,
+    title: `Dự án ${project.name}`,
+    description: `${project.taskCount} task, ${project.memberCount} thành viên, ${getProgress(project)}% hoàn thành.`,
     time: formatDate(project.updatedAt || project.createdAt),
     icon: FolderKanban,
   }));
@@ -1371,11 +1371,11 @@ const ActivityLogView = ({ tasks, projects }: { tasks: Task[]; projects: Project
     <Card>
       <CardHeader>
         <CardTitle>Activity Log</CardTitle>
-        <CardDescription>Dong lich su doc tu du lieu project/task hien co. Audit day du can endpoint rieng.</CardDescription>
+        <CardDescription>Đóng lịch sử đọc từ dữ liệu project/task hiện có. Audit đầy đủ cần endpoint riêng.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {[...taskEvents, ...projectEvents].length === 0 ? (
-          <EmptyState title="Chua co hoat dong" description="Activity log se hien thi khi co task/project trong he thong." />
+          <EmptyState title="Chưa có hoạt động" description="Activity log sẽ hiển thị khi có task/project trong hệ thống." />
         ) : (
           [...taskEvents, ...projectEvents].map((event) => (
             <div key={event.id} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4">
@@ -1400,7 +1400,7 @@ const ProfileSettingsHub = ({ userName }: { userName: string }) => (
     {[
       {
         title: 'Profile',
-        description: `Cap nhat thong tin ca nhan cua ${userName}.`,
+        description: `Cập nhật thông tin cá nhân của ${userName}.`,
         href: '/profile',
         icon: Users,
         badge: 'Ready',
@@ -1414,14 +1414,14 @@ const ProfileSettingsHub = ({ userName }: { userName: string }) => (
       },
       {
         title: 'Two-factor authentication',
-        description: '[API endpoint: enable 2FA] chua co trong backend hien tai.',
+        description: '[API endpoint: enable 2FA] chưa có trong backend hiện tại.',
         href: undefined,
         icon: ShieldCheck,
         badge: 'Placeholder',
       },
       {
         title: 'Language',
-        description: 'Tieng Viet/Tieng Anh se ket noi khi co i18n dictionary trong Phase 3.',
+        description: 'Tiếng Việt/Tieng Anh se ket noi khi co i18n dictionary trong Phase 3.',
         href: undefined,
         icon: Settings,
         badge: 'Phase 3',
@@ -1464,10 +1464,10 @@ const AnalyticsView = ({ projects, tasks }: { projects: ProjectSummary[]; tasks:
     <div className="space-y-4">
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
-          { label: 'Completion rate', value: `${completionRate}%`, hint: 'Task da hoan thanh tren tong task', icon: CheckCircle2, tone: 'bg-emerald-50 text-emerald-700' },
-          { label: 'Dang xu ly', value: inProgress, hint: 'Task dang trong cot In Progress', icon: Briefcase, tone: 'bg-blue-50 text-blue-700' },
-          { label: 'Rui ro uu tien', value: urgent, hint: 'HIGH hoac URGENT', icon: Bell, tone: 'bg-amber-50 text-amber-700' },
-          { label: 'Du an active', value: projects.filter((project) => project.status === 'ACTIVE').length, hint: 'Du an dang van hanh', icon: FolderKanban, tone: 'bg-cyan-50 text-cyan-700' },
+          { label: 'Completion rate', value: `${completionRate}%`, hint: 'Task da hoàn thành tren tong task', icon: CheckCircle2, tone: 'bg-emerald-50 text-emerald-700' },
+          { label: 'Đang xử lý', value: inProgress, hint: 'Task đang trong cột In Progress', icon: Briefcase, tone: 'bg-blue-50 text-blue-700' },
+          { label: 'Rủi ro ưu tiên', value: urgent, hint: 'HIGH hoặc URGENT', icon: Bell, tone: 'bg-amber-50 text-amber-700' },
+          { label: 'Dự án active', value: projects.filter((project) => project.status === 'ACTIVE').length, hint: 'Dự án dang van hanh', icon: FolderKanban, tone: 'bg-cyan-50 text-cyan-700' },
         ].map((item) => (
           <Card key={item.label} className="p-5">
             <div className="flex items-start justify-between gap-4">
@@ -1491,14 +1491,14 @@ const AnalyticsView = ({ projects, tasks }: { projects: ProjectSummary[]; tasks:
         </CardHeader>
         <CardContent className="space-y-4">
           {projectHealth.length === 0 ? (
-            <EmptyState title="Chua co du lieu analytics" description="Can project/task de hien thi bao cao." />
+            <EmptyState title="Chưa có dữ liệu analytics" description="Cần project/task để hiển thị báo cáo." />
           ) : (
             projectHealth.map((project) => (
               <div key={project.id} className="rounded-xl border border-slate-200 bg-white p-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-bold text-slate-950">{project.name}</p>
-                    <p className="mt-1 text-sm text-slate-600">{project.taskCount} task, {project.memberCount} thanh vien</p>
+                    <p className="mt-1 text-sm text-slate-600">{project.taskCount} task, {project.memberCount} thành viên</p>
                   </div>
                   <Badge variant={project.highPriorityTaskCount > 0 ? 'warning' : 'success'}>
                     {project.highPriorityTaskCount > 0 ? 'Co rui ro' : 'On dinh'}
@@ -1507,7 +1507,7 @@ const AnalyticsView = ({ projects, tasks }: { projects: ProjectSummary[]; tasks:
                 <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
                   <div className="h-full rounded-full bg-cyan-600" style={{ width: `${project.progress}%` }} />
                 </div>
-                <p className="mt-2 text-xs text-slate-500">{project.progress}% hoan thanh, {project.highPriorityTaskCount} task uu tien cao</p>
+                <p className="mt-2 text-xs text-slate-500">{project.progress}% hoàn thành, {project.highPriorityTaskCount} task uu tien cao</p>
               </div>
             ))
           )}
@@ -1539,7 +1539,7 @@ const TimelineView = ({ projects, tasks }: { projects: ProjectSummary[]; tasks: 
           ))}
         </div>
         {rows.length === 0 ? (
-          <EmptyState title="Chua co timeline" description="Can project/task va due date de ve Gantt that." />
+          <EmptyState title="Chưa có timeline" description="Cần project/task và due date để vẽ Gantt thật." />
         ) : (
           rows.map(({ project, projectTasks, laneStart, laneWidth }) => (
             <div key={project.id} className="rounded-xl border border-slate-200 bg-white p-4">
@@ -1593,14 +1593,14 @@ const AISuggestionsView = ({ projects, tasks, onNotice }: { projects: ProjectSum
         </CardHeader>
         <CardContent className="space-y-3">
           {overloadedAssignees.length === 0 ? (
-            <EmptyState title="Chua co tin hieu qua tai" description="Khi co task dang mo, AI shell se hien goi y phan bo lai." />
+            <EmptyState title="Chưa có tín hiệu quá tải" description="Khi có task đang mở, AI shell sẽ hiện gợi ý phân bổ lại." />
           ) : (
             overloadedAssignees.map(([assigneeId, count]) => (
               <div key={assigneeId} className="rounded-xl border border-slate-200 bg-white p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-bold text-slate-950">Assignee #{assigneeId}</p>
-                    <p className="mt-1 text-sm text-slate-600">{count} task chua hoan thanh. Nen giam task moi hoac tach viec uu tien cao.</p>
+                    <p className="mt-1 text-sm text-slate-600">{count} task chua hoàn thành. Nen giam task moi hoac tach viec uu tien cao.</p>
                   </div>
                   <Button type="button" variant="outline" size="sm" onClick={() => onNotice('[AI endpoint: suggest assignee] chua duoc ket noi.')}>
                     Lay goi y AI
@@ -1615,11 +1615,11 @@ const AISuggestionsView = ({ projects, tasks, onNotice }: { projects: ProjectSum
       <Card>
         <CardHeader>
           <CardTitle>Risk radar</CardTitle>
-          <CardDescription>Du an co task uu tien cao de AI uu tien phan tich.</CardDescription>
+          <CardDescription>Dự án co task uu tien cao de AI uu tien phan tich.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {riskyProjects.length === 0 ? (
-            <EmptyState title="Chua co rui ro" description="Khong co project nao dang co task HIGH/URGENT." />
+            <EmptyState title="Chưa có rủi ro" description="Không có project nào đang có task HIGH/URGENT." />
           ) : (
             riskyProjects.map((project) => (
               <div key={project.id} className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
@@ -1682,9 +1682,9 @@ const AutomationView = ({ onNotice }: { onNotice: (value: string) => void }) => 
 const IntegrationsView = ({ onNotice }: { onNotice: (value: string) => void }) => (
   <section className="grid gap-4 lg:grid-cols-3">
     {[
-      { name: 'Slack', description: 'Dong bo thong bao task va @mention vao channel du an.' },
+      { name: 'Slack', description: 'Đóng bo thông báo task va @mention vao channel du an.' },
       { name: 'Microsoft Teams', description: 'Gui approval reminder va meeting note cho team.' },
-      { name: 'Google Calendar', description: 'Dong bo due date, milestone va lich review.' },
+      { name: 'Google Calendar', description: 'Đóng bo due date, milestone va lich review.' },
     ].map((integration) => (
       <Card key={integration.name} className="p-5">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700">
@@ -1715,9 +1715,9 @@ const I18nMobileView = () => (
       </CardHeader>
       <CardContent className="space-y-3">
         {[
-          { key: 'vi', label: 'Tieng Viet', status: 'Dang dung trong UI hien tai' },
-          { key: 'en', label: 'English', status: 'Can dictionary va key mapping' },
-          { key: 'format', label: 'Date/number format', status: 'Can locale-aware formatter' },
+          { key: 'vi', label: 'Tiếng Việt', status: 'Đang dùng trong UI hien tai' },
+          { key: 'en', label: 'English', status: 'Cần dictionary và key mapping' },
+          { key: 'format', label: 'Date/number format', status: 'Cần locale-aware formatter' },
         ].map((item) => (
           <div key={item.key} className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4">
             <div className="flex items-center gap-3">
@@ -1760,10 +1760,10 @@ const I18nMobileView = () => (
 const AdminShellView = () => (
   <section className="grid gap-4 lg:grid-cols-2">
     {[
-      { title: 'Identity & Access', description: 'Quan ly tai khoan, vai tro, quyen truy cap va trang thai khoa.', href: '/users', icon: ShieldCheck, status: 'Dang dung' },
-      { title: 'Organization Settings', description: 'Dieu chinh phong ban, don vi va cau truc to chuc.', href: '/departments', icon: Users, status: 'Dang dung' },
-      { title: 'Company Analytics', description: 'Theo doi nang suat, tong gio lam va bao cao phong ban.', href: undefined, icon: BarChart3, status: 'Phase 3' },
-      { title: 'Billing', description: 'Khu vuc cau hinh thanh toan khi trien khai mo hinh SaaS.', href: undefined, icon: FileText, status: 'Du kien' },
+      { title: 'Identity & Access', description: 'Quản lý tài khoản, vai trò, quyền truy cập và trạng thái khóa.', href: '/users', icon: ShieldCheck, status: 'Đang dùng' },
+      { title: 'Organization Settings', description: 'Điều chỉnh phòng ban, đơn vị và cấu trúc tổ chức.', href: '/departments', icon: Users, status: 'Đang dùng' },
+      { title: 'Company Analytics', description: 'Theo dõi năng suất, tổng giờ làm và báo cáo phòng ban.', href: undefined, icon: BarChart3, status: 'Phase 3' },
+      { title: 'Billing', description: 'Khu vực cấu hình thanh toán khi triển khai mô hình SaaS.', href: undefined, icon: FileText, status: 'Dự kiến' },
     ].map((item) => (
       <Card key={item.title} className="group p-5 transition duration-150 hover:-translate-y-0.5 hover:bg-slate-50">
         <div className="flex items-start gap-4">
@@ -1802,7 +1802,7 @@ const TaskCard = ({ task, projectName, onDragStart }: { task: Task; projectName:
       <h4 className="min-w-0 text-sm font-bold leading-6 text-slate-950">{task.title}</h4>
       <Badge variant={priorityTone[task.priority]}>{priorityLabels[task.priority]}</Badge>
     </div>
-    <p className="mt-2 text-sm leading-6 text-slate-600">{task.description || 'Chua co mo ta'}</p>
+    <p className="mt-2 text-sm leading-6 text-slate-600">{task.description || 'Chưa có mô tả'}</p>
     <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
       <span className="rounded-full bg-slate-100 px-2.5 py-1">{projectName}</span>
       <span className="rounded-full bg-slate-100 px-2.5 py-1">Assignee #{task.assigneeId}</span>
@@ -1822,7 +1822,7 @@ const TaskRow = ({ task, projectName, compact = false }: { task: Task; projectNa
       </Badge>
       </div>
     </div>
-    <p className="mt-2 text-sm leading-6 text-slate-600">{task.description || 'Chua co mo ta cong viec.'}</p>
+    <p className="mt-2 text-sm leading-6 text-slate-600">{task.description || 'Chưa có mô tả công việc.'}</p>
     <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
       <span className="rounded-full bg-slate-100 px-2.5 py-1">{projectName}</span>
       <span className="rounded-full bg-slate-100 px-2.5 py-1">Assignee #{task.assigneeId}</span>
@@ -1845,7 +1845,7 @@ const ProjectRow = ({ project, expanded = false }: { project: ProjectSummary; ex
               {project.status}
             </Badge>
           </div>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{project.description || 'Chua co mo ta du an.'}</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{project.description || 'Chưa có mô tả du an.'}</p>
         </div>
         <Link to="/work/board">
           <Button type="button" variant="outline" size="sm">Mo board</Button>
@@ -1857,7 +1857,7 @@ const ProjectRow = ({ project, expanded = false }: { project: ProjectSummary; ex
       <div className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-4">
         <span className="rounded-lg bg-slate-50 px-3 py-2 font-semibold">{progress}% done</span>
         <span className="rounded-lg bg-slate-50 px-3 py-2">{project.taskCount} task</span>
-        <span className="rounded-lg bg-slate-50 px-3 py-2">{project.memberCount} thanh vien</span>
+        <span className="rounded-lg bg-slate-50 px-3 py-2">{project.memberCount} thành viên</span>
         <span className="rounded-lg bg-slate-50 px-3 py-2">{project.highPriorityTaskCount} uu tien cao</span>
       </div>
     </Card>

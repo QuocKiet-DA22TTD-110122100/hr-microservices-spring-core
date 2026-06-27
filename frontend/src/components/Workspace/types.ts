@@ -10,6 +10,12 @@ export interface WorkspaceMetric {
   hint: string;
 }
 
+export interface WorkspaceAssignee {
+  name: string;
+  initial: string;
+  color: string;
+}
+
 export interface WorkspaceItem {
   title: string;
   description: string;
@@ -19,6 +25,10 @@ export interface WorkspaceItem {
   priority: WorkspacePriority;
   due: string;
   nextStep: string;
+  /** 0-100 completion %, shown as a progress bar for inProgress items */
+  progress?: number;
+  /** Specific member responsible for this item */
+  assignee?: WorkspaceAssignee;
 }
 
 export interface WorkspaceDefinition {

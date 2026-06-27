@@ -229,9 +229,9 @@ const dashboardExperience: Record<WorkspaceRole, RoleDashboardExperience> = {
   },
   payroll: {
     summaryTitle: 'Tong quan payroll',
-    operatingModel: 'Payroll Officer theo doi ky luong, tinh luong, phe duyet va trang thai chi tra.',
+    operatingModel: 'Payroll Officer theo dõi kỳ lương, tính lương, phê duyệt và trạng thái chi trả.',
     health: [
-      { label: 'Ky luong hien tai', value: '06/2026', hint: 'Dang o trang thai doi soat demo' },
+      { label: 'Kỳ lương hiện tại', value: '06/2026', hint: 'Đang ở trạng thái đối soát demo' },
       { label: 'Bảng lương draft', value: '4', hint: 'Cần tính và phê duyệt' },
       { label: 'Da xu ly', value: '12', hint: 'Dung cho lich su chi tra va audit' },
     ],
@@ -243,7 +243,7 @@ const dashboardExperience: Record<WorkspaceRole, RoleDashboardExperience> = {
         priority: 'high',
       },
       {
-        title: 'Phe duyet bang luong',
+        title: 'Phê duyệt bang luong',
         description: 'Kiem tra gross pay, khau tru va net pay truoc khi chuyen sang APPROVED.',
         meta: 'Workflow payroll',
         priority: 'medium',
@@ -255,7 +255,7 @@ const dashboardExperience: Record<WorkspaceRole, RoleDashboardExperience> = {
         priority: 'normal',
       },
     ],
-    accessNotes: ['Co quyen xem ho so nhan vien de doi soat payroll', 'Co PAYROLL_MANAGE de tao ky, tinh luong va phe duyet', 'Khong co quyen quan ly user, role, project hoac task'],
+    accessNotes: ['Có quyền xem hồ sơ nhân viên để đối soát payroll', 'Có PAYROLL_MANAGE để tạo kỳ, tính lương và phê duyệt', 'Không có quyền quản lý user, role, project hoặc task'],
   },
   hr: {
     summaryTitle: 'Tổng quan nghiệp vụ nhân sự',
