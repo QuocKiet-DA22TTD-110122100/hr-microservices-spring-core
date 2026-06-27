@@ -23,8 +23,6 @@ import { WorkspaceStatusList } from '@/components/Workspace/WorkspaceStatusList'
 import { WorkspaceDefinition, WorkspaceItem } from '@/components/Workspace/types';
 import { resolveWorkspaceRole } from '@/config/roleExperience';
 import { useAuthStore } from '@/store/authStore';
-import { cn } from '@/utils/cn';
-
 const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
   'account-security': {
     title: 'Tài khoản và bảo mật',
