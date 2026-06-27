@@ -65,10 +65,6 @@ apiClient.interceptors.response.use(
       throw toApiError(`Quá nhiều yêu cầu. Vui lòng thử lại sau ${retryAfter || 60} giây.`, error);
     }
 
-    if (error.response?.status === 423) {
-      throw toApiError(`Tài khoản bị khóa. ${error.response.data.message}`, error);
-    }
-
     throw error;
   }
 );

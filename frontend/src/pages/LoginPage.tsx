@@ -13,33 +13,55 @@ import { LoginRequest } from '@/types/auth';
 import { decodeJwtClaims, mapClaimsToUser } from '@/utils/authSession';
 import { getApiErrorMessage } from '@/utils/error';
 
+type LoginErrorPayload = {
+  message?: string;
+  error?: string;
+  reason?: string;
+  detail?: string;
+  title?: string;
+  code?: string;
+};
+
 const getLoginErrorMessage = (error: unknown) => {
-  const axiosError = error as AxiosError<{ message?: string; error?: string }>;
+  const axiosError = error as AxiosError<LoginErrorPayload>;
   const status = axiosError.response?.status;
-  const serverMessage = axiosError.response?.data?.message || axiosError.response?.data?.error || '';
+  const serverMessage =
+    axiosError.response?.data?.message ||
+    axiosError.response?.data?.reason ||
+    axiosError.response?.data?.detail ||
+    axiosError.response?.data?.error ||
+    axiosError.response?.data?.title ||
+    '';
+  const errorCode = axiosError.response?.data?.code || '';
   const normalizedMessage = serverMessage.toLowerCase();
 
-  if (normalizedMessage.includes('too many failed attempts')) {
-    return 'Tai khoan bi khoa do dang nhap sai qua nhieu lan. Vui long thu lai sau 30 phut.';
+  if (
+    errorCode === 'ACCOUNT_LOCKED' ||
+    status === 423 ||
+    normalizedMessage.includes('account is locked') ||
+    normalizedMessage.includes('tai khoan bi khoa') ||
+    normalizedMessage.includes('tài khoản bị khóa')
+  ) {
+    if (normalizedMessage.includes('too many failed attempts')) {
+      return 'Tài khoản bị khóa do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau 30 phút.';
+    }
+
+    return 'Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên để được mở khóa.';
   }
 
-  if (normalizedMessage.includes('locked by administrator')) {
-    return 'Tai khoan da bi khoa boi quan tri vien.';
+  if (errorCode === 'INVALID_CREDENTIALS' || normalizedMessage.includes('invalid credentials') || status === 401) {
+    return 'Sai tên đăng nhập hoặc mật khẩu.';
   }
 
-  if (normalizedMessage.includes('invalid credentials') || status === 401) {
-    return 'Sai ten dang nhap hoac mat khau.';
-  }
-
-  if (normalizedMessage.includes('password expired') || status === 403) {
-    return 'Mat khau da het han. Vui long doi mat khau.';
+  if (errorCode === 'PASSWORD_EXPIRED' || normalizedMessage.includes('password expired') || status === 403) {
+    return 'Mật khẩu đã hết hạn. Vui lòng đổi mật khẩu.';
   }
 
   if (status === 429) {
-    return 'Dang nhap qua nhieu lan. Vui long thu lai sau.';
+    return 'Đăng nhập quá nhiều lần. Vui lòng thử lại sau.';
   }
 
-  return getApiErrorMessage(error, 'Dang nhap that bai. Vui long thu lai.');
+  return getApiErrorMessage(error, 'Đăng nhập thất bại. Vui lòng thử lại.');
 };
 
 export const LoginPage = () => {

@@ -178,7 +178,9 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.ACCEPTED).body(authDtoMapper.toLoginResponse(result));
             }
             return ResponseEntity.ok(authDtoMapper.toLoginResponse(result));
-        } catch (AccountLockedException | SecurityException ex) {
+        } catch (AccountLockedException ex) {
+            throw new ResponseStatusException(HttpStatus.LOCKED, ex.getMessage(), ex);
+        } catch (SecurityException ex) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ex.getMessage(), ex);
         } catch (PasswordExpiredException ex) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
@@ -203,7 +205,9 @@ public class AuthController {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "mfa_required");
             }
             return ResponseEntity.ok(authDtoMapper.toOAuth2TokenResponse(result));
-        } catch (AccountLockedException | SecurityException ex) {
+        } catch (AccountLockedException ex) {
+            throw new ResponseStatusException(HttpStatus.LOCKED, ex.getMessage(), ex);
+        } catch (SecurityException ex) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ex.getMessage(), ex);
         } catch (PasswordExpiredException ex) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
@@ -223,7 +227,9 @@ public class AuthController {
             return ResponseEntity.ok(new TwoFactorInitResponse(enrollment.secret(), enrollment.otpAuthUri()));
         } catch (IllegalArgumentException | IllegalStateException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
-        } catch (AccountLockedException | SecurityException ex) {
+        } catch (AccountLockedException ex) {
+            throw new ResponseStatusException(HttpStatus.LOCKED, ex.getMessage(), ex);
+        } catch (SecurityException ex) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ex.getMessage(), ex);
         }
     }
@@ -239,7 +245,9 @@ public class AuthController {
             return ResponseEntity.ok(authDtoMapper.toAdminResponse("2FA enabled successfully"));
         } catch (IllegalArgumentException | IllegalStateException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
-        } catch (AccountLockedException | SecurityException ex) {
+        } catch (AccountLockedException ex) {
+            throw new ResponseStatusException(HttpStatus.LOCKED, ex.getMessage(), ex);
+        } catch (SecurityException ex) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ex.getMessage(), ex);
         }
     }
@@ -255,7 +263,9 @@ public class AuthController {
             return ResponseEntity.ok(authDtoMapper.toAdminResponse("2FA disabled successfully"));
         } catch (IllegalArgumentException | IllegalStateException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
-        } catch (AccountLockedException | SecurityException ex) {
+        } catch (AccountLockedException ex) {
+            throw new ResponseStatusException(HttpStatus.LOCKED, ex.getMessage(), ex);
+        } catch (SecurityException ex) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ex.getMessage(), ex);
         }
     }
