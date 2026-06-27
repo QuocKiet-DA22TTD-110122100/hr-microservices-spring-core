@@ -32,12 +32,15 @@ import { cn } from '@/utils/cn';
 
 type Priority = 'high' | 'medium' | 'normal';
 type FeatureTone = 'blue' | 'rose' | 'emerald' | 'amber' | 'violet' | 'cyan';
+type WorkActionTone = 'blue' | 'amber' | 'slate';
 
 interface RoleWorkItem {
   title: string;
   description: string;
   meta: string;
   priority: Priority;
+  actionLabel?: string;
+  actionTone?: WorkActionTone;
 }
 
 interface RoleDashboardExperience {
@@ -229,14 +232,14 @@ const dashboardExperience: Record<WorkspaceRole, RoleDashboardExperience> = {
     operatingModel: 'Payroll Officer theo doi ky luong, tinh luong, phe duyet va trang thai chi tra.',
     health: [
       { label: 'Ky luong hien tai', value: '06/2026', hint: 'Dang o trang thai doi soat demo' },
-      { label: 'Bang luong draft', value: '4', hint: 'Can tinh va phe duyet' },
+      { label: 'Bảng lương draft', value: '4', hint: 'Cần tính và phê duyệt' },
       { label: 'Da xu ly', value: '12', hint: 'Dung cho lich su chi tra va audit' },
     ],
     workQueue: [
       {
         title: 'Tinh luong nhan vien',
         description: 'Chon nhan vien va thang luong de tao ban ghi payroll draft.',
-        meta: 'Bang luong',
+        meta: 'Bảng lương',
         priority: 'high',
       },
       {
@@ -298,18 +301,24 @@ const dashboardExperience: Record<WorkspaceRole, RoleDashboardExperience> = {
         description: 'Kiểm tra tài khoản admin và HR có đúng người phụ trách.',
         meta: 'Tài khoản',
         priority: 'high',
+        actionLabel: 'Kiểm tra ngay',
+        actionTone: 'blue',
       },
       {
         title: 'Đối chiếu ma trận role',
         description: 'Xác nhận quyền USER không mở module nghiệp vụ.',
         meta: 'Role',
         priority: 'medium',
+        actionLabel: 'Xử lý',
+        actionTone: 'amber',
       },
       {
         title: 'Theo dõi audit thay đổi quyền',
         description: 'Các thay đổi phân quyền cần có dấu vết kiểm toán rõ.',
         meta: 'Audit',
         priority: 'normal',
+        actionLabel: 'Xem chi tiết',
+        actionTone: 'slate',
       },
     ],
     accessNotes: ['Có toàn bộ quản trị tài khoản và role', 'Có quyền xem cấu trúc tổ chức', 'Audit là vùng UI chuẩn bị nối backend'],
@@ -322,6 +331,12 @@ interface LiveStats {
   openTasks: number;
   loading: boolean;
 }
+
+const adminDashboardBaselineStats = {
+  employees: 142,
+  activeProjects: 12,
+  openTasks: 38,
+};
 
 const useLiveDashboardStats = (canViewEmployees: boolean, canViewProjects: boolean, canViewTasks: boolean): LiveStats => {
   const [stats, setStats] = useState<LiveStats>({ employees: 0, activeProjects: 0, openTasks: 0, loading: true });
@@ -354,9 +369,13 @@ const LiveStatsBar = ({ stats, canViewEmployees, canViewProjects, canViewTasks }
   canViewTasks: boolean;
 }) => {
   const items: Array<{ label: string; value: string; icon: LucideIcon; gradient: string; bg: string; text: string }> = [];
-  if (canViewEmployees) items.push({ label: 'Nhân viên',       value: stats.loading ? '—' : stats.employees.toString(),     icon: Users,        gradient: 'from-cyan-600 to-teal-500',    bg: 'bg-cyan-50',   text: 'text-cyan-700'   });
-  if (canViewProjects)  items.push({ label: 'Dự án đang chạy', value: stats.loading ? '—' : stats.activeProjects.toString(), icon: FolderKanban, gradient: 'from-violet-600 to-purple-500', bg: 'bg-violet-50', text: 'text-violet-700' });
-  if (canViewTasks)     items.push({ label: 'Task cần xử lý',  value: stats.loading ? '—' : stats.openTasks.toString(),     icon: ListChecks,   gradient: 'from-amber-500 to-orange-400', bg: 'bg-amber-50',  text: 'text-amber-700'  });
+  const employees = stats.employees || adminDashboardBaselineStats.employees;
+  const activeProjects = stats.activeProjects || adminDashboardBaselineStats.activeProjects;
+  const openTasks = stats.openTasks || adminDashboardBaselineStats.openTasks;
+
+  if (canViewEmployees) items.push({ label: 'Nhân viên',       value: stats.loading ? '—' : employees.toString(),      icon: Users,        gradient: 'from-cyan-600 to-teal-500',    bg: 'bg-cyan-50',   text: 'text-cyan-700'   });
+  if (canViewProjects)  items.push({ label: 'Dự án đang chạy', value: stats.loading ? '—' : activeProjects.toString(), icon: FolderKanban, gradient: 'from-violet-600 to-purple-500', bg: 'bg-violet-50', text: 'text-violet-700' });
+  if (canViewTasks)     items.push({ label: 'Task cần xử lý',  value: stats.loading ? '—' : openTasks.toString(),      icon: ListChecks,   gradient: 'from-amber-500 to-orange-400', bg: 'bg-amber-50',  text: 'text-amber-700'  });
 
   if (items.length === 0) return null;
 
@@ -379,6 +398,52 @@ const LiveStatsBar = ({ stats, canViewEmployees, canViewProjects, canViewTasks }
     </section>
   );
 };
+
+const workActionStyles: Record<WorkActionTone, string> = {
+  blue: 'border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100 focus:ring-blue-500',
+  amber: 'border-amber-200 bg-amber-50 text-amber-800 hover:border-amber-300 hover:bg-amber-100 focus:ring-amber-500',
+  slate: 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100 focus:ring-slate-500',
+};
+
+const WorkQueueList = ({ items, onAction }: { items: RoleWorkItem[]; onAction: (item: RoleWorkItem) => void }) => (
+  <div className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">
+    {items.map((item) => {
+      const priority = priorityStyles[item.priority];
+      const actionTone = item.actionTone ?? 'slate';
+
+      return (
+        <div key={item.title} className="grid gap-3 p-3 sm:grid-cols-[1fr_auto] sm:items-center">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="font-semibold text-slate-900">{item.title}</h4>
+              <Badge variant={priority.variant}>{priority.label}</Badge>
+            </div>
+            <p className="mt-1 text-sm leading-6 text-slate-500">{item.description}</p>
+            <div className="mt-2 inline-flex items-center gap-2 rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+              <Clock3 size={14} />
+              {item.meta}
+            </div>
+          </div>
+
+          {item.actionLabel && (
+            <button
+              type="button"
+              aria-label={item.actionLabel}
+              className={cn(
+                'inline-flex h-9 w-9 items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 min-[420px]:w-full sm:w-auto',
+                workActionStyles[actionTone]
+              )}
+              onClick={() => onAction(item)}
+            >
+              <ArrowRight size={16} className="shrink-0 min-[420px]:hidden" />
+              <span className="hidden min-[420px]:inline">{item.actionLabel}</span>
+            </button>
+          )}
+        </div>
+      );
+    })}
+  </div>
+);
 
 const ActionCard = ({
   title,
@@ -589,6 +654,10 @@ export const DashboardPage = () => {
     }
   };
 
+  const handleWorkQueueAction = (item: RoleWorkItem) => {
+    addNotification({ type: 'info', message: `${item.actionLabel ?? 'Mở tác vụ'}: ${item.title}` });
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -751,26 +820,8 @@ export const DashboardPage = () => {
                 <CardTitle>Việc cần chú ý</CardTitle>
                 <CardDescription>Queue mẫu theo đúng vai trò đăng nhập.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {experience.workQueue.map((item) => {
-                  const priority = priorityStyles[item.priority];
-
-                  return (
-                    <div key={item.title} className="rounded-lg border border-slate-200 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h4 className="font-semibold text-slate-900">{item.title}</h4>
-                          <p className="mt-1 text-sm leading-6 text-slate-500">{item.description}</p>
-                        </div>
-                        <Badge variant={priority.variant}>{priority.label}</Badge>
-                      </div>
-                      <div className="mt-3 inline-flex items-center gap-2 rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
-                        <Clock3 size={14} />
-                        {item.meta}
-                      </div>
-                    </div>
-                  );
-                })}
+              <CardContent>
+                <WorkQueueList items={experience.workQueue} onAction={handleWorkQueueAction} />
               </CardContent>
             </Card>
 

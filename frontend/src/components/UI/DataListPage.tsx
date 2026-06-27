@@ -1,7 +1,6 @@
 import { ReactNode } from 'react';
-import { LucideIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LucideIcon } from 'lucide-react';
 import { MainLayout } from '@/components/Layout/MainLayout';
-import { Button } from '@/components/UI/Button';
 import { Card, CardContent } from '@/components/UI/Card';
 import { PageHeader } from '@/components/UI/PageHeader';
 import { Table, type Column } from '@/components/UI/Table';
@@ -33,6 +32,7 @@ interface DataListPageProps<T extends object> {
   onRowClick?: (record: T) => void;
   pagination?: PaginationConfig;
   className?: string;
+  headerCentered?: boolean;
 }
 
 export const TablePagination = ({
@@ -45,10 +45,12 @@ export const TablePagination = ({
   onPageSizeChange,
   itemLabel = 'bản ghi',
 }: PaginationConfig) => {
-  if (totalPages <= 1 && !onPageSizeChange) return null;
+  const hasContent = totalPages > 1 || !!onPageSizeChange || totalItems !== undefined;
+  if (!hasContent) return null;
 
   const startItem = totalItems && pageSize ? Math.min((currentPage - 1) * pageSize + 1, totalItems) : undefined;
   const endItem = totalItems && pageSize ? Math.min(currentPage * pageSize, totalItems) : undefined;
+
   const visiblePages = Array.from({ length: Math.min(5, totalPages) }, (_, index) => {
     if (totalPages <= 5) return index + 1;
     if (currentPage <= 3) return index + 1;
@@ -56,79 +58,105 @@ export const TablePagination = ({
     return currentPage - 2 + index;
   });
 
+  const navBtnBase =
+    'flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 disabled:pointer-events-none disabled:opacity-40';
+
+  const pageBtnBase =
+    'h-8 min-w-[2rem] rounded-lg px-2 text-xs font-medium transition-colors border';
+
   return (
     <nav
-      className="flex flex-col gap-3 border-t border-slate-200/80 bg-slate-50/90 px-5 py-4 md:flex-row md:items-center md:justify-between"
+      className="flex flex-col gap-3 border-t border-slate-100 bg-white px-5 py-3.5 sm:flex-row sm:items-center sm:justify-end"
       aria-label="Điều hướng trang"
     >
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-4">
+        {/* Status text */}
         {totalItems !== undefined && startItem !== undefined && endItem !== undefined && (
-          <span className="text-sm text-slate-600" role="status" aria-live="polite">
-            Hiển thị {startItem} - {endItem} trong tổng số {totalItems} {itemLabel}
+          <span className="text-xs text-slate-500" role="status" aria-live="polite">
+            Hiển thị{' '}
+            <span className="font-semibold text-slate-700">{startItem}–{endItem}</span>{' '}
+            trong{' '}
+            <span className="font-semibold text-slate-700">{totalItems}</span>{' '}
+            {itemLabel}
           </span>
         )}
+
+        {/* Page size button group */}
         {onPageSizeChange && pageSize && pageSizeOptions && (
-          <div className="flex items-center gap-2">
-            <label htmlFor="page-size-select" className="text-sm text-slate-600">
-              Số dòng/trang:
-            </label>
-            <select
-              id="page-size-select"
-              value={pageSize}
-              onChange={(event) => onPageSizeChange(Number(event.target.value))}
-              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800 shadow-sm transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              aria-label="Chọn số dòng trên mỗi trang"
+          <>
+            <div className="hidden h-4 w-px bg-slate-200 sm:block" aria-hidden="true" />
+            <div
+              className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-slate-50 p-0.5"
+              role="group"
+              aria-label="Số dòng mỗi trang"
             >
               {pageSizeOptions.map((option) => (
-                <option key={option} value={option}>
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => onPageSizeChange(option)}
+                  className={cn(
+                    'h-7 min-w-[2.25rem] rounded-md px-2 text-xs font-medium transition-colors',
+                    pageSize === option
+                      ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200/80'
+                      : 'text-slate-500 hover:text-slate-700'
+                  )}
+                  aria-label={`${option} dòng mỗi trang`}
+                  aria-pressed={pageSize === option}
+                >
                   {option}
-                </option>
+                </button>
               ))}
-            </select>
-          </div>
+            </div>
+          </>
+        )}
+
+        {/* Page navigation */}
+        {totalPages > 1 && (
+          <>
+            <div className="hidden h-4 w-px bg-slate-200 sm:block" aria-hidden="true" />
+            <div className="flex items-center gap-1" role="group" aria-label="Điều hướng phân trang">
+              <button
+                type="button"
+                className={navBtnBase}
+                disabled={currentPage === 1}
+                onClick={() => onPageChange(currentPage - 1)}
+                aria-label="Trang trước"
+              >
+                <ChevronLeft size={15} />
+              </button>
+
+              {visiblePages.map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => onPageChange(page)}
+                  className={cn(
+                    pageBtnBase,
+                    currentPage === page
+                      ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600'
+                  )}
+                  aria-label={`Trang ${page}`}
+                  aria-current={currentPage === page ? 'page' : undefined}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                className={navBtnBase}
+                disabled={currentPage === totalPages}
+                onClick={() => onPageChange(currentPage + 1)}
+                aria-label="Trang sau"
+              >
+                <ChevronRight size={15} />
+              </button>
+            </div>
+          </>
         )}
       </div>
-
-      {totalPages > 1 && (
-        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Điều hướng phân trang">
-          <Button variant="secondary" size="sm" disabled={currentPage === 1} onClick={() => onPageChange(1)}>
-            Đầu
-          </Button>
-          <Button variant="secondary" size="sm" disabled={currentPage === 1} onClick={() => onPageChange(currentPage - 1)}>
-            Trước
-          </Button>
-          <div className="flex items-center gap-1">
-            {visiblePages.map((page) => (
-              <Button
-                key={page}
-                variant={currentPage === page ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => onPageChange(page)}
-                aria-label={`Đi đến trang ${page}`}
-                aria-current={currentPage === page ? 'page' : undefined}
-              >
-                {page}
-              </Button>
-            ))}
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={currentPage === totalPages}
-            onClick={() => onPageChange(currentPage + 1)}
-          >
-            Sau
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={currentPage === totalPages}
-            onClick={() => onPageChange(totalPages)}
-          >
-            Cuối
-          </Button>
-        </div>
-      )}
     </nav>
   );
 };
@@ -148,11 +176,18 @@ export function DataListPage<T extends object>({
   onRowClick,
   pagination,
   className,
+  headerCentered = false,
 }: DataListPageProps<T>) {
   return (
     <MainLayout>
       <div className={cn('space-y-5', className)}>
-        <PageHeader icon={icon} title={title} description={description} actions={actions} />
+        <PageHeader
+          icon={icon}
+          title={title}
+          description={description}
+          actions={actions}
+          centered={headerCentered}
+        />
 
         {summary && <div className="relative">{summary}</div>}
 

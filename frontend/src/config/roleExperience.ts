@@ -87,7 +87,7 @@ export const resolveWorkspaceRole = (roles: string[] = []): WorkspaceRole => {
 };
 
 export const workspaceNavigation: NavigationItem[] = [
-  { icon: Home, label: 'Trang chu', path: '/' },
+  { icon: Home, label: 'Trang chủ', path: '/' },
   {
     icon: LayoutDashboard,
     label: 'My Dashboard',
@@ -209,40 +209,40 @@ export const workspaceNavigation: NavigationItem[] = [
   },
   {
     icon: Layers,
-    label: 'To chuc',
+    label: 'Tổ chức',
     path: '/organizations',
     permission: PERMISSIONS.ORGANIZATION_VIEW,
     roles: ['admin', 'hr', 'departmentHead'],
   },
   {
     icon: Users,
-    label: 'Nhan vien',
+    label: 'Nhân viên',
     path: '/employees',
     permission: PERMISSIONS.EMPLOYEE_VIEW,
     roles: ['admin', 'hr', 'departmentHead', 'manager'],
   },
   {
     icon: Building2,
-    label: 'Phong ban',
+    label: 'Phòng ban',
     path: '/departments',
     permission: PERMISSIONS.DEPARTMENT_VIEW,
     roles: ['admin', 'hr', 'departmentHead', 'manager'],
   },
   {
     icon: WalletCards,
-    label: 'Bang luong',
+    label: 'Bảng lương',
     path: '/payroll',
     permission: PERMISSIONS.PAYROLL_VIEW,
     roles: ['admin', 'payroll', 'hr'],
   },
   {
     icon: FileText,
-    label: 'Tai lieu phong ban',
+    label: 'Tài liệu phòng ban',
     path: '/documents',
   },
   {
     icon: FolderKanban,
-    label: 'Du an',
+    label: 'Dự án',
     path: '/projects',
     permission: PERMISSIONS.PROJECT_VIEW,
     roles: ['admin', 'hr', 'departmentHead', 'manager', 'employee'],
@@ -256,21 +256,21 @@ export const workspaceNavigation: NavigationItem[] = [
   },
   {
     icon: UserCog,
-    label: 'Tai khoan',
+    label: 'Tài khoản',
     path: '/users',
     permission: PERMISSIONS.USER_VIEW,
     roles: ['admin', 'hr'],
   },
   {
     icon: Key,
-    label: 'Vai tro',
+    label: 'Vai trò',
     path: '/roles',
     permission: PERMISSIONS.ROLE_VIEW,
     roles: ['admin'],
   },
   {
     icon: ShieldCheck,
-    label: 'Tai khoan cua toi',
+    label: 'Tài khoản của tôi',
     path: '/workspace/account-security',
     roles: ['user'],
   },
@@ -333,17 +333,17 @@ export const workspaceNavigation: NavigationItem[] = [
 export const roleProfiles: Record<WorkspaceRole, RoleProfile> = {
   admin: {
     role: 'admin',
-    label: 'Quan tri he thong',
+    label: 'Quản trị hệ thống',
     badge: 'ADMIN',
-    headline: 'Bang dieu phoi quan tri he thong',
-    description: 'Tap trung vao tai khoan, vai tro, quyen truy cap va cac diem can kiem toan.',
+    headline: 'Bảng điều phối quản trị hệ thống',
+    description: 'Tập trung vào tài khoản, vai trò, quyền truy cập và các điểm cần kiểm toán.',
     toneClass: 'from-slate-950 via-cyan-900 to-emerald-700',
     statCards: [
-      { label: 'Tai khoan', value: 'Quan tri', hint: 'Tao, khoa va cap quyen nguoi dung', icon: UserCog },
-      { label: 'Vai tro', value: 'RBAC', hint: 'Role, permission va pham vi truy cap', icon: Key },
-      { label: 'Audit', value: 'Theo doi', hint: 'Dau vet thay doi nhay cam', icon: ShieldCheck },
+      { label: 'Tài khoản', value: 'Quản trị', hint: 'Tạo, khóa và cấp quyền người dùng', icon: UserCog },
+      { label: 'Vai trò', value: 'RBAC', hint: 'Role, permission và phạm vi truy cập', icon: Key },
+      { label: 'Audit', value: 'Theo dõi', hint: 'Dấu vết thay đổi nhạy cảm', icon: ShieldCheck },
     ],
-    focusAreas: ['Tai khoan co quyen cao', 'Role va permission', 'Audit va cau hinh he thong'],
+    focusAreas: ['Tài khoản có quyền cao', 'Role và permission', 'Audit và cấu hình hệ thống'],
     actions: [
       {
         title: 'Quan ly tai khoan',
@@ -416,11 +416,11 @@ export const roleProfiles: Record<WorkspaceRole, RoleProfile> = {
     description: 'Tap trung vao ky luong, tinh luong, phe duyet va lich su chi tra theo dung pham vi payroll.',
     toneClass: 'from-slate-950 via-indigo-900 to-cyan-700',
     statCards: [
-      { label: 'Bang luong', value: 'Payroll', hint: 'Tinh va doi soat luong theo thang', icon: WalletCards },
+      { label: 'Bảng lương', value: 'Payroll', hint: 'Tính và đối soát lương theo tháng', icon: WalletCards },
       { label: 'Workflow', value: 'Duyet', hint: 'Draft, approved va processed', icon: ClipboardCheck },
       { label: 'Audit', value: 'Khoa so', hint: 'Du lieu processed dung cho ban giao', icon: ShieldCheck },
     ],
-    focusAreas: ['Ky luong dang xu ly', 'Bang luong can phe duyet', 'Lich su chi tra va audit'],
+    focusAreas: ['Kỳ lương đang xử lý', 'Bảng lương cần phê duyệt', 'Lịch sử chi trả và audit'],
     actions: [
       {
         title: 'Quan ly bang luong',
@@ -456,9 +456,9 @@ export const roleProfiles: Record<WorkspaceRole, RoleProfile> = {
     description: 'Theo doi bao cao phong ban, phe duyet cap phong va cac rui ro van hanh.',
     toneClass: 'from-sky-900 via-blue-800 to-emerald-700',
     statCards: [
-      { label: 'Bao cao', value: 'Phong ban', hint: 'KPI, headcount va tai cong viec', icon: BarChart3 },
+      { label: 'Báo cáo', value: 'Phòng ban', hint: 'KPI, headcount và tải công việc', icon: BarChart3 },
       { label: 'Phe duyet', value: 'Cap phong', hint: 'Nghi phep, phan bo, dieu chuyen', icon: ClipboardCheck },
-      { label: 'Nhan su', value: 'Pham vi', hint: 'Nhan vien va quan ly truc thuoc', icon: Users },
+      { label: 'Nhân sự', value: 'Phạm vi', hint: 'Nhân viên và quản lý trực thuộc', icon: Users },
     ],
     focusAreas: ['Bao cao phong ban', 'Phe duyet cap phong', 'Rui ro tai cong viec'],
     actions: [
@@ -514,7 +514,7 @@ export const roleProfiles: Record<WorkspaceRole, RoleProfile> = {
         status: 'ready',
       },
       {
-        title: 'Nhan vien trong nhom',
+        title: 'Nhân viên trong nhóm',
         description: 'Xem ho so nhan vien trong pham vi quan ly.',
         icon: Users,
         href: '/employees',
@@ -525,7 +525,7 @@ export const roleProfiles: Record<WorkspaceRole, RoleProfile> = {
   },
   employee: {
     role: 'employee',
-    label: 'Nhan vien',
+    label: 'Nhân viên',
     badge: 'EMPLOYEE',
     headline: 'Khong gian lam viec ca nhan',
     description: 'Theo doi cham cong, nghi phep va task ca nhan duoc giao.',
@@ -568,7 +568,7 @@ export const roleProfiles: Record<WorkspaceRole, RoleProfile> = {
     description: 'Danh cho tai khoan, bao mat va quyen truy cap duoc cap.',
     toneClass: 'from-slate-950 via-zinc-800 to-cyan-800',
     statCards: [
-      { label: 'Tai khoan', value: 'Ca nhan', hint: 'Thong tin dang nhap va lien he', icon: User },
+      { label: 'Tài khoản', value: 'Cá nhân', hint: 'Thông tin đăng nhập và liên hệ', icon: User },
       { label: 'Bao mat', value: 'Mat khau', hint: 'Doi mat khau va han bao mat', icon: Key },
       { label: 'Quyen truy cap', value: 'Gioi han', hint: 'Chi mo cac khu vuc duoc cap quyen', icon: ShieldCheck },
     ],

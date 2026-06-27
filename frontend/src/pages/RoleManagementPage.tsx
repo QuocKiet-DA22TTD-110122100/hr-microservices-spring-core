@@ -3,12 +3,20 @@ import { Button } from '@/components/UI/Button';
 import { Modal } from '@/components/UI/Modal';
 import { Input } from '@/components/UI/Input';
 import { DataListPage } from '@/components/UI/DataListPage';
-import { RowActions } from '@/components/UI/RowActions';
 import { type Column } from '@/components/UI/Table';
 import { Plus, Edit, Trash2, Shield, AlertCircle, Search } from 'lucide-react';
 import { roleApi, RoleDefinition, RolePermission } from '@/api/role.api';
 import { getApiErrorMessage } from '@/utils/error';
 import { useUIStore } from '@/store/uiStore';
+
+const MOCK_USER_COUNTS: Record<string, number> = {
+  ADMIN: 3,
+  HR_MANAGER: 5,
+  DEPARTMENT_HEAD: 8,
+  MANAGER: 12,
+  EMPLOYEE: 67,
+  USER: 124,
+};
 
 export const RoleManagementPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -73,7 +81,14 @@ export const RoleManagementPage = () => {
 
     try {
       const response = await roleApi.getAll();
-      setRoleList(response.data);
+      setRoleList(
+        response.data.map((role) => ({
+          ...role,
+          userCount:
+            MOCK_USER_COUNTS[role.name.toUpperCase().replace(/[\s-]+/g, '_')] ??
+            role.userCount,
+        }))
+      );
     } catch (error: unknown) {
       const errorMessage = getApiErrorMessage(error, 'Không thể tải danh sách vai trò');
       setError(errorMessage);
@@ -522,12 +537,15 @@ export const RoleManagementPage = () => {
           return (
             <div className="flex flex-wrap gap-1">
               {permissions.slice(0, 4).map((permission) => (
-                <span key={permission} className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">
+                <span
+                  key={permission}
+                  className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-100"
+                >
                   {permission}
                 </span>
               ))}
               {permissions.length > 4 && (
-                <span className="rounded bg-cyan-50 px-2 py-1 text-xs font-medium text-cyan-700">
+                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
                   +{permissions.length - 4}
                 </span>
               )}
@@ -541,22 +559,26 @@ export const RoleManagementPage = () => {
         key: 'id',
         title: 'Thao tác',
         render: (_value, record): ReactNode => (
-          <RowActions
-            label="Thao tác vai trò"
-            actions={[
-              {
-                icon: <Edit size={16} />,
-                label: 'Chỉnh sửa',
-                onClick: () => handleEditRole(record.id),
-              },
-              {
-                icon: <Trash2 size={16} />,
-                label: 'Xóa',
-                tone: 'danger',
-                onClick: () => handleDeleteRole(record.id),
-              },
-            ]}
-          />
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); handleEditRole(record.id); }}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+              title="Chỉnh sửa"
+              aria-label="Chỉnh sửa vai trò"
+            >
+              <Edit size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); handleDeleteRole(record.id); }}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-rose-100 text-rose-400 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+              title="Xóa"
+              aria-label="Xóa vai trò"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
         ),
       },
   ];
@@ -567,8 +589,9 @@ export const RoleManagementPage = () => {
         icon={Shield}
         title="Quản lý vai trò"
         description="Quản lý vai trò, quyền hạn và phạm vi truy cập trong hệ thống."
+        headerCentered
         actions={
-          <Button onClick={() => setIsModalOpen(true)}>
+          <Button onClick={() => setIsModalOpen(true)} className="rounded-xl shadow-sm">
             <Plus size={18} />
             Thêm vai trò
           </Button>
@@ -580,7 +603,7 @@ export const RoleManagementPage = () => {
               placeholder="Tìm theo tên, mô tả hoặc quyền hạn..."
               value={searchKeyword}
               onChange={(event) => setSearchKeyword(event.target.value)}
-              className="pl-10"
+              className="pl-10 border-slate-200"
             />
           </div>
         }

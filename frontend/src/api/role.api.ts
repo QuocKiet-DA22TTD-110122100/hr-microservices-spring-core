@@ -217,7 +217,7 @@ export const FALLBACK_ROLES: RoleDefinition[] = [
     name: 'Admin',
     description: 'System administrator',
     permissions: ['ALL'],
-    userCount: 0,
+    userCount: 3,
   },
   {
     id: 'HR_MANAGER',
@@ -232,14 +232,14 @@ export const FALLBACK_ROLES: RoleDefinition[] = [
       'WRITE_USER',
       'READ_ROLE',
     ],
-    userCount: 0,
+    userCount: 5,
   },
   {
     id: 'USER',
     name: 'User',
     description: 'Standard user',
     permissions: ['READ_EMPLOYEE', 'READ_DEPARTMENT', 'READ_PROJECT', 'READ_TASK'],
-    userCount: 0,
+    userCount: 124,
   },
 ];
 

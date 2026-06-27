@@ -27,6 +27,7 @@ import {
   Upload,
   Users,
   Workflow,
+  XCircle,
 } from 'lucide-react';
 import { projectApi } from '@/api/project.api';
 import { taskApi } from '@/api/task.api';
@@ -116,8 +117,8 @@ const workNavItems: WorkNavItem[] = [
   },
   {
     key: 'approvals',
-    label: 'Approvals',
-    description: 'Task dang cho duyet, placeholder Phase 1.',
+    label: 'Phê duyệt',
+    description: 'Yêu cầu đang chờ xử lý.',
     icon: CheckCircle2,
     roles: ['manager', 'departmentHead', 'admin'],
   },
@@ -489,7 +490,7 @@ export const WorkManagementPage = () => {
   return (
     <WorkShell
       title={workspaceRole === 'admin' ? 'Admin / Owner Dashboard' : workspaceRole === 'manager' || workspaceRole === 'departmentHead' ? 'Manager Dashboard' : 'Member Dashboard'}
-      subtitle="Phase 3 mo rong analytics, timeline, AI suggestion, automation, integrations, i18n va mobile readiness. Cac backend contract chua co duoc ghi ro."
+      subtitle="Phase 3: Mở rộng phân tích dữ liệu, dòng thời gian, gợi ý AI, tự động hóa, tích hợp, i18n và trải nghiệm mobile. Các backend contract chưa có được ghi rõ."
       navItems={allowedNav}
       currentView={currentView}
       onNavigate={(view) => navigate(viewToRoute[view])}
@@ -596,11 +597,11 @@ const WorkShell = ({ title, subtitle, children, navItems = [], currentView, onNa
         <div className="flex flex-wrap items-center gap-2">
           <Link
             to="/"
-            aria-label="Thoat Work Management ve menu chinh"
+            aria-label="Thoát Work Management về menu chính"
             className="interactive-lift inline-flex h-8 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             <ArrowLeft size={14} />
-            Ve menu chinh
+            Về menu chính
           </Link>
           <Badge variant="info">Phase 3</Badge>
           <Badge variant="muted">Kanban</Badge>
@@ -967,28 +968,123 @@ const TaskManagementView = ({ form, projects, canCreateTask, onChange, onSubmit 
   </section>
 );
 
-const ApprovalsView = ({ tasks, projects, onNotice }: { tasks: Task[]; projects: ProjectSummary[]; onNotice: (value: string) => void }) => {
-  const reviewLikeTasks = tasks.filter((task) => task.status === 'IN_PROGRESS' || task.priority === 'HIGH' || task.priority === 'URGENT').slice(0, 8);
+interface ApprovalRequest {
+  id: string;
+  personName: string;
+  position: string;
+  department: string;
+  requester: string;
+  submittedAt: string;
+  status: 'Chờ duyệt';
+}
+
+const initialApprovalRequests: ApprovalRequest[] = [
+  {
+    id: 'APR-2026-014',
+    personName: 'Nguyễn Minh Anh',
+    position: 'Chuyên viên tuyển dụng',
+    department: 'Nhân sự',
+    requester: 'Trần Hoài Nam',
+    submittedAt: '2026-06-24',
+    status: 'Chờ duyệt',
+  },
+  {
+    id: 'APR-2026-015',
+    personName: 'Lê Quốc Bảo',
+    position: 'Backend Developer',
+    department: 'Công nghệ',
+    requester: 'Phạm Thu Hà',
+    submittedAt: '2026-06-25',
+    status: 'Chờ duyệt',
+  },
+  {
+    id: 'APR-2026-016',
+    personName: 'Võ Khánh Linh',
+    position: 'Kế toán tiền lương',
+    department: 'Tài chính',
+    requester: 'Đỗ Minh Quân',
+    submittedAt: '2026-06-25',
+    status: 'Chờ duyệt',
+  },
+  {
+    id: 'APR-2026-017',
+    personName: 'Hoàng Gia Huy',
+    position: 'Project Coordinator',
+    department: 'Vận hành',
+    requester: 'Nguyễn Thanh Tâm',
+    submittedAt: '2026-06-26',
+    status: 'Chờ duyệt',
+  },
+];
+
+const ApprovalsView = ({ onNotice }: { tasks: Task[]; projects: ProjectSummary[]; onNotice: (value: string) => void }) => {
+  const [approvalRequests, setApprovalRequests] = useState<ApprovalRequest[]>(initialApprovalRequests);
+
+  const handleApprovalAction = (request: ApprovalRequest, action: 'approved' | 'rejected') => {
+    setApprovalRequests((current) => current.filter((item) => item.id !== request.id));
+    onNotice(
+      action === 'approved'
+        ? `Đã phê duyệt yêu cầu ${request.id} cho ${request.personName}.`
+        : `Đã từ chối yêu cầu ${request.id} cho ${request.personName}.`
+    );
+  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Approvals</CardTitle>
-        <CardDescription>Backend chua co endpoint submit/review. MVP hien danh sach ung vien can duyet va nut placeholder.</CardDescription>
+        <CardTitle>Phê duyệt yêu cầu</CardTitle>
+        <CardDescription>Hệ thống đang chuẩn bị kết nối các API endpoints submit/review. Phiên bản MVP hiện tại hiển thị danh sách các yêu cầu cần phê duyệt.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        {reviewLikeTasks.length === 0 ? (
-          <EmptyState title="Chua co task cho duyet" description="Khi co workflow submit/review, danh sach nay se lay tu endpoint approval rieng." />
+        {approvalRequests.length === 0 ? (
+          <EmptyState title="Đã xử lý hết yêu cầu" description="Danh sách sẽ được nạp lại từ endpoint approval riêng khi backend hoàn tất workflow submit/review." />
         ) : (
-          reviewLikeTasks.map((task) => (
-            <div key={task.id} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 lg:flex-row lg:items-center lg:justify-between">
-              <TaskRow task={task} projectName={getTaskProjectName(projects, task)} compact />
-              <div className="flex gap-2">
-                <Button type="button" size="sm" onClick={() => onNotice('[API endpoint: approve task] chua duoc ket noi trong Phase 1.')}>
-                  Approve
+          approvalRequests.map((request) => (
+            <div key={request.id} className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">{request.id}</span>
+                      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">{request.status}</span>
+                    </div>
+                    <h3 className="mt-2 text-base font-bold text-slate-950">{request.personName}</h3>
+                    <p className="mt-1 text-sm text-slate-600">{request.position}</p>
+                  </div>
+                  <div className="text-sm text-slate-600 sm:text-right">
+                    <p className="font-semibold text-slate-800">{request.department}</p>
+                    <p className="mt-1">Gửi bởi {request.requester}</p>
+                  </div>
+                </div>
+                <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+                  <div className="rounded-lg bg-slate-50 px-3 py-2">
+                    <dt className="text-xs font-semibold text-slate-500">Mã yêu cầu</dt>
+                    <dd className="mt-1 font-semibold text-slate-800">{request.id}</dd>
+                  </div>
+                  <div className="rounded-lg bg-slate-50 px-3 py-2">
+                    <dt className="text-xs font-semibold text-slate-500">Phòng ban</dt>
+                    <dd className="mt-1 font-semibold text-slate-800">{request.department}</dd>
+                  </div>
+                  <div className="rounded-lg bg-slate-50 px-3 py-2">
+                    <dt className="text-xs font-semibold text-slate-500">Ngày gửi</dt>
+                    <dd className="mt-1 font-semibold text-slate-800">{formatDate(request.submittedAt)}</dd>
+                  </div>
+                </dl>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 focus:ring-rose-500"
+                  onClick={() => handleApprovalAction(request, 'rejected')}
+                >
+                  <XCircle size={16} />
+                  Từ chối
                 </Button>
-                <Button type="button" size="sm" variant="outline" onClick={() => onNotice('[API endpoint: request changes] chua duoc ket noi trong Phase 1.')}>
-                  Request changes
+                <Button type="button" size="sm" onClick={() => handleApprovalAction(request, 'approved')}>
+                  <CheckCircle2 size={16} />
+                  Phê duyệt
                 </Button>
               </div>
             </div>
