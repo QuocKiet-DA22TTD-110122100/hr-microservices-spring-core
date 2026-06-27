@@ -65,7 +65,7 @@ describe('UserManagementPage', () => {
 
   let mockUIStore: ReturnType<typeof createMockUIStore>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset mocks
     vi.clearAllMocks();
 
