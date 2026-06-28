@@ -29,6 +29,10 @@ frontend/node_modules/
 .vscode/
 .kiro/
 .qodo/
+.claude/
+
+# TypeScript build cache
+*.tsbuildinfo
 
 # Build outputs
 target/

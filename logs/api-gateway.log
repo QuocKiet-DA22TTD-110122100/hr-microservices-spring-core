@@ -1,2 +1,0 @@
-2026-06-20 09:44:58 [main] INFO  c.h.gateway.ApiGatewayApplication - Starting ApiGatewayApplication using Java 21.0.10 with PID 23504 (C:\Thuctap\self-up\hr-microservices-spring-core.worktrees\agents-learning-ecc-codegraph-integration\api-gateway\target\classes started by quock in C:\Thuctap\self-up\hr-microservices-spring-core.worktrees\agents-learning-ecc-codegraph-integration)
-2026-06-20 09:44:58 [main] INFO  c.h.gateway.ApiGatewayApplication - No active profile set, falling back to 1 default profile: "default"
