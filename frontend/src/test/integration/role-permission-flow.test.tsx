@@ -127,9 +127,8 @@ describe('Integration: Role Permission Flow', () => {
       const deleteButtons = screen.getAllByText('Xóa');
       await user.click(deleteButtons[0]);
 
-      // Confirm
-      const confirmButton = screen.getByRole('button', { name: /xóa/i });
-      await user.click(confirmButton);
+      // Confirm — use specific aria-label to avoid matching row delete buttons
+      await user.click(screen.getByRole('button', { name: /xác nhận xóa tài khoản/i }));
 
       // Should succeed
       expect(userApi.userApi.delete).toHaveBeenCalled();
@@ -149,8 +148,8 @@ describe('Integration: Role Permission Flow', () => {
       // Click lock
       await user.click(lockButtons[0]);
 
-      // Confirm
-      await user.click(screen.getByRole('button', { name: /khóa/i }));
+      // Confirm — use specific aria-label
+      await user.click(screen.getByRole('button', { name: /xác nhận khóa tài khoản/i }));
 
       // Should succeed
       expect(userApi.userApi.lockAccount).toHaveBeenCalled();
@@ -316,10 +315,11 @@ describe('Integration: Role Permission Flow', () => {
       const editButtons = screen.getAllByText('Sửa');
       await user.click(editButtons[0]);
 
-      // Should show permission groups
-      expect(screen.getByText(/quản lý người dùng/i)).toBeInTheDocument();
-      expect(screen.getByText(/quản lý vai trò/i)).toBeInTheDocument();
-      expect(screen.getByText(/quản lý nhân viên/i)).toBeInTheDocument();
+      // Should show permission groups — scope to dialog to avoid matching page description
+      const dialog = screen.getByRole('dialog');
+      expect(within(dialog).getAllByText(/quản lý người dùng/i).length).toBeGreaterThanOrEqual(1);
+      expect(within(dialog).getAllByText(/quản lý vai trò/i).length).toBeGreaterThanOrEqual(1);
+      expect(within(dialog).getAllByText(/quản lý nhân viên/i).length).toBeGreaterThanOrEqual(1);
 
       // Should show inherited permissions indicator
       // (permissions that come from role)

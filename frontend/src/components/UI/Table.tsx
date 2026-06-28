@@ -86,7 +86,7 @@ function TableComponent<T extends object>({
     return <LoadingSkeleton columns={columns.length} />;
   }
 
-  if (data.length === 0) {
+  if (!data || data.length === 0) {
     return (
       <div className="animate-fade-in py-2">
         <EmptyState
@@ -106,8 +106,10 @@ function TableComponent<T extends object>({
             {columns.map((column) => (
               <th
                 key={String(column.key)}
+                role={column.sortable ? 'button' : undefined}
+                tabIndex={column.sortable ? 0 : undefined}
                 className={cn(
-                  'border-b border-slate-200/80 px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.03em] text-slate-700',
+                  'border-b border-slate-200/80 px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-[0.03em] text-slate-600',
                   column.sortable && 'cursor-pointer select-none transition-colors duration-150 hover:bg-slate-200/70'
                 )}
                   onClick={() => column.sortable && column.onSort?.(column.key)}

@@ -32,10 +32,10 @@ describe('Table Component', () => {
       expect(screen.getByText('Email')).toBeInTheDocument();
       expect(screen.getByText('Status')).toBeInTheDocument();
 
-      // Check data
+      // Check data (multiple 'active' values exist, use getAllByText)
       expect(screen.getByText('John Doe')).toBeInTheDocument();
       expect(screen.getByText('jane@example.com')).toBeInTheDocument();
-      expect(screen.getByText('active')).toBeInTheDocument();
+      expect(screen.getAllByText('active').length).toBeGreaterThan(0);
     });
 
     it('should render empty state when no data', () => {
@@ -92,7 +92,8 @@ describe('Table Component', () => {
       render(<Table columns={customColumns} data={mockData} />);
 
       const badges = screen.getAllByText('active');
-      expect(badges[0].parentElement).toHaveClass('active-badge');
+      // The span itself has the class, not its parent
+      expect(badges[0]).toHaveClass('active-badge');
     });
 
     it('should use custom renderHeader function', () => {
