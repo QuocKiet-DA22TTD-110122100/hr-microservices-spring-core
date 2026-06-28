@@ -59,7 +59,7 @@ export const TablePagination = ({
   });
 
   const navBtnBase =
-    'flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 disabled:pointer-events-none disabled:opacity-40';
+    'flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800 disabled:pointer-events-none disabled:opacity-40';
 
   const pageBtnBase =
     'h-8 min-w-[2rem] rounded-lg px-2 text-xs font-medium transition-colors border';
@@ -72,7 +72,7 @@ export const TablePagination = ({
       <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-4">
         {/* Status text */}
         {totalItems !== undefined && startItem !== undefined && endItem !== undefined && (
-          <span className="text-xs text-slate-500" role="status" aria-live="polite">
+          <span className="text-xs text-slate-600" role="status" aria-live="polite">
             Hiển thị{' '}
             <span className="font-semibold text-slate-700">{startItem}–{endItem}</span>{' '}
             trong{' '}
@@ -99,7 +99,7 @@ export const TablePagination = ({
                     'h-7 min-w-[2.25rem] rounded-md px-2 text-xs font-medium transition-colors',
                     pageSize === option
                       ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200/80'
-                      : 'text-slate-500 hover:text-slate-700'
+                      : 'text-slate-600 hover:text-slate-800'
                   )}
                   aria-label={`${option} dòng mỗi trang`}
                   aria-pressed={pageSize === option}
@@ -193,7 +193,7 @@ export function DataListPage<T extends object>({
 
         {filters && (
           <Card className="overflow-hidden bg-white/95">
-            <div className="h-1 bg-gradient-to-r from-cyan-700 via-cyan-400 to-slate-200" />
+            <div className="h-1 bg-blue-700" />
             <CardContent>{filters}</CardContent>
           </Card>
         )}

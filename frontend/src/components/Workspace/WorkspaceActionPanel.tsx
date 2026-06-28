@@ -71,8 +71,8 @@ export const WorkspaceActionPanel = ({ selectedItem, processNotes }: WorkspaceAc
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
                   <div
-                    className="h-full rounded-full bg-cyan-600 transition-all duration-700"
-                    style={{ width: `${selectedItem.progress}%` }}
+                    className="h-full w-full origin-left rounded-full bg-cyan-600 transition-transform duration-700"
+                    style={{ transform: `scaleX(${selectedItem.progress / 100})` }}
                   />
                 </div>
               </div>

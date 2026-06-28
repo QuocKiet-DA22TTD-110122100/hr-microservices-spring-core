@@ -415,7 +415,7 @@ const WorkQueueList = ({ items, onAction }: { items: RoleWorkItem[]; onAction: (
         <div key={item.title} className="grid gap-3 p-3 sm:grid-cols-[1fr_auto] sm:items-center">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h4 className="font-semibold text-slate-900">{item.title}</h4>
+              <h3 className="font-semibold text-slate-900">{item.title}</h3>
               <Badge variant={priority.variant}>{priority.label}</Badge>
             </div>
             <p className="mt-1 text-sm leading-6 text-slate-500">{item.description}</p>
@@ -481,7 +481,7 @@ const ActionCard = ({
           </div>
           <Badge variant={disabled ? 'muted' : 'success'}>{disabled ? 'Đang khóa' : 'Sẵn sàng'}</Badge>
         </div>
-        <h4 className="font-bold text-slate-950">{title}</h4>
+        <h3 className="font-bold text-slate-950">{title}</h3>
         <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">{description}</p>
         <div className={cn('mt-4 inline-flex items-center gap-2 text-sm font-bold', disabled ? 'text-slate-500' : tone.text)}>
           {disabled ? 'Chưa có quyền' : 'Mở chức năng'}

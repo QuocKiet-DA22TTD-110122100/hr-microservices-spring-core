@@ -198,12 +198,10 @@ export const UserManagementPage = () => {
       }
       
       if (aValue === undefined || bValue === undefined) return 0;
-      
-      if (sortOrder === 'asc') {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      }
+
+      if (aValue === bValue) return 0;
+      const ascending = aValue < bValue ? -1 : 1;
+      return sortOrder === 'asc' ? ascending : -ascending;
     });
     
     return sorted;
@@ -252,6 +250,7 @@ export const UserManagementPage = () => {
         label: 'Tổng tài khoản',
         value: userList.length.toString(),
         hint: 'Tài khoản đang có trong hệ thống',
+        gradient: 'from-cyan-500 to-cyan-700',
         tone: 'bg-cyan-50 text-cyan-700',
         icon: Shield,
       },
@@ -259,6 +258,7 @@ export const UserManagementPage = () => {
         label: 'Đang hoạt động',
         value: activeCount.toString(),
         hint: 'Có thể đăng nhập bình thường',
+        gradient: 'from-emerald-500 to-emerald-700',
         tone: 'bg-emerald-50 text-emerald-700',
         icon: Unlock,
       },
@@ -266,6 +266,7 @@ export const UserManagementPage = () => {
         label: 'Bị khóa',
         value: lockedCount.toString(),
         hint: 'Cần admin mở khóa khi phù hợp',
+        gradient: 'from-rose-500 to-rose-700',
         tone: 'bg-rose-50 text-rose-700',
         icon: Lock,
       },
@@ -273,6 +274,7 @@ export const UserManagementPage = () => {
         label: 'Role phổ biến',
         value: topRole?.[0] || '--',
         hint: topRole ? `${topRole[1]} tài khoản` : 'Chưa có dữ liệu role',
+        gradient: 'from-slate-400 to-slate-600',
         tone: 'bg-slate-100 text-slate-700',
         icon: CheckSquare,
       },
@@ -691,7 +693,7 @@ export const UserManagementPage = () => {
       key: 'id',
       title: 'Thao tác',
       render: (_value, record) => (
-        <div className="flex flex-wrap gap-2" role="group" aria-label={`Thao tác cho tài khoản ${record.username}`}>
+        <div className="flex flex-wrap gap-2" aria-label={`Thao tác cho tài khoản ${record.username}`}>
           <PermissionGate permission={PERMISSIONS.USER_UPDATE}>
             <button
               onClick={(e) => {
@@ -770,14 +772,15 @@ export const UserManagementPage = () => {
         summary={
           <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             {userStats.map((stat) => (
-              <Card key={stat.label} className="p-5">
+              <Card key={stat.label} className="relative overflow-hidden p-5">
+                <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${stat.gradient}`} />
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                    <p className="mt-1 truncate text-2xl font-semibold text-slate-900">{stat.value}</p>
-                    <p className="mt-2 text-sm text-slate-500">{stat.hint}</p>
+                    <p className="text-sm font-medium text-slate-600">{stat.label}</p>
+                    <p className="mt-1 font-display truncate text-2xl font-bold tabular-nums text-slate-950">{stat.value}</p>
+                    <p className="mt-2 text-sm text-slate-600">{stat.hint}</p>
                   </div>
-                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md ${stat.tone}`}>
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${stat.tone}`}>
                     <stat.icon size={22} />
                   </div>
                 </div>
@@ -798,10 +801,10 @@ export const UserManagementPage = () => {
               />
             </div>
             {debouncedSearchKeyword && filteredUsers.length === 0 && !loading && (
-              <div className="flex items-center gap-2 text-sm text-slate-500" role="status">
+              <output className="flex items-center gap-2 text-sm text-slate-600">
                 <AlertCircle size={16} aria-hidden="true" />
                 Không tìm thấy tài khoản nào phù hợp với "{debouncedSearchKeyword}"
-              </div>
+              </output>
             )}
           </div>
         }
@@ -863,7 +866,7 @@ export const UserManagementPage = () => {
             <label htmlFor="add-user-role" className="mb-2 block text-sm font-semibold text-slate-700">
               Vai trò <span className="text-rose-500">*</span>
             </label>
-            <div role="group" aria-labelledby="add-user-role" aria-required="true" className="flex flex-wrap gap-2">
+            <div aria-labelledby="add-user-role" className="flex flex-wrap gap-2">
               {availableRoles.map((role) => (
                 <button
                   key={role}
@@ -917,7 +920,7 @@ export const UserManagementPage = () => {
             <label htmlFor="edit-user-role" className="mb-2 block text-sm font-semibold text-slate-700">
               Vai trò <span className="text-rose-500">*</span>
             </label>
-            <div role="group" aria-labelledby="edit-user-role" aria-required="true" className="flex flex-wrap gap-2">
+            <div aria-labelledby="edit-user-role" className="flex flex-wrap gap-2">
               {availableRoles.map((role) => (
                 <button
                   key={role}
@@ -950,18 +953,18 @@ export const UserManagementPage = () => {
             <span id="edit-user-status" className="mb-2 block text-sm font-semibold text-slate-700">
               Trạng thái <span className="text-rose-500">*</span>
             </span>
-            <div role="group" aria-labelledby="edit-user-status" aria-required="true" className="flex gap-3">
+            <div aria-labelledby="edit-user-status" className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setEditLocked(false)}
                 disabled={isUpdating}
                 aria-pressed={!editLocked}
                 aria-label="Đặt trạng thái hoạt động"
-                className={`rounded-md border px-3 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 active:translate-y-px ${
-                  editLocked
-                    ? 'border-slate-200 bg-white text-slate-700'
-                    : 'border-emerald-700 bg-emerald-700 text-white'
-                } ${isUpdating ? 'opacity-50 cursor-not-allowed' : editLocked ? 'hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950' : ''}`}
+                className={[
+                  'rounded-md border px-3 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 active:translate-y-px',
+                  editLocked ? 'border-slate-200 bg-white text-slate-700' : 'border-emerald-700 bg-emerald-700 text-white',
+                  isUpdating ? 'opacity-50 cursor-not-allowed' : (editLocked ? 'hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950' : ''),
+                ].join(' ')}
               >
                 Hoạt động
               </button>
@@ -971,11 +974,11 @@ export const UserManagementPage = () => {
                 disabled={isUpdating}
                 aria-pressed={editLocked}
                 aria-label="Đặt trạng thái bị khóa"
-                className={`rounded-md border px-3 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 active:translate-y-px ${
-                  editLocked
-                    ? 'border-rose-700 bg-rose-700 text-white'
-                    : 'border-slate-200 bg-white text-slate-700'
-                } ${isUpdating ? 'opacity-50 cursor-not-allowed' : editLocked ? '' : 'hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950'}`}
+                className={[
+                  'rounded-md border px-3 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 active:translate-y-px',
+                  editLocked ? 'border-rose-700 bg-rose-700 text-white' : 'border-slate-200 bg-white text-slate-700',
+                  isUpdating ? 'opacity-50 cursor-not-allowed' : (editLocked ? '' : 'hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950'),
+                ].join(' ')}
               >
                 Bị khóa
               </button>
@@ -991,9 +994,8 @@ export const UserManagementPage = () => {
               </span>
             </div>
             
-            <div 
+            <section
               className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
-              role="region"
               aria-labelledby="permission-matrix-heading"
             >
               {permissionGroups.map((group, groupIndex) => (
@@ -1030,7 +1032,7 @@ export const UserManagementPage = () => {
                   </div>
 
                   {/* Permissions List */}
-                  <div className="bg-white" role="group" aria-label={`Danh sách quyền ${group.category}`}>
+                  <div className="bg-white" aria-label={`Danh sách quyền ${group.category}`}>
                     {group.permissions.map((permission) => {
                       const permissionInputId = `permission-${permission.id}`;
                       return (
@@ -1075,9 +1077,9 @@ export const UserManagementPage = () => {
                   </div>
                 </div>
               ))}
-            </div>
+            </section>
 
-            <div className="mt-2 flex items-start gap-1 text-xs leading-5 text-slate-500" role="note">
+            <div className="mt-2 flex items-start gap-1 text-xs leading-5 text-slate-600" role="note">
               <AlertCircle size={12} className="mt-0.5 flex-shrink-0" aria-hidden="true" />
               <span>
                 Quyền "Kế thừa" được gắn tự động từ vai trò và không thể thay đổi trực tiếp.
@@ -1116,20 +1118,27 @@ export const UserManagementPage = () => {
             }
           </p>
           <div className="flex gap-3 justify-end">
-            <Button 
-              variant={lockAction === 'lock' ? 'danger' : 'primary'}
-              onClick={handleConfirmLock}
-              disabled={isTogglingLock}
-              isLoading={isTogglingLock}
-              aria-label={isTogglingLock ? 'đang xử lý' : (lockAction === 'lock' ? 'Xác nhận khóa tài khoản' : 'Xác nhận m? khóa tài khoản')}
-            >
-              {isTogglingLock ? 'Đang xử lý...' : (lockAction === 'lock' ? 'Khóa tài khoản' : 'Mở khóa')}
-            </Button>
-            <Button 
-              variant="secondary" 
+            {(() => {
+              const isLock = lockAction === 'lock';
+              const btnLabel = isTogglingLock ? 'Đang xử lý...' : (isLock ? 'Khóa tài khoản' : 'Mở khóa');
+              const ariaLabel = isTogglingLock ? 'Đang xử lý' : (isLock ? 'Xác nhận khóa tài khoản' : 'Xác nhận mở khóa tài khoản');
+              return (
+                <Button
+                  variant={isLock ? 'danger' : 'primary'}
+                  onClick={handleConfirmLock}
+                  disabled={isTogglingLock}
+                  isLoading={isTogglingLock}
+                  aria-label={ariaLabel}
+                >
+                  {btnLabel}
+                </Button>
+              );
+            })()}
+            <Button
+              variant="secondary"
               onClick={handleCancelLock}
               disabled={isTogglingLock}
-              aria-label="H?y thao tác"
+              aria-label="Hủy thao tác"
             >
               Hủy
             </Button>

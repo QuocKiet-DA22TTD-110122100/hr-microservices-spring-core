@@ -31,6 +31,8 @@ import {
 } from 'lucide-react';
 import { projectApi } from '@/api/project.api';
 import { taskApi } from '@/api/task.api';
+import { aiApi, AiRiskRadarItem, AiSuggestion } from '@/api/ai.api';
+import { automationApi, AutomationRule } from '@/api/automation.api';
 import { Badge } from '@/components/UI/Badge';
 import { Button } from '@/components/UI/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/UI/Card';
@@ -473,7 +475,7 @@ export const WorkManagementPage = () => {
               <LockKeyhole size={24} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Đang ở trạng thái giới hạn</h2>
+              <h2 className="font-display text-lg font-semibold text-slate-900">Đang ở trạng thái giới hạn</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
                 Role hiện tại không nằm trong phạm vi dashboard Member, Manager hoặc Admin. Đây là hành vi đúng cho tài khoản chưa được phê duyệt hoặc role không thuộc module công việc.
               </p>
@@ -591,21 +593,21 @@ const WorkShell = ({ title, subtitle, children, navItems = [], currentView, onNa
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold text-blue-700">Work Management MVP</p>
-          <h1 className="mt-1 text-2xl font-bold tracking-[-0.02em] text-slate-950">{title}</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{subtitle}</p>
+          <h1 className="mt-1 font-display text-2xl font-bold tracking-[-0.02em] text-slate-950 text-balance">{title}</h1>
+          <p className="mt-2 max-w-[72ch] text-sm leading-6 text-slate-700 text-pretty">{subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link
             to="/"
             aria-label="Thoát Work Management về menu chính"
-            className="interactive-lift inline-flex h-8 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="interactive-lift inline-flex h-8 items-center gap-2 rounded-md border border-blue-200 bg-white px-3 text-xs font-bold text-blue-900 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-950 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             <ArrowLeft size={14} />
             Về menu chính
           </Link>
-          <Badge variant="info">Phase 3</Badge>
-          <Badge variant="muted">Kanban</Badge>
-          <Badge variant="muted">Advanced</Badge>
+          <Badge variant="info" className="bg-blue-100 text-blue-950">Phase 3</Badge>
+          <Badge variant="muted" className="bg-slate-200 text-slate-900">Kanban</Badge>
+          <Badge variant="muted" className="bg-slate-200 text-slate-900">Advanced</Badge>
         </div>
       </div>
 
@@ -625,12 +627,12 @@ const WorkShell = ({ title, subtitle, children, navItems = [], currentView, onNa
                     : 'border-slate-200 bg-white/85 text-slate-700 hover:border-blue-200 hover:bg-white hover:text-slate-950'
                 )}
               >
-                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', active ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500')}>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', active ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600')}>
                   <item.icon size={18} />
                 </span>
                 <span>
-                  <span className="block text-sm font-semibold">{item.label}</span>
-                  <span className="mt-0.5 block text-xs text-slate-500">{item.description}</span>
+                  <span className="block font-display text-sm font-semibold">{item.label}</span>
+                  <span className="mt-0.5 block text-xs text-slate-600">{item.description}</span>
                 </span>
               </button>
             );
@@ -671,7 +673,7 @@ const DashboardView = ({ role, stats, projects, tasks }: DashboardViewProps) => 
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-slate-500">{stat.label}</p>
-                <p className="mt-1 text-3xl font-bold text-slate-950">{stat.value}</p>
+                <p className="mt-1 font-display text-3xl font-bold tabular-nums text-slate-950">{stat.value}</p>
                 <p className="mt-2 text-sm leading-5 text-slate-600">{stat.hint}</p>
               </div>
               <div className={cn('flex h-11 w-11 items-center justify-center rounded-xl', stat.tone)}>
@@ -800,7 +802,7 @@ const BoardView = ({ projects, tasks, selectedProjectId, draggedTaskId, onProjec
     <Card className="p-4">
       <div className="grid gap-4 lg:grid-cols-[1fr_260px] lg:items-end">
         <div>
-          <h2 className="text-lg font-bold text-slate-950">Project Board Kanban</h2>
+          <h2 className="font-display text-lg font-bold text-slate-950">Project Board Kanban</h2>
           <p className="mt-1 text-sm text-slate-600">Keo task giua Todo, In Progress va Done. Review la placeholder Phase 1.</p>
         </div>
         <div>
@@ -839,8 +841,8 @@ const BoardView = ({ projects, tasks, selectedProjectId, draggedTaskId, onProjec
             )}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-bold">{statusLabels[status]}</h3>
-              <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs font-semibold">{columnTasks.length}</span>
+              <h3 className="font-display font-bold">{statusLabels[status]}</h3>
+              <span className="font-display rounded-full bg-white/80 px-2 py-0.5 text-xs font-semibold tabular-nums">{columnTasks.length}</span>
             </div>
             <div className="space-y-3">
               {status === 'REVIEW' && (
@@ -1030,43 +1032,46 @@ const ApprovalsView = ({ onNotice }: { tasks: Task[]; projects: ProjectSummary[]
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Phê duyệt yêu cầu</CardTitle>
-        <CardDescription>Hệ thống đang chuẩn bị kết nối các API endpoints submit/review. Phiên bản MVP hiện tại hiển thị danh sách các yêu cầu cần phê duyệt.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <section className="space-y-4">
+      <div className="max-w-[72ch]">
+        <h2 className="font-display text-xl font-bold tracking-[-0.01em] text-slate-950">Phê duyệt yêu cầu</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-700 text-pretty">
+          Hệ thống đang chuẩn bị kết nối các API endpoints submit/review. Phiên bản MVP hiện tại hiển thị danh sách các yêu cầu cần phê duyệt.
+        </p>
+      </div>
+
+      <div className="space-y-3">
         {approvalRequests.length === 0 ? (
           <EmptyState title="Đã xử lý hết yêu cầu" description="Danh sách sẽ được nạp lại từ endpoint approval riêng khi backend hoàn tất workflow submit/review." />
         ) : (
           approvalRequests.map((request) => (
-            <div key={request.id} className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 lg:flex-row lg:items-center lg:justify-between">
+            <article key={request.id} className="interactive-lift flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 hover:border-blue-200 hover:shadow-[0_10px_20px_rgba(15,23,42,0.06)] lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">{request.id}</span>
-                      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">{request.status}</span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-800">{request.id}</span>
+                      <span className="rounded-full border border-amber-300 bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-950">{request.status}</span>
                     </div>
-                    <h3 className="mt-2 text-base font-bold text-slate-950">{request.personName}</h3>
+                    <h3 className="mt-2 font-display text-lg font-bold tracking-[-0.01em] text-slate-950">{request.personName}</h3>
                     <p className="mt-1 text-sm text-slate-600">{request.position}</p>
                   </div>
-                  <div className="text-sm text-slate-600 sm:text-right">
+                  <div className="text-sm text-slate-700 sm:text-right">
                     <p className="font-semibold text-slate-800">{request.department}</p>
                     <p className="mt-1">Gửi bởi {request.requester}</p>
                   </div>
                 </div>
                 <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
-                  <div className="rounded-lg bg-slate-50 px-3 py-2">
-                    <dt className="text-xs font-semibold text-slate-500">Mã yêu cầu</dt>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                    <dt className="text-xs font-semibold text-slate-700">Mã yêu cầu</dt>
                     <dd className="mt-1 font-semibold text-slate-800">{request.id}</dd>
                   </div>
-                  <div className="rounded-lg bg-slate-50 px-3 py-2">
-                    <dt className="text-xs font-semibold text-slate-500">Phòng ban</dt>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                    <dt className="text-xs font-semibold text-slate-700">Phòng ban</dt>
                     <dd className="mt-1 font-semibold text-slate-800">{request.department}</dd>
                   </div>
-                  <div className="rounded-lg bg-slate-50 px-3 py-2">
-                    <dt className="text-xs font-semibold text-slate-500">Ngày gửi</dt>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                    <dt className="text-xs font-semibold text-slate-700">Ngày gửi</dt>
                     <dd className="mt-1 font-semibold text-slate-800">{formatDate(request.submittedAt)}</dd>
                   </div>
                 </dl>
@@ -1075,23 +1080,23 @@ const ApprovalsView = ({ onNotice }: { tasks: Task[]; projects: ProjectSummary[]
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
-                  className="border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 focus:ring-rose-500"
+                  variant="danger"
+                  className="font-display"
                   onClick={() => handleApprovalAction(request, 'rejected')}
                 >
                   <XCircle size={16} />
                   Từ chối
                 </Button>
-                <Button type="button" size="sm" onClick={() => handleApprovalAction(request, 'approved')}>
+                <Button type="button" size="sm" variant="success" className="font-display" onClick={() => handleApprovalAction(request, 'approved')}>
                   <CheckCircle2 size={16} />
                   Phê duyệt
                 </Button>
               </div>
-            </div>
+            </article>
           ))
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 };
 
@@ -1121,64 +1126,73 @@ const NotificationsView = ({ tasks, projects, onNotice }: { tasks: Task[]; proje
       })),
   ];
 
+  const endpointContracts = [
+    '[API endpoint: list notifications]',
+    '[API endpoint: mark notification as read]',
+    '[Realtime channel: task.assigned]',
+    '[Realtime channel: task.mentioned]',
+  ];
+
   return (
-    <section className="grid gap-4 xl:grid-cols-[1fr_0.7fr]">
-      <Card>
-        <CardHeader>
-          <CardTitle>Notification Center</CardTitle>
-          <CardDescription>Phase 2 shell cho thông báo giao viec, @mention va cap nhat trang thai. Realtime can websocket/SSE backend.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+    <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="space-y-4">
+        <div className="max-w-[72ch]">
+          <h2 className="font-display text-xl font-bold tracking-[-0.01em] text-slate-950">Notification Center</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-700 text-pretty">
+            Phase 2 shell cho thông báo giao viec, @mention va cap nhat trang thai. Realtime can websocket/SSE backend.
+          </p>
+        </div>
+
+        <div className="space-y-3">
           {notifications.length === 0 ? (
             <EmptyState title="Chưa có thông báo" description="Thông báo sẽ được tạo từ task ưu tiên cao, task hoàn thành và mention khi backend có event stream." />
           ) : (
             notifications.map((item) => (
-              <div key={item.id} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4">
+              <article key={item.id} className="interactive-lift flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 hover:border-blue-200 hover:shadow-[0_10px_20px_rgba(15,23,42,0.06)]">
                 <div
                   className={cn(
-                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
-                    item.tone === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border',
+                    item.tone === 'success'
+                      ? 'border-emerald-200 bg-emerald-100 text-emerald-900'
+                      : 'border-amber-200 bg-amber-100 text-amber-950'
                   )}
                 >
                   <item.icon size={20} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-bold text-slate-950">{item.title}</p>
-                    <Badge variant={item.tone}>{item.tone === 'success' ? 'Done' : 'Can chu y'}</Badge>
+                    <p className="font-display font-bold text-slate-950">{item.title}</p>
+                    <Badge variant={item.tone} className={item.tone === 'success' ? 'text-emerald-900' : 'text-amber-950'}>
+                      {item.tone === 'success' ? 'Done' : 'Can chu y'}
+                    </Badge>
                   </div>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">{item.description}</p>
-                  <p className="mt-2 text-xs text-slate-500">{item.time}</p>
+                  <p className="mt-1 max-w-[68ch] text-sm leading-6 text-slate-700">{item.description}</p>
+                  <p className="mt-2 text-xs font-semibold text-slate-600">{item.time}</p>
                 </div>
-              </div>
+              </article>
             ))
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Realtime contract</CardTitle>
-          <CardDescription>Cac endpoint/event can bo sung sau frontend shell.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {[
-            '[API endpoint: list notifications]',
-            '[API endpoint: mark notification as read]',
-            '[Realtime channel: task.assigned]',
-            '[Realtime channel: task.mentioned]',
-          ].map((item) => (
+      <aside className="space-y-3">
+        <div className="max-w-[60ch]">
+          <h2 className="font-display text-lg font-bold text-slate-950">Realtime contract</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-700">Cac endpoint/event can bo sung sau frontend shell.</p>
+        </div>
+        <div className="space-y-2">
+          {endpointContracts.map((item) => (
             <button
               key={item}
               type="button"
               onClick={() => onNotice(`${item} chua co backend trong Phase 2 shell.`)}
-              className="w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100"
+              className="interactive-lift w-full rounded-xl border border-blue-900/20 bg-blue-950 px-4 py-3 text-left font-mono text-xs font-semibold leading-5 text-white shadow-sm hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               {item}
             </button>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </aside>
     </section>
   );
 };
@@ -1257,18 +1271,18 @@ const DiscussionsView = ({
           <CardDescription>{projectName}. Comment va @mention dang la Phase 2 frontend shell.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-3">
+          <div className="divide-y divide-slate-100">
             {sampleComments.map((comment) => (
-              <div key={comment.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div key={comment.id} className="py-3 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="info">{comment.author}</Badge>
-                  <span className="text-xs text-slate-500">{comment.time}</span>
+                  <span className="text-xs text-slate-600">{comment.time}</span>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-slate-700">{comment.body}</p>
               </div>
             ))}
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="border-t border-slate-100 pt-4">
             <label htmlFor="discussion-draft" className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
               <AtSign size={16} />
               Viet comment
@@ -1311,21 +1325,23 @@ const FilesView = ({ tasks, projects, onNotice }: { tasks: Task[]; projects: Pro
           {fileRows.length === 0 ? (
             <EmptyState title="Chưa có file" description="Khi task có attachment, danh sách file sẽ hiển thị ở đây." />
           ) : (
-            fileRows.map((file) => (
-              <div key={file.id} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-bold text-slate-950">{file.name}</p>
-                    <Badge variant={file.status === 'Sẵn sàng bàn giao' ? 'success' : 'muted'}>{file.status}</Badge>
+            <div className="divide-y divide-slate-100">
+              {fileRows.map((file) => (
+                <div key={file.id} className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-bold text-slate-950">{file.name}</p>
+                      <Badge variant={file.status === 'Sẵn sàng bàn giao' ? 'success' : 'muted'}>{file.status}</Badge>
+                    </div>
+                    <p className="mt-1 text-sm text-slate-600">{file.project}</p>
+                    <p className="mt-1 text-xs text-slate-600">{file.type}</p>
                   </div>
-                  <p className="mt-1 text-sm text-slate-600">{file.project}</p>
-                  <p className="mt-1 text-xs text-slate-500">{file.type}</p>
+                  <Button type="button" variant="outline" size="sm" onClick={() => onNotice('[API endpoint: download attachment] chua co backend.')}>
+                    Tai file
+                  </Button>
                 </div>
-                <Button type="button" variant="outline" size="sm" onClick={() => onNotice('[API endpoint: download attachment] chua co backend.')}>
-                  Tai file
-                </Button>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -1366,89 +1382,119 @@ const ActivityLogView = ({ tasks, projects }: { tasks: Task[]; projects: Project
     time: formatDate(project.updatedAt || project.createdAt),
     icon: FolderKanban,
   }));
+  const events = [...taskEvents, ...projectEvents];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Activity Log</CardTitle>
-        <CardDescription>Đóng lịch sử đọc từ dữ liệu project/task hiện có. Audit đầy đủ cần endpoint riêng.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {[...taskEvents, ...projectEvents].length === 0 ? (
-          <EmptyState title="Chưa có hoạt động" description="Activity log sẽ hiển thị khi có task/project trong hệ thống." />
+    <section className="space-y-4">
+      <div className="max-w-[72ch]">
+        <h2 className="font-display text-xl font-bold tracking-[-0.01em] text-slate-950">Activity Log</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-700 text-pretty">
+          Đóng lịch sử đọc từ dữ liệu project/task hiện có. Audit đầy đủ cần endpoint riêng.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {events.length === 0 ? (
+          <div className="flex min-h-56 flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
+              <History size={28} />
+            </div>
+            <h3 className="mt-4 font-display text-lg font-bold text-slate-950">Chưa có hoạt động</h3>
+            <p className="mt-2 max-w-[60ch] text-sm leading-6 text-slate-700">
+              Activity log sẽ hiển thị khi có task/project trong hệ thống.
+            </p>
+          </div>
         ) : (
-          [...taskEvents, ...projectEvents].map((event) => (
-            <div key={event.id} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+          events.map((event) => (
+            <article key={event.id} className="interactive-lift flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 hover:border-blue-200 hover:shadow-[0_10px_20px_rgba(15,23,42,0.06)]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-800">
                 <event.icon size={19} />
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-slate-950">{event.title}</p>
-                <p className="mt-1 text-sm leading-6 text-slate-600">{event.description}</p>
-                <p className="mt-2 text-xs text-slate-500">{event.time}</p>
+                <p className="font-display font-bold text-slate-950">{event.title}</p>
+                <p className="mt-1 max-w-[68ch] text-sm leading-6 text-slate-700">{event.description}</p>
+                <p className="mt-2 text-xs font-semibold text-slate-600">{event.time}</p>
               </div>
-            </div>
+            </article>
           ))
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 };
 
-const ProfileSettingsHub = ({ userName }: { userName: string }) => (
-  <section className="grid gap-4 lg:grid-cols-2">
-    {[
-      {
-        title: 'Profile',
-        description: `Cập nhật thông tin cá nhân của ${userName}.`,
-        href: '/profile',
-        icon: Users,
-        badge: 'Ready',
-      },
-      {
-        title: 'Password',
-        description: 'Doi mat khau bang route bao mat hien co.',
-        href: '/change-password',
-        icon: LockKeyhole,
-        badge: 'Ready',
-      },
-      {
-        title: 'Two-factor authentication',
-        description: '[API endpoint: enable 2FA] chưa có trong backend hiện tại.',
-        href: undefined,
-        icon: ShieldCheck,
-        badge: 'Placeholder',
-      },
-      {
-        title: 'Language',
-        description: 'Tiếng Việt/Tieng Anh se ket noi khi co i18n dictionary trong Phase 3.',
-        href: undefined,
-        icon: Settings,
-        badge: 'Phase 3',
-      },
-    ].map((item) => (
-      <Card key={item.title} className="p-5">
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700">
-            <item.icon size={23} />
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-bold text-slate-950">{item.title}</h2>
-              <Badge variant={item.badge === 'Ready' ? 'success' : 'muted'}>{item.badge}</Badge>
+const ProfileSettingsHub = ({ userName }: { userName: string }) => {
+  const settingsItems = [
+    {
+      title: 'Profile',
+      description: `Cập nhật thông tin cá nhân của ${userName}.`,
+      href: '/profile',
+      icon: Users,
+      badge: 'Ready',
+    },
+    {
+      title: 'Password',
+      description: 'Doi mat khau bang route bao mat hien co.',
+      href: '/change-password',
+      icon: LockKeyhole,
+      badge: 'Ready',
+    },
+    {
+      title: 'Two-factor authentication',
+      description: '[API endpoint: enable 2FA] chưa có trong backend hiện tại.',
+      href: undefined,
+      icon: ShieldCheck,
+      badge: 'Placeholder',
+    },
+    {
+      title: 'Language',
+      description: 'Tiếng Việt/Tieng Anh se ket noi khi co i18n dictionary trong Phase 3.',
+      href: undefined,
+      icon: Settings,
+      badge: 'Phase 3',
+    },
+  ];
+
+  return (
+    <section className="space-y-4">
+      <div className="max-w-[72ch]">
+        <h2 className="font-display text-xl font-bold tracking-[-0.01em] text-slate-950">Profile Settings</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-700 text-pretty">
+          Quản lý hồ sơ, mật khẩu, xác thực hai lớp và ngôn ngữ từ một khu vực cài đặt gọn.
+        </p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {settingsItems.map((item) => (
+          <Card key={item.title} className="interactive-lift p-5 hover:border-blue-200 hover:shadow-[0_10px_20px_rgba(15,23,42,0.06)]">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-blue-200 bg-blue-100 text-blue-900">
+                <item.icon size={23} />
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-display text-lg font-bold text-slate-950">{item.title}</h2>
+                  <Badge
+                    variant={item.badge === 'Ready' ? 'success' : 'muted'}
+                    className={item.badge === 'Ready' ? 'bg-emerald-100 text-emerald-950' : 'bg-slate-200 text-slate-900'}
+                  >
+                    {item.badge}
+                  </Badge>
+                </div>
+                <p className="mt-1 max-w-[62ch] text-sm leading-6 text-slate-700">{item.description}</p>
+                {item.href && (
+                  <Link to={item.href} className="mt-4 inline-flex">
+                    <Button type="button" variant="primary" size="sm" className="font-display">Mở cài đặt</Button>
+                  </Link>
+                )}
+              </div>
             </div>
-            <p className="mt-1 text-sm leading-6 text-slate-600">{item.description}</p>
-            {item.href && (
-              <Link to={item.href} className="mt-4 inline-flex">
-                <Button type="button" variant="outline" size="sm">Mo cai dat</Button>
-              </Link>
-            )}
-          </div>
-        </div>
-      </Card>
-    ))}
-  </section>
-);
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+};
 
 const AnalyticsView = ({ projects, tasks }: { projects: ProjectSummary[]; tasks: Task[] }) => {
   const completed = tasks.filter((task) => task.status === 'COMPLETED').length;
@@ -1472,9 +1518,9 @@ const AnalyticsView = ({ projects, tasks }: { projects: ProjectSummary[]; tasks:
           <Card key={item.label} className="p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-slate-500">{item.label}</p>
-                <p className="mt-1 text-3xl font-bold text-slate-950">{item.value}</p>
-                <p className="mt-2 text-sm text-slate-500">{item.hint}</p>
+                <p className="text-sm font-semibold text-slate-600">{item.label}</p>
+                <p className="mt-1 font-display text-3xl font-bold tabular-nums text-slate-950">{item.value}</p>
+                <p className="mt-2 text-sm text-slate-600">{item.hint}</p>
               </div>
               <div className={cn('flex h-11 w-11 items-center justify-center rounded-xl', item.tone)}>
                 <item.icon size={22} />
@@ -1493,23 +1539,28 @@ const AnalyticsView = ({ projects, tasks }: { projects: ProjectSummary[]; tasks:
           {projectHealth.length === 0 ? (
             <EmptyState title="Chưa có dữ liệu analytics" description="Cần project/task để hiển thị báo cáo." />
           ) : (
-            projectHealth.map((project) => (
-              <div key={project.id} className="rounded-xl border border-slate-200 bg-white p-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-bold text-slate-950">{project.name}</p>
-                    <p className="mt-1 text-sm text-slate-600">{project.taskCount} task, {project.memberCount} thành viên</p>
+            <div className="divide-y divide-slate-100">
+              {projectHealth.map((project) => (
+                <div key={project.id} className="py-4 first:pt-0 last:pb-0">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-bold text-slate-950">{project.name}</p>
+                      <p className="mt-1 text-sm text-slate-600">{project.taskCount} task, {project.memberCount} thành viên</p>
+                    </div>
+                    <Badge variant={project.highPriorityTaskCount > 0 ? 'warning' : 'success'}>
+                      {project.highPriorityTaskCount > 0 ? 'Co rui ro' : 'On dinh'}
+                    </Badge>
                   </div>
-                  <Badge variant={project.highPriorityTaskCount > 0 ? 'warning' : 'success'}>
-                    {project.highPriorityTaskCount > 0 ? 'Co rui ro' : 'On dinh'}
-                  </Badge>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full w-full origin-left rounded-full bg-cyan-600 transition-transform duration-300 ease-out"
+                      style={{ transform: `scaleX(${project.progress / 100})` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-slate-600">{project.progress}% hoàn thành, {project.highPriorityTaskCount} task uu tien cao</p>
                 </div>
-                <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full rounded-full bg-cyan-600" style={{ width: `${project.progress}%` }} />
-                </div>
-                <p className="mt-2 text-xs text-slate-500">{project.progress}% hoàn thành, {project.highPriorityTaskCount} task uu tien cao</p>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -1533,34 +1584,39 @@ const TimelineView = ({ projects, tasks }: { projects: ProjectSummary[]; tasks: 
         <CardDescription>Gantt that can startDate/dueDate/dependency backend. Shell nay dung project/task hien co de demo luong timeline.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-4 gap-2 text-xs font-semibold text-slate-500 sm:grid-cols-8">
+        <div className="grid grid-cols-4 gap-2 border-b border-slate-100 pb-2 sm:grid-cols-8">
           {['Tuan 1', 'Tuan 2', 'Tuan 3', 'Tuan 4', 'Tuan 5', 'Tuan 6', 'Tuan 7', 'Tuan 8'].map((label) => (
-            <span key={label}>{label}</span>
+            <span key={label} className="font-display text-xs font-semibold text-slate-600">{label}</span>
           ))}
         </div>
         {rows.length === 0 ? (
           <EmptyState title="Chưa có timeline" description="Cần project/task và due date để vẽ Gantt thật." />
         ) : (
-          rows.map(({ project, projectTasks, laneStart, laneWidth }) => (
-            <div key={project.id} className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <p className="font-bold text-slate-950">{project.name}</p>
-                <p className="text-sm text-slate-500">{projectTasks.length} task, {getProgress(project)}% done</p>
+          <div className="divide-y divide-slate-100">
+            {rows.map(({ project, projectTasks, laneStart, laneWidth }) => (
+              <div key={project.id} className="py-4 first:pt-0 last:pb-0">
+                <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="font-bold text-slate-950">{project.name}</p>
+                  <p className="text-sm text-slate-600">{projectTasks.length} task, {getProgress(project)}% done</p>
+                </div>
+                <div className="relative h-9 rounded-lg bg-slate-100">
+                  <div
+                    className="absolute top-1 h-7 w-full origin-left rounded-md bg-cyan-600 transition-transform duration-300 ease-out"
+                    style={{
+                      left: `${laneStart}%`,
+                      transform: `scaleX(${laneWidth / 100})`,
+                    }}
+                  />
+                </div>
               </div>
-              <div className="relative h-9 rounded-lg bg-slate-100">
-                <div
-                  className="absolute top-1 h-7 rounded-md bg-cyan-600"
-                  style={{ left: `${laneStart}%`, width: `${laneWidth}%` }}
-                />
-              </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
-        <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
           <p className="font-semibold">Backend contract dang cho bo sung</p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-2">
             {['task.startDate', 'task.dueDate', 'task.dependencies', 'project.milestones', 'burndown metrics API'].map((contract) => (
-              <span key={contract} className="rounded-full border border-amber-200 bg-white px-2.5 py-1 text-xs font-semibold text-amber-800">
+              <span key={contract} className="rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs font-semibold text-amber-900">
                 {contract}
               </span>
             ))}
@@ -1572,110 +1628,255 @@ const TimelineView = ({ projects, tasks }: { projects: ProjectSummary[]; tasks: 
 };
 
 const AISuggestionsView = ({ projects, tasks, onNotice }: { projects: ProjectSummary[]; tasks: Task[]; onNotice: (value: string) => void }) => {
-  const overloadedAssignees = Object.entries(
-    tasks.reduce<Record<string, number>>((acc, task) => {
-      if (task.status !== 'COMPLETED') {
-        acc[task.assigneeId] = (acc[task.assigneeId] || 0) + 1;
-      }
-      return acc;
-    }, {})
-  )
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-  const riskyProjects = projects.filter((project) => project.highPriorityTaskCount > 0).slice(0, 5);
+  const fallbackSuggestions = useMemo(
+    () =>
+      Object.entries(
+        tasks.reduce<Record<string, number>>((acc, task) => {
+          if (task.status !== 'COMPLETED') {
+            acc[task.assigneeId] = (acc[task.assigneeId] || 0) + 1;
+          }
+          return acc;
+        }, {})
+      )
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([assigneeId, count]): AiSuggestion => ({
+          id: `local-${assigneeId}`,
+          assigneeId,
+          title: `Assignee #${assigneeId}`,
+          reason: `${count} task chua hoàn thành. Nen giam task moi hoac tach viec uu tien cao.`,
+          workload: count,
+          confidence: Math.min(96, 62 + count * 7),
+        })),
+    [tasks]
+  );
+  const fallbackRisks = useMemo(
+    () =>
+      projects
+        .filter((project) => project.highPriorityTaskCount > 0)
+        .slice(0, 5)
+        .map((project): AiRiskRadarItem => ({
+          id: `local-project-${project.id}`,
+          projectId: project.id,
+          projectName: project.name,
+          severity: project.highPriorityTaskCount > 2 ? 'danger' : 'warning',
+          summary: `${project.highPriorityTaskCount} task uu tien cao, ${getProgress(project)}% done.`,
+          highPriorityTaskCount: project.highPriorityTaskCount,
+          progress: getProgress(project),
+        })),
+    [projects]
+  );
+  const [suggestions, setSuggestions] = useState<AiSuggestion[]>(fallbackSuggestions);
+  const [riskRadar, setRiskRadar] = useState<AiRiskRadarItem[]>(fallbackRisks);
+  const [aiLoading, setAiLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    void Promise.all([aiApi.getSuggestions(), aiApi.getRiskRadar()])
+      .then(([remoteSuggestions, remoteRisks]) => {
+        if (!active) return;
+        setSuggestions(remoteSuggestions);
+        setRiskRadar(remoteRisks);
+      })
+      .catch(() => {
+        if (!active) return;
+        setSuggestions(fallbackSuggestions);
+        setRiskRadar(fallbackRisks);
+      })
+      .finally(() => {
+        if (active) setAiLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [fallbackRisks, fallbackSuggestions]);
 
   return (
-    <section className="grid gap-4 xl:grid-cols-[1fr_0.75fr]">
-      <Card>
-        <CardHeader>
-          <CardTitle>AI task assignment suggestions</CardTitle>
-          <CardDescription>Shell goi y dua tren workload hien co. AI that can skills, calendar va lich su performance.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {overloadedAssignees.length === 0 ? (
-            <EmptyState title="Chưa có tín hiệu quá tải" description="Khi có task đang mở, AI shell sẽ hiện gợi ý phân bổ lại." />
+    <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="space-y-4">
+        <div className="max-w-[72ch]">
+          <h2 className="font-display text-xl font-bold tracking-[-0.01em] text-slate-950">AI task assignment suggestions</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-700 text-pretty">
+            Gợi ý dựa trên workload hiện có, sẵn sàng nối skills, calendar và lịch sử hiệu suất qua `/api/v1/ai/suggestions`.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {aiLoading ? (
+            <LoadingGrid />
+          ) : suggestions.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center">
+              <Bot className="mx-auto text-slate-500" size={30} />
+              <h3 className="mt-3 font-display text-lg font-bold text-slate-950">Chưa có tín hiệu quá tải</h3>
+              <p className="mx-auto mt-2 max-w-[60ch] text-sm leading-6 text-slate-700">
+                Khi API hoặc workload phát hiện điểm nghẽn, danh sách gợi ý phân bổ lại sẽ xuất hiện ở đây.
+              </p>
+            </div>
           ) : (
-            overloadedAssignees.map(([assigneeId, count]) => (
-              <div key={assigneeId} className="rounded-xl border border-slate-200 bg-white p-4">
+            suggestions.map((item) => (
+              <article key={item.id} className="interactive-lift rounded-xl border border-slate-200 bg-white p-4 hover:border-blue-200 hover:shadow-[0_10px_20px_rgba(15,23,42,0.06)]">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-bold text-slate-950">Assignee #{assigneeId}</p>
-                    <p className="mt-1 text-sm text-slate-600">{count} task chua hoàn thành. Nen giam task moi hoac tach viec uu tien cao.</p>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-display font-bold text-slate-950">{item.title}</h3>
+                      <Badge variant="info" className="bg-blue-100 text-blue-950">{item.confidence}% confidence</Badge>
+                    </div>
+                    <p className="mt-1 max-w-[68ch] text-sm leading-6 text-slate-700">{item.reason}</p>
+                    <p className="mt-2 text-xs font-semibold text-slate-600">Workload: {item.workload} open task</p>
                   </div>
-                  <Button type="button" variant="outline" size="sm" onClick={() => onNotice('[AI endpoint: suggest assignee] chua duoc ket noi.')}>
-                    Lay goi y AI
+                  <Button type="button" variant="primary" size="sm" className="font-display" onClick={() => onNotice('GET /api/v1/ai/suggestions da duoc khai bao, backend rule AI chua tra du lieu production.')}>
+                    Lấy gợi ý AI
                   </Button>
                 </div>
-              </div>
+              </article>
             ))
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Risk radar</CardTitle>
-          <CardDescription>Dự án co task uu tien cao de AI uu tien phan tich.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {riskyProjects.length === 0 ? (
-            <EmptyState title="Chưa có rủi ro" description="Không có project nào đang có task HIGH/URGENT." />
+      <aside className="space-y-4">
+        <div className="max-w-[60ch]">
+          <h2 className="font-display text-lg font-bold text-slate-950">Risk radar</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-700">Quét `/api/v1/ai/risk-radar` để ưu tiên dự án có HIGH/URGENT task.</p>
+        </div>
+        <div className="space-y-3">
+          {aiLoading ? (
+            <div className="h-28 animate-pulse rounded-xl bg-slate-200/70" />
+          ) : riskRadar.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-white p-5 text-center">
+              <ShieldCheck className="mx-auto text-slate-600" size={28} />
+              <h3 className="mt-3 font-display font-bold text-slate-950">Chưa có rủi ro</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-700">Không có project nào đang có task HIGH/URGENT.</p>
+            </div>
           ) : (
-            riskyProjects.map((project) => (
-              <div key={project.id} className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
-                <p className="font-bold">{project.name}</p>
-                <p className="mt-1 text-sm">{project.highPriorityTaskCount} task uu tien cao, {getProgress(project)}% done.</p>
-              </div>
+            riskRadar.map((project) => (
+              <article
+                key={project.id}
+                className={cn(
+                  'rounded-xl border p-4',
+                  project.severity === 'danger'
+                    ? 'border-rose-300 bg-rose-50 text-rose-950'
+                    : 'border-amber-300 bg-amber-50 text-amber-950'
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="font-display font-bold">{project.projectName}</h3>
+                  <Badge variant={project.severity === 'danger' ? 'danger' : 'warning'} className={project.severity === 'danger' ? 'bg-rose-100 text-rose-950' : 'bg-amber-100 text-amber-950'}>
+                    {project.highPriorityTaskCount} high
+                  </Badge>
+                </div>
+                <p className="mt-2 text-sm leading-6">{project.summary}</p>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/80">
+                  <div className="h-full w-full origin-left rounded-full bg-current transition-transform duration-300 ease-out" style={{ transform: `scaleX(${project.progress / 100})` }} />
+                </div>
+              </article>
             ))
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </aside>
     </section>
   );
 };
 
 const AutomationView = ({ onNotice }: { onNotice: (value: string) => void }) => {
-  const rules = [
+  const initialRules: AutomationRule[] = [
     {
-      name: 'Done moves next task',
-      trigger: 'When task.status = COMPLETED',
-      action: 'Move dependent task to IN_PROGRESS',
+      rule_id: 'auto-done-next-task',
+      rule_name: 'Done moves next task',
+      trigger: { event: 'task.status_changed', condition: 'COMPLETED' },
+      action: { type: 'move_dependent_task', target_status: 'IN_PROGRESS' },
+      is_enabled: false,
     },
     {
-      name: 'High priority notification',
-      trigger: 'When task.priority = HIGH or URGENT',
-      action: 'Notify manager and assignee',
+      rule_id: 'auto-high-priority-notification',
+      rule_name: 'High priority notification',
+      trigger: { event: 'task.priority_changed', condition: 'HIGH_OR_URGENT' },
+      action: { type: 'notify_manager', channel: 'in_app' },
+      is_enabled: false,
     },
     {
-      name: 'Review reminder',
-      trigger: 'When task enters REVIEW for 24h',
-      action: 'Send approval reminder',
+      rule_id: 'auto-review-reminder',
+      rule_name: 'Review reminder',
+      trigger: { event: 'task.review_waiting', condition: '24H' },
+      action: { type: 'send_approval_reminder', channel: 'email' },
+      is_enabled: false,
     },
   ];
+  const [rules, setRules] = useState<AutomationRule[]>(initialRules);
+
+  const toggleRule = async (rule: AutomationRule) => {
+    const nextRule = { ...rule, is_enabled: !rule.is_enabled };
+    setRules((current) => current.map((item) => (item.rule_id === rule.rule_id ? nextRule : item)));
+
+    try {
+      await automationApi.createRule(nextRule);
+      onNotice(`POST /api/v1/automation/rules: ${nextRule.rule_name} ${nextRule.is_enabled ? 'enabled' : 'disabled'}.`);
+    } catch {
+      onNotice('POST /api/v1/automation/rules da duoc khai bao, backend rule engine chua san sang.');
+    }
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Workflow Automation</CardTitle>
-        <CardDescription>Phase 3 shell cho rule builder. Backend can rule engine va event bus.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <section className="space-y-4">
+      <div className="max-w-[72ch]">
+        <h2 className="font-display text-xl font-bold tracking-[-0.01em] text-slate-950">Workflow Automation</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-700 text-pretty">
+          Rule builder kết nối contract `POST /api/v1/automation/rules`, sẵn sàng nối rule engine và event bus.
+        </p>
+      </div>
+
+      <div className="space-y-3">
         {rules.map((rule) => (
-          <div key={rule.name} className="rounded-xl border border-slate-200 bg-white p-4">
+          <article key={rule.rule_id} className="interactive-lift rounded-xl border border-slate-200 bg-white p-4 hover:border-blue-200 hover:shadow-[0_10px_20px_rgba(15,23,42,0.06)]">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="font-bold text-slate-950">{rule.name}</p>
-                <p className="mt-1 text-sm text-slate-600">Trigger: {rule.trigger}</p>
-                <p className="mt-1 text-sm text-slate-600">Action: {rule.action}</p>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-display font-bold text-slate-950">{rule.rule_name}</h3>
+                  <Badge variant={rule.is_enabled ? 'success' : 'muted'} className={rule.is_enabled ? 'bg-emerald-100 text-emerald-950' : 'bg-slate-200 text-slate-900'}>
+                    {rule.is_enabled ? 'Enabled' : 'Disabled'}
+                  </Badge>
+                </div>
+                <p className="mt-2 max-w-[68ch] text-sm leading-6 text-slate-700">
+                  Trigger: <span className="font-semibold text-slate-950">{rule.trigger.event}</span> when <span className="font-semibold text-slate-950">{rule.trigger.condition}</span>
+                </p>
+                <p className="mt-1 max-w-[68ch] text-sm leading-6 text-slate-700">
+                  Action: <span className="font-semibold text-slate-950">{rule.action.type}</span>{rule.action.target_status ? ` -> ${rule.action.target_status}` : ''}
+                </p>
               </div>
-              <Button type="button" size="sm" variant="outline" onClick={() => onNotice('[API endpoint: save workflow rule] chua co backend.')}>
-                Enable rule
-              </Button>
+              <button
+                type="button"
+                onClick={() => void toggleRule(rule)}
+                className={cn(
+                  'interactive-lift inline-flex h-8 min-w-28 items-center justify-between gap-2 rounded-full border px-1.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+                  rule.is_enabled
+                    ? 'border-emerald-700 bg-emerald-600 text-white'
+                    : 'border-slate-300 bg-white text-slate-900 hover:border-blue-300 hover:bg-blue-50'
+                )}
+                aria-pressed={rule.is_enabled}
+              >
+                <span className="px-2">{rule.is_enabled ? 'Enabled' : 'Enable rule'}</span>
+                <span
+                  className={cn(
+                    'h-5 w-5 rounded-full bg-current opacity-90 transition-transform duration-200',
+                    rule.is_enabled ? 'translate-x-0 text-white' : 'text-slate-400'
+                  )}
+                  aria-hidden="true"
+                />
+              </button>
             </div>
-          </div>
+          </article>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+
+      <div className="rounded-lg border border-dashed border-blue-300 bg-blue-50 p-3 text-sm text-blue-950">
+        <p className="font-display font-bold">Rule JSON schema</p>
+        <p className="mt-1 max-w-[72ch] leading-6">
+          rule_id, rule_name, trigger.event, trigger.condition, action.type, action.target_status, is_enabled.
+        </p>
+      </div>
+    </section>
   );
 };
 
@@ -1687,11 +1888,13 @@ const IntegrationsView = ({ onNotice }: { onNotice: (value: string) => void }) =
       { name: 'Google Calendar', description: 'Đóng bo due date, milestone va lich review.' },
     ].map((integration) => (
       <Card key={integration.name} className="p-5">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700">
-          <PlugZap size={24} />
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 ring-1 ring-cyan-100">
+            <PlugZap size={22} />
+          </div>
+          <h2 className="font-display text-lg font-bold text-slate-950">{integration.name}</h2>
         </div>
-        <h2 className="mt-4 text-lg font-bold text-slate-950">{integration.name}</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">{integration.description}</p>
+        <p className="mt-3 text-sm leading-6 text-slate-600">{integration.description}</p>
         <Button
           type="button"
           variant="outline"
@@ -1713,25 +1916,27 @@ const I18nMobileView = () => (
         <CardTitle>Localization readiness</CardTitle>
         <CardDescription>Phase 3 chuan bi tieng Viet/Tieng Anh. Hien tai app van dung copy truc tiep trong component.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {[
-          { key: 'vi', label: 'Tiếng Việt', status: 'Đang dùng trong UI hien tai' },
-          { key: 'en', label: 'English', status: 'Cần dictionary và key mapping' },
-          { key: 'format', label: 'Date/number format', status: 'Cần locale-aware formatter' },
-        ].map((item) => (
-          <div key={item.key} className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-                <Languages size={20} />
+      <CardContent>
+        <div className="divide-y divide-slate-100">
+          {[
+            { key: 'vi', label: 'Tiếng Việt', status: 'Đang dùng trong UI hien tai' },
+            { key: 'en', label: 'English', status: 'Cần dictionary và key mapping' },
+            { key: 'format', label: 'Date/number format', status: 'Cần locale-aware formatter' },
+          ].map((item) => (
+            <div key={item.key} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                  <Languages size={18} />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-950">{item.label}</p>
+                  <p className="text-sm text-slate-600">{item.status}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-slate-950">{item.label}</p>
-                <p className="text-sm text-slate-600">{item.status}</p>
-              </div>
+              <Badge variant={item.key === 'vi' ? 'success' : 'muted'}>{item.key === 'vi' ? 'Ready' : 'Planned'}</Badge>
             </div>
-            <Badge variant={item.key === 'vi' ? 'success' : 'muted'}>{item.key === 'vi' ? 'Ready' : 'Planned'}</Badge>
-          </div>
-        ))}
+          ))}
+        </div>
       </CardContent>
     </Card>
 
@@ -1740,18 +1945,20 @@ const I18nMobileView = () => (
         <CardTitle>Mobile support</CardTitle>
         <CardDescription>Web responsive truoc, native app iOS/Android de sau neu can.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {[
-          'Sidebar da collapse tren mobile',
-          'Kanban co the scroll ngang tren man hinh nho',
-          'Form dung label ro rang va tap target lon',
-          'Native app can API contract on dinh truoc khi tach mobile',
-        ].map((item) => (
-          <div key={item} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
-            <Smartphone size={18} className="mt-0.5 shrink-0 text-cyan-700" />
-            <span>{item}</span>
-          </div>
-        ))}
+      <CardContent>
+        <div className="divide-y divide-slate-100">
+          {[
+            'Sidebar da collapse tren mobile',
+            'Kanban co the scroll ngang tren man hinh nho',
+            'Form dung label ro rang va tap target lon',
+            'Native app can API contract on dinh truoc khi tach mobile',
+          ].map((item) => (
+            <div key={item} className="flex items-start gap-3 py-3 text-sm text-slate-700 first:pt-0 last:pb-0">
+              <Smartphone size={18} className="mt-0.5 shrink-0 text-cyan-700" />
+              <span>{item}</span>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   </section>
@@ -1772,7 +1979,7 @@ const AdminShellView = () => (
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <h2 className="text-lg font-bold text-slate-950">{item.title}</h2>
+              <h2 className="font-display text-lg font-bold text-slate-950">{item.title}</h2>
               <Badge variant={item.href ? 'success' : 'muted'}>{item.status}</Badge>
             </div>
             <p className="mt-1 text-sm leading-6 text-slate-600">{item.description}</p>
@@ -1781,9 +1988,9 @@ const AdminShellView = () => (
                 <Button type="button" variant="outline" size="sm">Mo trang</Button>
               </Link>
             ) : (
-              <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-500">
-                Chua mo trong phien ban nay
-              </div>
+              <p className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1.5 text-sm font-medium text-slate-600">
+                Chưa mở trong phiên bản này
+              </p>
             )}
           </div>
         </div>
@@ -1799,7 +2006,7 @@ const TaskCard = ({ task, projectName, onDragStart }: { task: Task; projectName:
     className="interactive-lift cursor-grab rounded-xl border border-slate-200 bg-white p-4 text-slate-900 shadow-sm hover:border-blue-200 hover:shadow-[0_10px_20px_rgba(15,23,42,0.07)] active:cursor-grabbing"
   >
     <div className="flex items-start justify-between gap-3">
-      <h4 className="min-w-0 text-sm font-bold leading-6 text-slate-950">{task.title}</h4>
+      <h4 className="font-display min-w-0 text-sm font-bold leading-6 text-slate-950">{task.title}</h4>
       <Badge variant={priorityTone[task.priority]}>{priorityLabels[task.priority]}</Badge>
     </div>
     <p className="mt-2 text-sm leading-6 text-slate-600">{task.description || 'Chưa có mô tả'}</p>
@@ -1814,7 +2021,7 @@ const TaskCard = ({ task, projectName, onDragStart }: { task: Task; projectName:
 const TaskRow = ({ task, projectName, compact = false }: { task: Task; projectName: string; compact?: boolean }) => (
   <div className={cn('min-w-0', !compact && 'interactive-lift rounded-xl border border-slate-200 bg-white p-4 hover:border-blue-200 hover:shadow-[0_10px_20px_rgba(15,23,42,0.06)]')}>
     <div className="flex flex-wrap items-start justify-between gap-3">
-      <h3 className="min-w-0 flex-1 font-bold leading-6 text-slate-950">{task.title}</h3>
+      <h3 className="font-display min-w-0 flex-1 font-bold leading-6 text-slate-950">{task.title}</h3>
       <div className="flex flex-wrap gap-2">
       <Badge variant={priorityTone[task.priority]}>{priorityLabels[task.priority]}</Badge>
       <Badge variant={task.status === 'COMPLETED' ? 'success' : task.status === 'IN_PROGRESS' ? 'warning' : 'info'}>
@@ -1840,7 +2047,7 @@ const ProjectRow = ({ project, expanded = false }: { project: ProjectSummary; ex
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-lg font-bold text-slate-950">{project.name}</h3>
+            <h3 className="font-display text-lg font-bold text-slate-950">{project.name}</h3>
             <Badge variant={project.status === 'ACTIVE' ? 'success' : project.status === 'PAUSED' ? 'warning' : 'muted'}>
               {project.status}
             </Badge>
@@ -1852,7 +2059,10 @@ const ProjectRow = ({ project, expanded = false }: { project: ProjectSummary; ex
         </Link>
       </div>
       <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-slate-100">
-        <div className="h-full rounded-full bg-blue-600 transition-[width] duration-300 ease-out" style={{ width: `${progress}%` }} />
+        <div
+          className="h-full w-full origin-left rounded-full bg-blue-600 transition-transform duration-300 ease-out"
+          style={{ transform: `scaleX(${progress / 100})` }}
+        />
       </div>
       <div className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-4">
         <span className="rounded-lg bg-slate-50 px-3 py-2 font-semibold">{progress}% done</span>
@@ -1866,7 +2076,7 @@ const ProjectRow = ({ project, expanded = false }: { project: ProjectSummary; ex
 
 const EmptyState = ({ title, description }: { title: string; description: string }) => (
   <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-    <p className="font-bold text-slate-900">{title}</p>
+    <p className="font-display font-bold text-slate-900">{title}</p>
     <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
   </div>
 );

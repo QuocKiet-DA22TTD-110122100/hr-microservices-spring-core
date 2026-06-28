@@ -43,10 +43,10 @@ export const PageHeader = ({ title, description, icon: Icon, actions, className 
           )}
           <div>
             <h1
-              className={cn(
-                'text-2xl font-semibold tracking-[-0.02em] text-slate-950',
-                'animate-fade-up'
-              )}
+                className={cn(
+                  'font-display text-2xl font-semibold tracking-[-0.02em] text-slate-950',
+                  'animate-fade-up'
+                )}
             >
               {title}
             </h1>
@@ -91,17 +91,17 @@ export const PageHeader = ({ title, description, icon: Icon, actions, className 
           )}
           <div className="min-w-0">
             <h1
-              className={cn(
-                'text-2xl font-semibold tracking-[-0.02em] text-slate-950 text-balance',
-                'animate-fade-up'
-              )}
+                className={cn(
+                  'font-display text-2xl font-semibold tracking-[-0.02em] text-slate-950 text-balance',
+                  'animate-fade-up'
+                )}
             >
               {title}
             </h1>
             {description && (
               <p
                 className={cn(
-                  'mt-2 max-w-3xl text-sm leading-6 text-slate-600 text-pretty',
+                  'mt-2 max-w-prose text-sm leading-6 text-slate-600 text-pretty',
                   'animate-fade-up'
                 )}
                 style={{ animationDelay: '40ms' }}

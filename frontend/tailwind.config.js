@@ -6,6 +6,11 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Roboto', 'Segoe UI', 'Arial', 'sans-serif'],
+        display: ['"Segoe UI Variable Display"', 'Inter', 'system-ui', 'sans-serif'],
+        heading: ['"Segoe UI Variable Display"', 'Inter', 'system-ui', 'sans-serif'],
+      },
       keyframes: {
         shimmer: {
           '0%': { backgroundPosition: '200% 0' },

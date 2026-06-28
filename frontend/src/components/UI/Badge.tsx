@@ -12,7 +12,7 @@ const badgeStyles = {
   warning: 'border-amber-200 bg-amber-50 text-amber-800',
   danger:  'border-rose-200 bg-rose-50 text-rose-800',
   info:    'border-blue-200 bg-blue-50 text-blue-800',
-  muted:   'border-slate-200 bg-slate-100 text-slate-600',
+  muted:   'border-slate-200 bg-slate-100 text-slate-700',
   /* Lumora-style */
   accent:  'border-[#e8c8a8] bg-[#fdf3ea] text-[#b15f2c]',
   dark:    'border-transparent bg-[#0a0a0a] text-white',

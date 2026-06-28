@@ -212,7 +212,7 @@ export const TaskListPage = () => {
         label: 'Task mở',
         value: useMock ? 12 : tasks.filter((t) => t.status === 'OPEN').length,
         icon: ListChecks,
-        gradient: 'from-cyan-600 to-teal-500',
+        gradient: 'from-cyan-500 to-cyan-700',
         bg: 'bg-cyan-50', text: 'text-cyan-700',
         danger: false,
       },
@@ -220,7 +220,7 @@ export const TaskListPage = () => {
         label: 'Đang làm',
         value: useMock ? 5 : tasks.filter((t) => t.status === 'IN_PROGRESS').length,
         icon: Clock3,
-        gradient: 'from-amber-500 to-orange-400',
+        gradient: 'from-amber-400 to-amber-600',
         bg: 'bg-amber-50', text: 'text-amber-700',
         danger: false,
       },
@@ -228,7 +228,7 @@ export const TaskListPage = () => {
         label: 'Hoàn tất',
         value: useMock ? 48 : tasks.filter((t) => t.status === 'COMPLETED').length,
         icon: CheckCircle2,
-        gradient: 'from-emerald-600 to-green-500',
+        gradient: 'from-emerald-500 to-emerald-700',
         bg: 'bg-emerald-50', text: 'text-emerald-700',
         danger: false,
       },
@@ -236,7 +236,7 @@ export const TaskListPage = () => {
         label: 'Ưu tiên cao',
         value: useMock ? 3 : tasks.filter((t) => t.priority === 'URGENT' || t.priority === 'HIGH').length,
         icon: AlertTriangle,
-        gradient: 'from-rose-600 to-red-500',
+        gradient: 'from-rose-500 to-rose-700',
         bg: 'bg-rose-100', text: 'text-rose-700',
         danger: true,
       },
@@ -290,7 +290,7 @@ export const TaskListPage = () => {
             <Card
               key={stat.label}
               className={cn(
-                'relative overflow-hidden p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
+                'relative overflow-hidden p-5 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md',
                 stat.danger && 'border-rose-200 bg-rose-50/60'
               )}
               style={{ animationDelay: `${i * 60}ms` }}
@@ -298,10 +298,10 @@ export const TaskListPage = () => {
               <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${stat.gradient}`} />
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">{stat.label}</p>
+                  <p className="text-sm font-medium text-slate-600">{stat.label}</p>
                   <p className={cn(
-                    'mt-1 text-3xl font-bold tracking-tight',
-                    stat.danger ? 'text-rose-700' : 'text-slate-900'
+                    'mt-1 font-display text-3xl font-bold tabular-nums tracking-tight',
+                    stat.danger ? 'text-rose-700' : 'text-slate-950'
                   )}>
                     {loading ? '—' : stat.value}
                   </p>
@@ -341,13 +341,13 @@ export const TaskListPage = () => {
                   type="button"
                   onClick={() => setStatusFilter(s)}
                   className={cn(
-                    'rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all duration-150',
+                    'rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color] duration-150',
                     statusFilter === s
                       ? statusActiveStyle[s]
                       : IDLE_FILTER
                   )}
                 >
-                  {s === 'ALL' ? 'Tất cả' : statusLabels[s as TaskStatus]}
+                  {s === 'ALL' ? 'Tất cả' : statusLabels[s]}
                 </button>
               ))}
             </div>
@@ -361,13 +361,13 @@ export const TaskListPage = () => {
                   type="button"
                   onClick={() => setPriorityFilter(p)}
                   className={cn(
-                    'rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all duration-150',
+                    'rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color] duration-150',
                     priorityFilter === p
                       ? priorityActiveStyle[p]
                       : IDLE_FILTER
                   )}
                 >
-                  {p === 'ALL' ? 'Tất cả' : priorityLabels[p as TaskPriority]}
+                  {p === 'ALL' ? 'Tất cả' : priorityLabels[p]}
                 </button>
               ))}
             </div>
@@ -376,24 +376,27 @@ export const TaskListPage = () => {
 
         {/* ── h4: Task list ──────────────────────────────────────────────────── */}
         <Card className="overflow-hidden">
-          {loading ? (
+          {loading && (
             <div className="grid gap-3 p-5 md:grid-cols-2">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-28 animate-pulse rounded-lg bg-slate-100" />
+              {['sk0', 'sk1', 'sk2', 'sk3', 'sk4', 'sk5'].map((key) => (
+                <div key={key} className="h-28 animate-pulse rounded-lg bg-slate-100" />
               ))}
             </div>
-          ) : error ? (
+          )}
+          {!loading && error && (
             <div className="flex flex-col items-center gap-3 py-16 text-center">
               <p className="text-sm text-rose-600">{error}</p>
               <Button variant="outline" size="sm" onClick={() => void loadTasks()}>Thử lại</Button>
             </div>
-          ) : pagedTasks.length === 0 ? (
+          )}
+          {!loading && !error && pagedTasks.length === 0 && (
             <div className="flex flex-col items-center gap-2 py-16 text-center">
               <Zap size={40} className="text-slate-300" />
               <p className="font-semibold text-slate-600">Không tìm thấy tác vụ nào</p>
               <p className="text-sm text-slate-400">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.</p>
             </div>
-          ) : (
+          )}
+          {!loading && !error && pagedTasks.length > 0 && (
             <>
               {/* Desktop: Table layout */}
               <div className="hidden overflow-x-auto md:block">
@@ -516,19 +519,20 @@ export const TaskListPage = () => {
                 {pagedTasks.map((task, i) => (
                   <div
                     key={task.id}
-                    className="group relative flex gap-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-up"
+                    className="group relative flex gap-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-up"
                     style={{ animationDelay: `${i * 35}ms` }}
                   >
                     <div className={cn('w-1 shrink-0', priorityBar[task.priority])} />
                     <div className="flex flex-1 flex-col gap-2 p-4">
                       {/* Title + badges */}
                       <div className="flex items-start justify-between gap-2">
-                        <p
-                          className="cursor-pointer font-semibold leading-snug text-slate-900 line-clamp-2"
+                        <button
+                          type="button"
+                          className="text-left font-semibold leading-snug text-slate-900 line-clamp-2"
                           onClick={() => task.id > 0 && navigate(`/tasks/${task.id}`)}
                         >
                           {task.title}
-                        </p>
+                        </button>
                         <div className="flex shrink-0 flex-col items-end gap-1">
                           <Badge variant={priorityVariants[task.priority]}>
                             {priorityLabels[task.priority]}
@@ -551,10 +555,7 @@ export const TaskListPage = () => {
 
                       {/* Actions */}
                       <div
-                        role="group"
-                        aria-label="Thao tác task"
                         className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2"
-                        onClick={(e) => e.stopPropagation()}
                       >
                         {canUpdateTask && (
                           <select

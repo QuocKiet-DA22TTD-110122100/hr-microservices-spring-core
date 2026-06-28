@@ -91,7 +91,7 @@ export const Toast = ({ id, type, message, duration = 5000, onClose, onRetry }: 
         ${variant.bg} ${variant.border} ${variant.text}
         border rounded-xl shadow-[0_18px_45px_rgba(15,23,42,0.14)]
         min-w-[320px] max-w-[480px]
-        transition-all duration-300 ease-out
+        transition-[opacity,transform] duration-300 ease-out
         ${isExiting ? 'opacity-0 translate-x-full' : 'opacity-100 translate-x-0'}
       `}
     >
@@ -127,8 +127,8 @@ export const Toast = ({ id, type, message, duration = 5000, onClose, onRetry }: 
       {duration > 0 && (
         <div className="h-1 bg-black/10">
           <div
-            className={`h-full ${variant.progressBg} transition-all duration-50 ease-linear`}
-            style={{ width: `${progress}%` }}
+            className={`h-full w-full origin-left ${variant.progressBg} transition-transform duration-50 ease-linear`}
+            style={{ transform: `scaleX(${progress / 100})` }}
             role="progressbar"
             aria-valuenow={progress}
             aria-valuemin={0}

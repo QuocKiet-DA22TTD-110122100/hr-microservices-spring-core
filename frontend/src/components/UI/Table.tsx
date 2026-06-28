@@ -30,39 +30,37 @@ interface TableProps<T extends object> {
 }
 
 const LoadingSkeleton = memo(({ columns, rows = 5 }: { columns: number; rows?: number }) => (
-  <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white/90">
-    <div className="overflow-x-auto">
-      <table className="min-w-full">
-        <thead className="bg-slate-100/90">
-          <tr>
-            {Array.from({ length: columns }).map((_, index) => (
-              <th key={index} className="border-b border-slate-200 px-5 py-3">
-                <div className="h-4 w-24 rounded animate-shimmer" />
-              </th>
+  <div className="overflow-x-auto">
+    <table className="min-w-full">
+      <thead className="bg-slate-100/90">
+        <tr>
+          {Array.from({ length: columns }).map((_, index) => (
+            <th key={index} className="border-b border-slate-200 px-6 py-3.5">
+              <div className="h-4 w-24 rounded animate-shimmer" />
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-slate-100">
+        {Array.from({ length: rows }).map((_, rowIndex) => (
+          <tr key={rowIndex}>
+            {Array.from({ length: columns }).map((_, columnIndex) => (
+              <td key={columnIndex} className="px-6 py-4">
+                <div
+                  className="h-4 rounded animate-shimmer"
+                  style={{ width: `${60 + ((rowIndex * 3 + columnIndex * 7) % 40)}%` }}
+                />
+              </td>
             ))}
           </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {Array.from({ length: rows }).map((_, rowIndex) => (
-            <tr key={rowIndex} className="bg-white/90">
-              {Array.from({ length: columns }).map((_, columnIndex) => (
-                <td key={columnIndex} className="px-5 py-4">
-                  <div
-                    className="h-4 rounded animate-shimmer"
-                    style={{ width: `${60 + ((rowIndex * 3 + columnIndex * 7) % 40)}%` }}
-                  />
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        ))}
+      </tbody>
+    </table>
   </div>
 ));
 
 const ErrorState = memo(({ message, onRetry }: { message: string; onRetry?: () => void }) => (
-  <div className="animate-fade-in rounded-xl border border-rose-200 bg-rose-50/70">
+  <div className="animate-fade-in rounded-b-xl bg-rose-50/60 px-6 py-2">
     <EmptyState
       icon={AlertCircle}
       title="Có lỗi xảy ra"
@@ -90,7 +88,7 @@ function TableComponent<T extends object>({
 
   if (data.length === 0) {
     return (
-      <div className="animate-fade-in rounded-xl border border-slate-200/80 bg-white/90">
+      <div className="animate-fade-in py-2">
         <EmptyState
           icon={FileText}
           title="Không có dữ liệu"
@@ -101,18 +99,17 @@ function TableComponent<T extends object>({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white/90 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <div className="overflow-x-auto">
-        <table className="min-w-full">
-          <thead className="sticky top-0 z-[1] bg-slate-100/95 backdrop-blur">
-            <tr>
-              {columns.map((column) => (
-                <th
-                  key={String(column.key)}
-                  className={cn(
-                    'border-b border-slate-200/80 px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.03em] text-slate-600',
-                    column.sortable && 'cursor-pointer select-none transition-colors duration-150 hover:bg-slate-200/70'
-                  )}
+    <div className="overflow-x-auto">
+      <table className="min-w-full">
+        <thead className="sticky top-0 z-[1] bg-slate-100/95 backdrop-blur">
+          <tr>
+            {columns.map((column) => (
+              <th
+                key={String(column.key)}
+                className={cn(
+                  'border-b border-slate-200/80 px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.03em] text-slate-700',
+                  column.sortable && 'cursor-pointer select-none transition-colors duration-150 hover:bg-slate-200/70'
+                )}
                   onClick={() => column.sortable && column.onSort?.(column.key)}
                 >
                   <div className="flex items-center gap-2">
@@ -160,7 +157,7 @@ function TableComponent<T extends object>({
                         : String(value ?? '');
 
                     return (
-                      <td key={String(column.key)} className="whitespace-nowrap px-5 py-4 text-sm text-slate-800">
+                      <td key={String(column.key)} className="whitespace-nowrap px-6 py-4 text-sm text-slate-800">
                         {content}
                       </td>
                     );
@@ -170,7 +167,6 @@ function TableComponent<T extends object>({
             })}
           </tbody>
         </table>
-      </div>
     </div>
   );
 }

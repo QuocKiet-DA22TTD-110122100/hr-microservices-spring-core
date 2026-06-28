@@ -31,7 +31,7 @@ export const CardHeader = ({ className = '', children, ...props }: Omit<CardProp
 
 export const CardTitle = ({ className = '', children, ...props }: Omit<CardProps, 'hoverable'>) => (
   <h2
-    className={cn('text-base font-bold tracking-[-0.01em] text-slate-950 sm:text-lg', className)}
+    className={cn('font-display text-base font-bold tracking-[-0.01em] text-slate-950 sm:text-lg', className)}
     {...props}
   >
     {children}
@@ -40,7 +40,7 @@ export const CardTitle = ({ className = '', children, ...props }: Omit<CardProps
 
 export const CardDescription = ({ className = '', children, ...props }: Omit<CardProps, 'hoverable'>) => (
   <p
-    className={cn('mt-1 max-w-3xl text-sm leading-6 text-slate-600 text-pretty', className)}
+    className={cn('mt-1 max-w-prose text-sm leading-6 text-slate-600 text-pretty', className)}
     {...props}
   >
     {children}

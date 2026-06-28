@@ -70,8 +70,8 @@ export const WorkspaceStatusList = ({ items, selectedItem, onSelectItem }: Works
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
                     <div
-                      className="h-full rounded-full bg-cyan-600 transition-all duration-500"
-                      style={{ width: `${item.progress}%` }}
+                      className="h-full w-full origin-left rounded-full bg-cyan-600 transition-transform duration-500"
+                      style={{ transform: `scaleX(${item.progress / 100})` }}
                     />
                   </div>
                 </div>

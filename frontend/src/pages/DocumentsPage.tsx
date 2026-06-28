@@ -255,7 +255,7 @@ export const DocumentsPage = () => {
         }
       />
 
-      <section className="surface-panel rounded-xl p-5">
+      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <input
           ref={fileInputRef}
           type="file"
@@ -268,9 +268,11 @@ export const DocumentsPage = () => {
         <button
           type="button"
           className={cn(
-            'flex min-h-[210px] w-full flex-col items-center justify-center rounded-xl border-2 border-dashed px-5 py-8 text-center transition',
-            'bg-slate-50 text-slate-600 hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-            dragActive ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-[0_0_0_4px_rgba(59,130,246,0.12)]' : 'border-slate-300'
+            'flex min-h-[190px] w-full flex-col items-center justify-center rounded-lg border-2 border-dashed px-5 py-7 text-center',
+            'transition-[border-color,background-color,color] duration-200',
+            'bg-slate-50/60 hover:border-blue-300 hover:bg-blue-50/40 hover:text-blue-700',
+            'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+            dragActive ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-[0_0_0_4px_rgba(59,130,246,0.12)]' : 'border-slate-200 text-slate-600'
           )}
           disabled={uploading}
           onClick={() => fileInputRef.current?.click()}
@@ -278,17 +280,17 @@ export const DocumentsPage = () => {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <span className="flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-100 bg-white text-blue-600 shadow-sm">
-            {uploading ? <Loader2 size={30} className="animate-spin" /> : <UploadCloud size={32} />}
+          <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+            {uploading ? <Loader2 size={26} className="animate-spin" /> : <UploadCloud size={28} />}
           </span>
-          <span className="mt-4 text-base font-semibold text-slate-900">
-            {uploading ? 'Đang tải lên tài liệu...' : 'Kéo và thả file của bạn vào đây hoặc Click để chọn file từ máy tính'}
+          <span className="mt-3 text-base font-semibold text-slate-900">
+            {uploading ? 'Đang tải lên tài liệu...' : 'Kéo thả file hoặc nhấn để chọn'}
           </span>
-          <span className="mt-2 text-sm text-slate-500">Word, Excel, PDF. Mỗi file tối đa {MAX_MB} MB.</span>
+          <span className="mt-1 text-sm text-slate-600">Word, Excel, PDF — tối đa {MAX_MB} MB</span>
         </button>
 
-        <p className="mt-3 text-xs text-slate-400">
-          Chỉ nhận file .doc, .docx, .xls, .xlsx, .pdf. Tài liệu chỉ hiển thị với thành viên cùng phòng ban.
+        <p className="mt-3 max-w-prose text-xs text-slate-600">
+          Chỉ nhận .doc, .docx, .xls, .xlsx, .pdf. Tài liệu chỉ hiển thị với thành viên cùng phòng ban.
         </p>
       </section>
 
@@ -307,7 +309,7 @@ export const DocumentsPage = () => {
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center gap-3 py-16 text-slate-500">
+            <div className="flex items-center justify-center gap-3 py-16 text-slate-600">
               <Loader2 size={20} className="animate-spin" />
               <span className="text-sm">Đang tải...</span>
             </div>
@@ -321,13 +323,13 @@ export const DocumentsPage = () => {
                 return (
                   <div
                     key={doc.id}
-                    className="grid gap-3 px-5 py-4 transition-colors hover:bg-slate-50 sm:grid-cols-[auto_1fr_auto] sm:items-center"
+                    className="grid gap-3 px-6 py-4 transition-colors hover:bg-slate-50/80 sm:grid-cols-[auto_1fr_auto] sm:items-center"
                   >
                     <div className="flex items-center gap-3">
                       {fileIcon(doc)}
                       <div className="min-w-0 sm:hidden">
-                        <p className="truncate text-sm font-semibold text-slate-900">{doc.fileName}</p>
-                        <p className="mt-0.5 text-xs text-slate-500">
+                        <p className="font-display truncate text-sm font-semibold text-slate-900">{doc.fileName}</p>
+                        <p className="mt-0.5 text-xs text-slate-600">
                           {getDocumentKind(doc)} · {formatBytes(doc.fileSize)}
                         </p>
                       </div>
@@ -335,9 +337,9 @@ export const DocumentsPage = () => {
 
                     <div className="hidden min-w-0 sm:block">
                       <p className="truncate text-sm font-semibold text-slate-900">{doc.fileName}</p>
-                      <p className="mt-0.5 text-xs text-slate-500">
+                      <p className="mt-0.5 text-xs text-slate-600">
                         {getDocumentKind(doc)} · {formatBytes(doc.fileSize)} · Người đăng:{' '}
-                        <span className="font-medium text-slate-700">{doc.uploadedBy}</span> · {formatDate(doc.createdAt)}
+                        <span className="font-medium text-slate-800">{doc.uploadedBy}</span> · {formatDate(doc.createdAt)}
                       </p>
                     </div>
 

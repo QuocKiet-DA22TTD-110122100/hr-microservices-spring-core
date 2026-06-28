@@ -180,7 +180,7 @@ export const PayrollPage = () => {
       value: formatCurrency(currentPayroll?.grossPay),
       hint: 'Tổng thu nhập trước khấu trừ',
       icon: WalletCards,
-      gradient: 'from-cyan-600 to-teal-500',
+      gradient: 'from-cyan-500 to-cyan-700',
       tone: 'bg-cyan-50 text-cyan-700',
     },
     {
@@ -188,7 +188,7 @@ export const PayrollPage = () => {
       value: formatCurrency(currentPayroll?.totalDeduction),
       hint: 'Thuế, bảo hiểm và khấu trừ khác',
       icon: Calculator,
-      gradient: 'from-amber-500 to-orange-400',
+      gradient: 'from-amber-400 to-amber-600',
       tone: 'bg-amber-50 text-amber-700',
     },
     {
@@ -196,7 +196,7 @@ export const PayrollPage = () => {
       value: formatCurrency(currentPayroll?.netPay),
       hint: 'Số tiền sau khấu trừ',
       icon: CheckCircle2,
-      gradient: 'from-emerald-600 to-green-500',
+      gradient: 'from-emerald-500 to-emerald-700',
       tone: 'bg-emerald-50 text-emerald-700',
     },
     {
@@ -204,8 +204,8 @@ export const PayrollPage = () => {
       value: currentPayroll ? formatStatus(currentPayroll.status) : 'Chưa có',
       hint: currentPayroll ? `Payroll #${currentPayroll.id}` : 'Tính lương để tạo bản ghi',
       icon: ClipboardCheck,
-      gradient: 'from-slate-600 to-slate-500',
-      tone: 'bg-slate-100 text-slate-700',
+      gradient: 'from-slate-400 to-slate-600',
+      tone: 'bg-slate-100 text-slate-600',
     },
   ];
 
@@ -344,9 +344,9 @@ export const PayrollPage = () => {
               <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${card.gradient}`} />
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-500">{card.label}</p>
-                  <p className="mt-1 text-xl font-semibold text-slate-900">{card.value}</p>
-                  <p className="mt-2 text-sm text-slate-500">{card.hint}</p>
+                  <p className="text-sm font-medium text-slate-600">{card.label}</p>
+                  <p className="mt-1 font-display text-xl font-bold tabular-nums text-slate-950">{card.value}</p>
+                  <p className="mt-2 text-sm text-slate-600">{card.hint}</p>
                 </div>
                 <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md ${card.tone}`}>
                   <card.icon size={22} />
@@ -388,7 +388,7 @@ export const PayrollPage = () => {
                     { label: 'Người xử lý',  value: currentPayroll.processedBy || '--' },
                   ].map((item) => (
                     <div key={item.label}>
-                      <dt className="text-xs font-semibold uppercase text-slate-500">{item.label}</dt>
+                      <dt className="text-xs font-semibold uppercase text-slate-600">{item.label}</dt>
                       <dd className="mt-2 text-sm text-slate-700">{item.value}</dd>
                     </div>
                   ))}
@@ -451,12 +451,10 @@ export const PayrollPage = () => {
                 Xử lý chi trả
               </Button>
 
-              <div className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                <div className="flex items-start gap-2">
-                  <XCircle size={16} className="mt-0.5 shrink-0 text-slate-500" />
-                  <p>Bảng lương PROCESSED được coi là đã khóa để phục vụ audit và báo cáo bàn giao.</p>
-                </div>
-              </div>
+              <p className="flex items-start gap-2 border-t border-slate-100 pt-3 text-sm text-slate-600">
+                <XCircle size={15} className="mt-0.5 shrink-0 text-slate-500" />
+                Bảng lương PROCESSED được coi là đã khóa để phục vụ audit và báo cáo bàn giao.
+              </p>
             </CardContent>
           </Card>
         </div>

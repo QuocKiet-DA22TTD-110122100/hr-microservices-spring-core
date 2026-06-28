@@ -138,19 +138,19 @@ export const ProjectListPage = () => {
   const projectStats = useMemo(() => [
     {
       label: 'Đang chạy',    value: projects.filter((p) => p.status === 'ACTIVE').length,
-      icon: FolderKanban,    gradient: 'from-cyan-600 to-teal-500',    text: 'text-cyan-700',   bg: 'bg-cyan-50',
+      icon: FolderKanban,    gradient: 'from-cyan-500 to-cyan-700',     text: 'text-cyan-700',   bg: 'bg-cyan-50',
     },
     {
       label: 'Tạm dừng',     value: projects.filter((p) => p.status === 'PAUSED').length,
-      icon: PauseCircle,     gradient: 'from-amber-500 to-orange-400', text: 'text-amber-700',  bg: 'bg-amber-50',
+      icon: PauseCircle,     gradient: 'from-amber-400 to-amber-600',   text: 'text-amber-700',  bg: 'bg-amber-50',
     },
     {
       label: 'Hoàn tất',     value: projects.filter((p) => p.status === 'COMPLETED').length,
-      icon: CheckCircle2,    gradient: 'from-emerald-600 to-green-500',text: 'text-emerald-700',bg: 'bg-emerald-50',
+      icon: CheckCircle2,    gradient: 'from-emerald-500 to-emerald-700',text: 'text-emerald-700',bg: 'bg-emerald-50',
     },
     {
       label: 'Tổng thành viên active', value: projects.reduce((s, p) => s + p.memberCount, 0),
-      icon: Users,           gradient: 'from-slate-600 to-slate-500',  text: 'text-slate-700',  bg: 'bg-slate-100',
+      icon: Users,           gradient: 'from-slate-400 to-slate-600',   text: 'text-slate-700',  bg: 'bg-slate-100',
     },
   ], [projects]);
 
@@ -185,8 +185,8 @@ export const ProjectListPage = () => {
               <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${stat.gradient}`} />
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                  <p className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
+                  <p className="text-sm font-medium text-slate-600">{stat.label}</p>
+                  <p className="mt-1 font-display text-3xl font-bold tabular-nums tracking-tight text-slate-950">
                     {loading ? '—' : stat.value}
                   </p>
                 </div>
@@ -200,7 +200,7 @@ export const ProjectListPage = () => {
 
         {/* Filters */}
         <Card className="overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-cyan-700 via-cyan-400 to-slate-200" />
+          <div className="h-1 bg-blue-700" />
           <div className="grid gap-4 p-5 md:grid-cols-[minmax(0,1fr)_200px]">
             <Input
               label="Tìm kiếm"
@@ -243,7 +243,7 @@ export const ProjectListPage = () => {
           ) : pagedProjects.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-16 text-center">
               <FolderKanban size={40} className="text-slate-300" />
-              <p className="text-sm text-slate-500">Không có dự án nào phù hợp.</p>
+              <p className="text-sm text-slate-600">Không có dự án nào phù hợp.</p>
             </div>
           ) : (
             <div className="grid gap-4 p-5 md:grid-cols-2">
@@ -253,7 +253,7 @@ export const ProjectListPage = () => {
                   className={`
                     group relative flex flex-col gap-3 overflow-hidden rounded-xl border border-slate-200
                     border-l-4 ${statusBorder[project.status]} bg-white p-5 shadow-sm
-                    cursor-pointer transition-all duration-200
+                    cursor-pointer transition-[transform,box-shadow,border-color] duration-200
                     hover:-translate-y-0.5 hover:shadow-md hover:border-slate-300
                     animate-fade-up
                   `}
