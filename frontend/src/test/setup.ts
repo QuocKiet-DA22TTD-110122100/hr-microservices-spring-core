@@ -1,15 +1,8 @@
 import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
+import * as jestDomMatchers from '@testing-library/jest-dom/matchers';
 
-const optionalImport = new Function('specifier', 'return import(specifier)') as (specifier: string) => Promise<Record<string, unknown>>;
-
-void optionalImport('@testing-library/jest-dom/matchers')
-  .then((matchers) => {
-    expect.extend(matchers);
-  })
-  .catch(() => {
-    // Some minimal installs do not include jest-dom; pure unit tests can still run.
-  });
+expect.extend(jestDomMatchers);
 
 // Cleanup after each test
 afterEach(() => {

@@ -263,7 +263,7 @@ export const UserManagementPage = () => {
         icon: Unlock,
       },
       {
-        label: 'Bị khóa',
+        label: 'Tài khoản khóa',
         value: lockedCount.toString(),
         hint: 'Cần admin mở khóa khi phù hợp',
         gradient: 'from-rose-500 to-rose-700',
@@ -763,7 +763,7 @@ export const UserManagementPage = () => {
         description="Quản lý người dùng, trạng thái khóa và phân quyền theo vai trò."
         actions={
           <PermissionGate permission={PERMISSIONS.USER_CREATE}>
-            <Button onClick={() => setIsAddModalOpen(true)} aria-label="Mở form thêm tài khoản mới">
+            <Button onClick={() => setIsAddModalOpen(true)}>
               <Plus size={18} aria-hidden="true" />
               Thêm tài khoản
             </Button>
@@ -891,9 +891,9 @@ export const UserManagementPage = () => {
               type="submit" 
               disabled={isCreating || !newUsername.trim() || !newPassword.trim() || !!usernameError || !!passwordError}
               isLoading={isCreating}
-              aria-label={isCreating ? 'Đang tạo tài khoản' : 'Lưu tài khoản mới'}
+              aria-label={isCreating ? 'Đang tạo tài khoản' : 'Tạo tài khoản mới'}
             >
-              {isCreating ? 'Đang tạo...' : 'Lưu tài khoản'}
+              {isCreating ? 'Đang tạo...' : 'Tạo tài khoản'}
             </Button>
             <Button 
               type="button" 
