@@ -31,4 +31,7 @@ export interface PaginationParams {
 
 export interface SearchParams extends PaginationParams {
   keyword?: string;
+  search?: string;
+  department?: string;
+  status?: string;
 }

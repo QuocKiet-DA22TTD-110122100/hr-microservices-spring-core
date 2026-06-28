@@ -4,6 +4,7 @@ import {
   LoginRequest,
   LoginResponse,
   ChangePasswordApiRequest,
+  ProfileResponse,
   VerifyTokenResponse,
 } from '@/types/auth';
 import { storage } from '@/utils/storage';
@@ -61,6 +62,16 @@ export const authApi = {
   getProfile: async (): Promise<VerifyTokenResponse> => {
     const token = storage.getAccessToken() || '';
     const response = await apiClient.post('/xac-thuc/kiem-tra', { token });
+    return response.data;
+  },
+
+  getProfileV1: async (): Promise<ProfileResponse> => {
+    const response = await apiClient.get<ProfileResponse>('/v1/auth/profile', {
+      timeout: 5000,
+      headers: {
+        'Cache-Control': 'max-age=60',
+      },
+    });
     return response.data;
   },
 };

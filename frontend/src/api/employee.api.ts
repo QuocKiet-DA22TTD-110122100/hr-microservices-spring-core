@@ -2,25 +2,47 @@ import apiClient from '@/utils/axios';
 import { ApiResponse, PaginatedResponse, SearchParams } from '@/types/common';
 import { Employee, CreateEmployeeRequest, UpdateEmployeeRequest } from '@/types/employee';
 
+const EMPLOYEE_V1_PATH = '/v1/employees';
+const EMPLOYEE_LEGACY_PATH = '/hr/employees';
+
+const normalizeEmployee = (employee: Employee | Record<string, unknown>): Employee => {
+  const source = employee as Record<string, unknown>;
+
+  return {
+    ...(employee as Employee),
+    id: Number(source.id ?? source.employee_id ?? 0),
+    employeeCode: String(source.employeeCode ?? source.employee_id ?? source.employee_code ?? ''),
+    fullName: String(source.fullName ?? source.full_name ?? source.name ?? ''),
+    name: String(source.name ?? source.fullName ?? source.full_name ?? ''),
+    position: source.position ? String(source.position) : source.role ? String(source.role) : undefined,
+    email: source.email ? String(source.email) : undefined,
+    departmentName: source.departmentName ? String(source.departmentName) : source.department ? String(source.department) : undefined,
+    status: source.status ? String(source.status) : undefined,
+    hireDate: source.hireDate ? String(source.hireDate) : source.joined_date ? String(source.joined_date) : undefined,
+  };
+};
+
 const toPaginated = (payload: unknown): PaginatedResponse<Employee> => {
   const data = payload as Record<string, unknown>;
 
   if (Array.isArray(payload)) {
+    const content = (payload as Array<Employee | Record<string, unknown>>).map(normalizeEmployee);
     return {
-      content: payload as Employee[],
+      content,
       page: 0,
-      size: payload.length,
-      totalElements: payload.length,
+      size: content.length,
+      totalElements: content.length,
       totalPages: 1,
     };
   }
 
   if (Array.isArray(data?.content)) {
+    const content = (data.content as Array<Employee | Record<string, unknown>>).map(normalizeEmployee);
     return {
-      content: data.content as Employee[],
+      content,
       page: Number(data.page ?? 0),
-      size: Number(data.size ?? (data.content as Employee[]).length),
-      totalElements: Number(data.totalElements ?? (data.content as Employee[]).length),
+      size: Number(data.size ?? content.length),
+      totalElements: Number(data.totalElements ?? content.length),
       totalPages: Number(data.totalPages ?? 1),
     };
   }
@@ -40,7 +62,7 @@ const toPaginated = (payload: unknown): PaginatedResponse<Employee> => {
 
 export const employeeApi = {
   getAll: async (params?: SearchParams): Promise<ApiResponse<PaginatedResponse<Employee>>> => {
-    const response = await apiClient.get('/hr/employees', { params });
+    const response = await apiClient.get(EMPLOYEE_LEGACY_PATH, { params });
     return {
       success: true,
       data: toPaginated(response.data),
@@ -48,8 +70,47 @@ export const employeeApi = {
     };
   },
 
+  getDirectory: async (params?: SearchParams): Promise<ApiResponse<PaginatedResponse<Employee>>> => {
+    const apiParams = {
+      page: params?.page,
+      size: params?.size,
+      search: params?.search ?? params?.keyword,
+      department: params?.department,
+      status: params?.status,
+      sort: params?.sort,
+    };
+
+    try {
+      const response = await apiClient.get(EMPLOYEE_V1_PATH, { params: apiParams });
+      return {
+        success: true,
+        data: toPaginated(response.data),
+        timestamp: new Date().toISOString(),
+      };
+    } catch {
+      const response = await apiClient.get(EMPLOYEE_LEGACY_PATH, {
+        params: {
+          page: params?.page,
+          size: params?.size,
+          keyword: apiParams.search,
+          department: apiParams.department,
+          status: apiParams.status,
+          sort: apiParams.sort,
+        },
+      });
+
+      return {
+        success: true,
+        data: toPaginated(response.data),
+        timestamp: new Date().toISOString(),
+        _fallback: true,
+        _fallbackReason: 'GET /api/v1/employees unavailable; used /api/hr/employees.',
+      };
+    }
+  },
+
   getByDepartmentId: async (departmentId: number, params?: SearchParams): Promise<ApiResponse<PaginatedResponse<Employee>>> => {
-    const response = await apiClient.get('/hr/employees', { 
+    const response = await apiClient.get(EMPLOYEE_LEGACY_PATH, { 
       params: { departmentId, ...params } 
     });
     return {
@@ -60,7 +121,7 @@ export const employeeApi = {
   },
 
   getById: async (id: number): Promise<ApiResponse<Employee>> => {
-    const response = await apiClient.get(`/hr/employees/${id}`);
+    const response = await apiClient.get(`${EMPLOYEE_LEGACY_PATH}/${id}`);
     return {
       success: true,
       data: response.data,
@@ -69,7 +130,7 @@ export const employeeApi = {
   },
 
   create: async (data: CreateEmployeeRequest): Promise<ApiResponse<Employee>> => {
-    const response = await apiClient.post('/hr/employees', data);
+    const response = await apiClient.post(EMPLOYEE_LEGACY_PATH, data);
     return {
       success: true,
       data: response.data,
@@ -78,7 +139,7 @@ export const employeeApi = {
   },
 
   update: async (id: number, data: UpdateEmployeeRequest): Promise<ApiResponse<Employee>> => {
-    const response = await apiClient.put(`/hr/employees/${id}`, data);
+    const response = await apiClient.put(`${EMPLOYEE_LEGACY_PATH}/${id}`, data);
     return {
       success: true,
       data: response.data,
@@ -87,7 +148,7 @@ export const employeeApi = {
   },
 
   delete: async (id: number): Promise<ApiResponse<null>> => {
-    await apiClient.delete(`/hr/employees/${id}`);
+    await apiClient.delete(`${EMPLOYEE_LEGACY_PATH}/${id}`);
     return {
       success: true,
       data: null,
@@ -96,7 +157,7 @@ export const employeeApi = {
   },
 
   search: async (keyword: string, params?: SearchParams): Promise<ApiResponse<PaginatedResponse<Employee>>> => {
-    const response = await apiClient.get('/hr/employees/search', {
+    const response = await apiClient.get(`${EMPLOYEE_LEGACY_PATH}/search`, {
       params: { keyword, ...params },
     });
     return {
