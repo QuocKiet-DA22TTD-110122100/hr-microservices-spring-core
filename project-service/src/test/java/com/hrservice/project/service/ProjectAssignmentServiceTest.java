@@ -62,7 +62,7 @@ class ProjectAssignmentServiceTest {
     @Test
     void addAssignmentRejectsDuplicateActiveMember() {
         when(projectRepository.findById(10L)).thenReturn(Optional.of(project(10L)));
-        when(projectAssignmentRepository.existsByProjectIdAndEmployeeIdAndActiveTrue(10L, 20L)).thenReturn(true);
+        when(projectAssignmentRepository.existsByProject_IdAndEmployeeIdAndActiveTrue(10L, 20L)).thenReturn(true);
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
                 service.addAssignment(10L, 20L, ProjectAssignment.ProjectRole.QA)
@@ -89,7 +89,7 @@ class ProjectAssignmentServiceTest {
         assignment.setProject(project(10L));
         assignment.setEmployeeId(20L);
         assignment.setActive(true);
-        when(projectAssignmentRepository.findByProjectIdAndEmployeeId(10L, 20L)).thenReturn(Optional.of(assignment));
+        when(projectAssignmentRepository.findByProject_IdAndEmployeeId(10L, 20L)).thenReturn(Optional.of(assignment));
 
         service.removeAssignment(10L, 20L);
 

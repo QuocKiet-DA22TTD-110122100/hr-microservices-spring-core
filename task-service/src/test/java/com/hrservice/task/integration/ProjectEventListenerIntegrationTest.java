@@ -36,7 +36,8 @@ import static org.mockito.Mockito.verify;
         "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
         "spring.data.redis.host=localhost",
         "eureka.client.enabled=false",
-        "task.reassign.defaultPoolAssigneeId=777"
+        "task.reassign.defaultPoolAssigneeId=777",
+        "messaging.enabled=true"
 })
 @Testcontainers(disabledWithoutDocker = true)
 class ProjectEventListenerIntegrationTest {
