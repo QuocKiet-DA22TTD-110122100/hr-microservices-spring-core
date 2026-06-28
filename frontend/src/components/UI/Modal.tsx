@@ -12,8 +12,8 @@ interface ModalProps {
 
 const sizeStyles = {
   sm: 'max-w-md',
-  md: 'max-w-2xl',
-  lg: 'max-w-4xl',
+  md: 'max-w-lg',
+  lg: 'max-w-2xl',
   xl: 'max-w-6xl',
 };
 
@@ -43,7 +43,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         type="button"
         className="fixed inset-0 cursor-default bg-slate-950/60 backdrop-blur-sm"
         onClick={onClose}
-        aria-label="Đóng hộp thoại"
+        aria-label="Vùng nền hộp thoại"
       />
       <div
         role="dialog"

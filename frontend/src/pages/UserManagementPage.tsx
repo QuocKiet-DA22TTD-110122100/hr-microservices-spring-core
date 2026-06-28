@@ -832,7 +832,7 @@ export const UserManagementPage = () => {
       <Modal isOpen={isAddModalOpen} onClose={() => { setIsAddModalOpen(false); resetAddUserForm(); }} title="Tạo tài khoản mới">
         <form className="space-y-4" onSubmit={handleCreateUser} aria-label="Form thêm tài khoản mới">
           <Input
-            label="Username"
+            label="Tên đăng nhập"
             placeholder="Nhập tên đăng nhập (3-50 ký tự)"
             required
             value={newUsername}

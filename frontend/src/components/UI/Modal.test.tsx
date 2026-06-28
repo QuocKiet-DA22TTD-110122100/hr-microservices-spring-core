@@ -61,7 +61,8 @@ describe('Modal Component', () => {
         </Modal>
       );
 
-      const closeButton = screen.getByRole('button', { name: /đóng/i });
+      // Use aria-label "Đóng" (X button only) to avoid matching overlay
+      const closeButton = screen.getByRole('button', { name: 'Đóng' });
       await user.click(closeButton);
 
       expect(onClose).toHaveBeenCalledTimes(1);
@@ -77,11 +78,9 @@ describe('Modal Component', () => {
         </Modal>
       );
 
-      // Click on overlay (backdrop)
-      const overlay = screen.getByRole('dialog').parentElement;
-      if (overlay) {
-        await user.click(overlay);
-      }
+      // Click on the backdrop/overlay button directly
+      const overlay = screen.getByRole('button', { name: 'Vùng nền hộp thoại' });
+      await user.click(overlay);
 
       expect(onClose).toHaveBeenCalled();
     });

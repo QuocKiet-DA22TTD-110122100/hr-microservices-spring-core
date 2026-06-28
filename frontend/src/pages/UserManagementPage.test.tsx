@@ -370,11 +370,11 @@ describe('UserManagementPage', () => {
       // API should be called
       expect(userApi.userApi.delete).toHaveBeenCalledWith('2');
 
-      // Success notification
+      // Success notification (case-insensitive match for Vietnamese capital letter)
       expect(mockUIStore.addNotification).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'success',
-          message: expect.stringContaining('xóa'),
+          message: expect.stringMatching(/xóa/i),
         })
       );
     });
@@ -436,8 +436,8 @@ describe('UserManagementPage', () => {
       const lockButtons = within(table).getAllByTitle(/khóa tài khoản/i);
       await user.click(lockButtons[0]);
 
-      // Confirm lock
-      const confirmButton = screen.getByRole('button', { name: /khóa/i });
+      // Confirm lock — use specific aria-label to avoid row lock buttons
+      const confirmButton = screen.getByRole('button', { name: /xác nhận khóa/i });
       await user.click(confirmButton);
 
       // API should be called
@@ -479,11 +479,13 @@ describe('UserManagementPage', () => {
 
       await screen.findByText('admin');
 
-      // Check for page size selector
-      expect(screen.getByLabelText(/số dòng\/trang/i)).toBeInTheDocument();
+      // Pagination nav should exist
+      const nav = screen.getByRole('navigation', { name: /điều hướng trang/i });
+      expect(nav).toBeInTheDocument();
 
-      // Check for pagination info
-      expect(screen.getByText(/hiển thị \d+ - \d+ trong tổng số/i)).toBeInTheDocument();
+      // Page size group should exist
+      const sizeGroup = screen.getByRole('group', { name: /số dòng mỗi trang/i });
+      expect(sizeGroup).toBeInTheDocument();
     });
 
     it('should change page size', async () => {
@@ -492,11 +494,12 @@ describe('UserManagementPage', () => {
 
       await screen.findByText('admin');
 
-      const pageSizeSelect = screen.getByLabelText(/số dòng\/trang/i);
-      await user.selectOptions(pageSizeSelect, '20');
+      // Click the page size button for 20 items
+      const btn20 = screen.getByRole('button', { name: '20 dòng mỗi trang' });
+      await user.click(btn20);
 
-      // Page size should update
-      expect(pageSizeSelect).toHaveValue('20');
+      // The 20 button should now be active (pressed)
+      expect(btn20).toHaveAttribute('aria-pressed', 'true');
     });
   });
 
