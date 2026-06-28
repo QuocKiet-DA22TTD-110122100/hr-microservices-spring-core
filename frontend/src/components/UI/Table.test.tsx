@@ -149,9 +149,9 @@ describe('Table Component', () => {
 
       render(<Table columns={sortableColumns} data={mockData} />);
 
-      // Name column should be sortable
+      // Name column should have cursor-pointer (sortable visual cue)
       const nameHeader = screen.getByText('Name').closest('th');
-      expect(nameHeader).toHaveAttribute('role', 'button');
+      expect(nameHeader).toHaveAttribute('data-sortable', 'true');
     });
 
     it('should call onSort when sortable column is clicked', async () => {

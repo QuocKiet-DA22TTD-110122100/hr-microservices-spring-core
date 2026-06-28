@@ -209,15 +209,12 @@ describe('UserManagementPage', () => {
       renderWithRouter(<UserManagementPage />);
 
       await screen.findByText('admin');
-
-      // Open modal
       await user.click(screen.getByRole('button', { name: /thêm tài khoản/i }));
 
-      // Try to submit without username
-      const submitButton = screen.getByRole('button', { name: /tạo/i });
-      await user.click(submitButton);
+      // Scope to dialog to avoid conflict with table headers
+      const dialog = screen.getByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: /tạo tài khoản/i }));
 
-      // Should show validation error
       expect(await screen.findByText(/tên đăng nhập là bắt buộc/i)).toBeInTheDocument();
     });
 
@@ -226,15 +223,11 @@ describe('UserManagementPage', () => {
       renderWithRouter(<UserManagementPage />);
 
       await screen.findByText('admin');
-
       await user.click(screen.getByRole('button', { name: /thêm tài khoản/i }));
 
-      // Enter username but no password
-      const usernameInput = screen.getByLabelText(/tên đăng nhập/i);
-      await user.type(usernameInput, 'newuser');
-
-      const submitButton = screen.getByRole('button', { name: /tạo/i });
-      await user.click(submitButton);
+      const dialog = screen.getByRole('dialog');
+      await user.type(within(dialog).getByLabelText(/tên đăng nhập/i), 'newuser');
+      await user.click(within(dialog).getByRole('button', { name: /tạo tài khoản/i }));
 
       expect(await screen.findByText(/mật khẩu là bắt buộc/i)).toBeInTheDocument();
     });
@@ -248,15 +241,12 @@ describe('UserManagementPage', () => {
       renderWithRouter(<UserManagementPage />);
 
       await screen.findByText('admin');
-
       await user.click(screen.getByRole('button', { name: /thêm tài khoản/i }));
 
-      // Fill form
-      await user.type(screen.getByLabelText(/tên đăng nhập/i), 'newuser');
-      await user.type(screen.getByLabelText(/mật khẩu/i), 'password123');
-
-      // Submit
-      await user.click(screen.getByRole('button', { name: /tạo/i }));
+      const dialog = screen.getByRole('dialog');
+      await user.type(within(dialog).getByLabelText(/tên đăng nhập/i), 'newuser');
+      await user.type(within(dialog).getByLabelText(/mật khẩu/i), 'password123');
+      await user.click(within(dialog).getByRole('button', { name: /tạo tài khoản/i }));
 
       // API should be called
       expect(userApi.userApi.create).toHaveBeenCalledWith({

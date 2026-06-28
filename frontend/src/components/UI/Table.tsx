@@ -106,7 +106,7 @@ function TableComponent<T extends object>({
             {columns.map((column) => (
               <th
                 key={String(column.key)}
-                role={column.sortable ? 'button' : undefined}
+                data-sortable={column.sortable ? 'true' : undefined}
                 tabIndex={column.sortable ? 0 : undefined}
                 className={cn(
                   'border-b border-slate-200/80 px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-[0.03em] text-slate-600',
