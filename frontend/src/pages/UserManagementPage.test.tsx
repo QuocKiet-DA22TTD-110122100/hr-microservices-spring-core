@@ -90,9 +90,9 @@ describe('UserManagementPage', () => {
       // Wait for data to load
       await screen.findByText('admin');
 
-      // Check table headers
+      // Check table headers (sidebar also contains "Vai trò" nav item, use getAllByText)
       expect(screen.getByText('Tên đăng nhập')).toBeInTheDocument();
-      expect(screen.getByText('Vai trò')).toBeInTheDocument();
+      expect(screen.getAllByText('Vai trò').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('Trạng thái')).toBeInTheDocument();
 
       // Check user data
@@ -139,18 +139,18 @@ describe('UserManagementPage', () => {
     });
 
     it('should show error message on API failure', async () => {
-      const errorMessage = 'Failed to load users';
       vi.mocked(userApi.userApi.getAll).mockRejectedValue({
-        response: {
-          status: 500,
-          data: { message: errorMessage },
-        },
+        response: { status: 500, data: { message: 'Server error' } },
       });
 
       renderWithRouter(<UserManagementPage />);
 
-      // Should show fallback data
-      await screen.findByText('admin');
+      // Should trigger error notification when API fails
+      await vi.waitFor(() => {
+        expect(mockUIStore.addNotification).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error' })
+        );
+      });
     });
   });
 
@@ -300,9 +300,10 @@ describe('UserManagementPage', () => {
       const editButtons = screen.getAllByText('Sửa');
       await user.click(editButtons[0]);
 
-      // Permission matrix should be visible
-      expect(screen.getByText(/quản lý người dùng/i)).toBeInTheDocument();
-      expect(screen.getByText(/quản lý vai trò/i)).toBeInTheDocument();
+      // Permission matrix should be visible — scope to dialog to avoid page description match
+      const dialog = screen.getByRole('dialog');
+      expect(within(dialog).getAllByText(/quản lý người dùng/i).length).toBeGreaterThanOrEqual(1);
+      expect(within(dialog).getAllByText(/quản lý vai trò/i).length).toBeGreaterThanOrEqual(1);
     });
 
     it('should update user role', async () => {
@@ -319,12 +320,12 @@ describe('UserManagementPage', () => {
       const editButtons = screen.getAllByText('Sửa');
       await user.click(editButtons[1]);
 
-      // Change role
-      const roleSelect = screen.getByLabelText(/vai trò/i);
-      await user.selectOptions(roleSelect, 'HR_MANAGER');
+      // Change role — component uses toggle buttons, not a <select>
+      const dialog = screen.getByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: /chọn vai trò HR_MANAGER/i }));
 
       // Submit
-      await user.click(screen.getByRole('button', { name: /cập nhật/i }));
+      await user.click(within(dialog).getByRole('button', { name: /cập nhật/i }));
 
       // API should be called
       expect(userApi.userApi.update).toHaveBeenCalledWith(
@@ -358,12 +359,12 @@ describe('UserManagementPage', () => {
 
       await screen.findByText('admin');
 
-      // Click delete
+      // Click delete on second user (user1)
       const deleteButtons = screen.getAllByText('Xóa');
       await user.click(deleteButtons[1]);
 
-      // Confirm deletion
-      const confirmButton = screen.getByRole('button', { name: /xóa/i });
+      // Confirm deletion — use aria-label to avoid ambiguity with row delete buttons
+      const confirmButton = screen.getByRole('button', { name: /xác nhận xóa tài khoản/i });
       await user.click(confirmButton);
 
       // API should be called

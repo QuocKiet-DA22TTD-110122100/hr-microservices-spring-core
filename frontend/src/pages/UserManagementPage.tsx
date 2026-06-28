@@ -829,7 +829,7 @@ export const UserManagementPage = () => {
         }
       />
 
-      <Modal isOpen={isAddModalOpen} onClose={() => { setIsAddModalOpen(false); resetAddUserForm(); }} title="Thêm tài khoản mới">
+      <Modal isOpen={isAddModalOpen} onClose={() => { setIsAddModalOpen(false); resetAddUserForm(); }} title="Tạo tài khoản mới">
         <form className="space-y-4" onSubmit={handleCreateUser} aria-label="Form thêm tài khoản mới">
           <Input
             label="Username"
@@ -889,7 +889,7 @@ export const UserManagementPage = () => {
           <div className="flex gap-3 pt-4">
             <Button 
               type="submit" 
-              disabled={isCreating || !newUsername.trim() || !newPassword.trim() || !!usernameError || !!passwordError}
+              disabled={isCreating || !!usernameError || !!passwordError}
               isLoading={isCreating}
               aria-label={isCreating ? 'Đang tạo tài khoản' : 'Tạo tài khoản mới'}
             >
@@ -1092,9 +1092,9 @@ export const UserManagementPage = () => {
               type="submit" 
               disabled={isUpdating || !!editRoleError}
               isLoading={isUpdating}
-              aria-label={isUpdating ? 'Đang cập nhật tài khoản' : 'Lưu thay đổi tài khoản'}
+              aria-label={isUpdating ? 'Đang cập nhật tài khoản' : 'Cập nhật tài khoản'}
             >
-              {isUpdating ? 'Đang cập nhật...' : 'Lưu thay đổi'}
+              {isUpdating ? 'Đang cập nhật...' : 'Cập nhật'}
             </Button>
             <Button 
               type="button" 
@@ -1148,7 +1148,7 @@ export const UserManagementPage = () => {
 
       <Modal isOpen={isDeleteModalOpen} onClose={handleCancelDelete} title="Xác nhận xóa">
         <div className="space-y-4">
-          <p role="alert">Bạn có chỉc chọn mu?n xóa tài khoản này? Hành động này không thể hoàn tác.</p>
+          <p role="alert">Bạn có chắc chắn muốn xóa tài khoản này? Hành động này không thể hoàn tác.</p>
           <div className="flex gap-3 justify-end">
             <Button 
               variant="danger" 
