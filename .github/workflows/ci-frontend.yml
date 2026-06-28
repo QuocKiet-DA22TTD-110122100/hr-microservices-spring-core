@@ -157,10 +157,11 @@ jobs:
           cache-to: type=gha,mode=max,scope=frontend
 
       - name: Smoke test — container starts
-        run: |
-          docker run -d --name smoke-frontend -p 3000:80 \
-            ghcr.io/${{ github.repository_owner }}/hr-frontend:latest
-          sleep 5
-          curl -sf http://localhost:3000/ | grep -q "DOCTYPE html" && echo "✅ Frontend serving HTML"
-          docker stop smoke-frontend
         if: github.event_name != 'pull_request'
+        run: |
+          IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | head -1)
+          echo "Testing image: $IMAGE"
+          docker run -d --name smoke-frontend -p 3001:80 "$IMAGE"
+          sleep 5
+          curl -sf http://localhost:3001/ | grep -q "DOCTYPE" && echo "✅ Frontend serving HTML" || (docker logs smoke-frontend && exit 1)
+          docker stop smoke-frontend && docker rm smoke-frontend
