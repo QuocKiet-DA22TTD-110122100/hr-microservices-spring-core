@@ -2,7 +2,6 @@ import apiClient from '@/utils/axios';
 import { ApiResponse, PaginatedResponse, SearchParams } from '@/types/common';
 import { Employee, CreateEmployeeRequest, UpdateEmployeeRequest } from '@/types/employee';
 
-const EMPLOYEE_V1_PATH = '/v1/employees';
 const EMPLOYEE_LEGACY_PATH = '/hr/employees';
 
 const normalizeEmployee = (employee: Employee | Record<string, unknown>): Employee => {
@@ -71,42 +70,21 @@ export const employeeApi = {
   },
 
   getDirectory: async (params?: SearchParams): Promise<ApiResponse<PaginatedResponse<Employee>>> => {
-    const apiParams = {
-      page: params?.page,
-      size: params?.size,
-      search: params?.search ?? params?.keyword,
-      department: params?.department,
-      status: params?.status,
-      sort: params?.sort,
+    const response = await apiClient.get(EMPLOYEE_LEGACY_PATH, {
+      params: {
+        page: params?.page,
+        size: params?.size,
+        keyword: params?.search ?? params?.keyword,
+        department: params?.department,
+        status: params?.status,
+        sort: params?.sort,
+      },
+    });
+    return {
+      success: true,
+      data: toPaginated(response.data),
+      timestamp: new Date().toISOString(),
     };
-
-    try {
-      const response = await apiClient.get(EMPLOYEE_V1_PATH, { params: apiParams });
-      return {
-        success: true,
-        data: toPaginated(response.data),
-        timestamp: new Date().toISOString(),
-      };
-    } catch {
-      const response = await apiClient.get(EMPLOYEE_LEGACY_PATH, {
-        params: {
-          page: params?.page,
-          size: params?.size,
-          keyword: apiParams.search,
-          department: apiParams.department,
-          status: apiParams.status,
-          sort: apiParams.sort,
-        },
-      });
-
-      return {
-        success: true,
-        data: toPaginated(response.data),
-        timestamp: new Date().toISOString(),
-        _fallback: true,
-        _fallbackReason: 'GET /api/v1/employees unavailable; used /api/hr/employees.',
-      };
-    }
   },
 
   getByDepartmentId: async (departmentId: number, params?: SearchParams): Promise<ApiResponse<PaginatedResponse<Employee>>> => {

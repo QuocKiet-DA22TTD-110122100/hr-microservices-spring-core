@@ -19,6 +19,8 @@ export interface AutomationRule {
   is_enabled: boolean;
 }
 
+// TODO: Gateway route + backend not implemented. Callers must handle errors gracefully.
+// Route needed in application.yaml: Path=/api/v1/automation/**
 const AUTOMATION_RULES_PATH = '/v1/automation/rules';
 
 export const automationApi = {

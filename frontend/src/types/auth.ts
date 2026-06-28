@@ -29,12 +29,6 @@ export interface PermissionDescriptor {
   type: 'system' | 'custom' | 'role';
 }
 
-export interface ProfileResponse {
-  user: User;
-  permissions: PermissionDescriptor[];
-  cached?: boolean;
-  cacheTtlMs?: number;
-}
 
 export interface User {
   id: string;

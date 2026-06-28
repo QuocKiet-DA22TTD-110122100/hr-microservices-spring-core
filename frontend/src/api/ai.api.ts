@@ -19,6 +19,8 @@ export interface AiRiskRadarItem {
   progress: number;
 }
 
+// TODO: Gateway route + backend not implemented. Callers must handle errors and provide fallback data.
+// Routes needed in application.yaml: Path=/api/v1/ai/**
 export const aiApi = {
   getSuggestions: async (): Promise<AiSuggestion[]> => {
     const response = await apiClient.get<AiSuggestion[]>('/v1/ai/suggestions');
