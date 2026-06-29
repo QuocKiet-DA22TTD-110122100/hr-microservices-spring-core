@@ -268,12 +268,12 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
       </aside>
 
       {/* ── Main content ───────────────────────────────────── */}
-      <div className="flex overflow-x-hidden pt-16">
+      <div className="pt-16">
         <main
           className={cn(
-            'relative z-0 min-w-0 flex-1 bg-transparent p-4 sm:p-6 lg:p-7',
-            'will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
-            isDesktopSidebarOpen && 'lg:translate-x-64'
+            'relative z-0 min-h-[calc(100vh-4rem)] min-w-0 bg-transparent p-4 sm:p-6 lg:p-7',
+            'transition-[margin] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+            isDesktopSidebarOpen ? 'lg:ml-64' : 'lg:ml-0'
           )}
         >
           <div key={location.pathname} className="page-enter">
