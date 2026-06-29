@@ -43,13 +43,13 @@ public class CustomRateLimitFilter implements GlobalFilter, Ordered {
     private static final int VERIFY_LIMIT = 12;
     private static final Duration VERIFY_WINDOW = Duration.ofMinutes(1);
 
-    private static final int WRITE_LIMIT = 20;
+    private static final int WRITE_LIMIT = 60;
     private static final Duration WRITE_WINDOW = Duration.ofMinutes(1);
 
-    private static final int READ_LIMIT = 60;
+    private static final int READ_LIMIT = 300;
     private static final Duration READ_WINDOW = Duration.ofMinutes(1);
 
-    private static final int DEFAULT_LIMIT = 30;
+    private static final int DEFAULT_LIMIT = 120;
     private static final Duration DEFAULT_WINDOW = Duration.ofMinutes(1);
 
     @Override
@@ -62,7 +62,8 @@ public class CustomRateLimitFilter implements GlobalFilter, Ordered {
         RateLimitPolicy policy = resolvePolicy(exchange);
         String ip = getClientIp(exchange);
         String routeKey = policy.key();
-        String key = "rate_limit:" + routeKey + ":" + ip;
+        String servicePrefix = extractServicePrefix(path);
+        String key = "rate_limit:" + routeKey + ":" + servicePrefix + ":" + ip;
 
         log.debug("[GW][RATE_LIMIT] policy={}, ip={}, method={}, path={}",
                 policy.name(), ip, exchange.getRequest().getMethod(), exchange.getRequest().getPath().value());
@@ -221,6 +222,15 @@ public class CustomRateLimitFilter implements GlobalFilter, Ordered {
         private String key() {
             return name;
         }
+    }
+
+    private String extractServicePrefix(String path) {
+        if (path == null) return "unknown";
+        // Extract first 2 segments: /api/hr → "api_hr", /api/tasks → "api_tasks"
+        String[] parts = path.split("/");
+        if (parts.length >= 3) return parts[1] + "_" + parts[2];
+        if (parts.length == 2) return parts[1];
+        return "root";
     }
 
     private boolean shouldSkipLogging(String path) {
