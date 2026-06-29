@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -23,6 +23,7 @@ import { WorkspaceStatusList } from '@/components/Workspace/WorkspaceStatusList'
 import { WorkspaceDefinition, WorkspaceItem } from '@/components/Workspace/types';
 import { resolveWorkspaceRole } from '@/config/roleExperience';
 import { useAuthStore } from '@/store/authStore';
+import { useUIStore } from '@/store/uiStore';
 const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
   'account-security': {
     title: 'Tài khoản và bảo mật',
@@ -540,26 +541,114 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
   },
 };
 
+const workspaceActionRoutes: Partial<Record<string, { primary?: string; secondary?: string }>> = {
+  'team-tasks': {
+    primary: '/work/manage',
+    secondary: '/work/board',
+  },
+  'account-security': {
+    primary: '/change-password',
+    secondary: '/profile',
+  },
+};
+
 export const RoleWorkspacePage = () => {
   const { slug = '' } = useParams();
   const { user } = useAuthStore();
+  const { addNotification } = useUIStore();
   const [activeFilter, setActiveFilter] = useState<WorkspaceFilter>('all');
+  const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
+  const [items, setItems] = useState<WorkspaceItem[]>(() => workspaceDefinitions[slug]?.items ?? []);
+
+  useEffect(() => {
+    setItems(workspaceDefinitions[slug]?.items ?? []);
+    setSelectedTitle(null);
+    setActiveFilter('all');
+  }, [slug]);
 
   const workspace = workspaceDefinitions[slug];
+  const actionRoutes = workspaceActionRoutes[slug] || {};
   const workspaceRole = resolveWorkspaceRole(user?.roles);
   const hasAccess = workspace?.allowedRoles.includes(workspaceRole);
 
-  const filteredItems = useMemo(() => {
-    if (!workspace) return [];
-    if (activeFilter === 'all') return workspace.items;
-    return workspace.items.filter((item) => item.status === activeFilter);
-  }, [activeFilter, workspace]);
+  const handleApproveItem = (item: WorkspaceItem) => {
+    setItems((prev) => prev.map((i) => i.title === item.title ? { ...i, status: 'approved' as const } : i));
+    addNotification({ type: 'success', message: `Đã phê duyệt: ${item.title}` });
+  };
 
-  const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
-  const selectedItem = useMemo(() => {
-    if (!workspace) return undefined;
-    return workspace.items.find((item) => item.title === selectedTitle) || filteredItems[0];
-  }, [filteredItems, selectedTitle, workspace]);
+  const handleRejectItem = (item: WorkspaceItem) => {
+    setItems((prev) => prev.filter((i) => i.title !== item.title));
+    addNotification({ type: 'warning', message: `Đã từ chối và gỡ khỏi danh sách: ${item.title}` });
+  };
+
+  const handleCreateItem = () => {
+    const today = new Date().toLocaleDateString('vi-VN');
+    const newItem: WorkspaceItem =
+      slug === 'timekeeping'
+        ? {
+            title: `Chấm công ${today}`,
+            description: 'Đã ghi nhận hôm nay, đang chờ xác nhận từ quản lý.',
+            owner: 'Tôi',
+            meta: 'Hôm nay',
+            status: 'pending',
+            priority: 'normal',
+            due: 'Hôm nay',
+            nextStep: 'Nhớ ghi nhận check-out lúc kết thúc ca làm việc.',
+          }
+        : {
+            title: `Đơn nghỉ phép ${today}`,
+            description: 'Đơn nghỉ mới tạo, đang chờ quản lý trực tiếp duyệt.',
+            owner: 'Tôi',
+            meta: 'Gửi hôm nay',
+            status: 'pending',
+            priority: 'medium',
+            due: 'Chờ duyệt',
+            nextStep: 'Chờ quản lý trực tiếp xác nhận đơn nghỉ.',
+          };
+    setItems((prev) => [newItem, ...prev]);
+    setSelectedTitle(newItem.title);
+    addNotification({
+      type: 'success',
+      message: slug === 'timekeeping' ? 'Đã ghi nhận chấm công hôm nay.' : 'Đã tạo đơn nghỉ phép thành công.',
+    });
+  };
+
+  const handlePrimaryAction = () => {
+    if (['timesheet-approval', 'approvals'].includes(slug)) {
+      if (!selectedItem) {
+        addNotification({ type: 'info', message: 'Hãy chọn một mục từ danh sách để phê duyệt.' });
+        return;
+      }
+      if (selectedItem.status === 'approved') {
+        addNotification({ type: 'info', message: 'Mục này đã được phê duyệt trước đó.' });
+        return;
+      }
+      handleApproveItem(selectedItem);
+      return;
+    }
+
+    if (['timekeeping', 'leave'].includes(slug)) {
+      handleCreateItem();
+      return;
+    }
+
+    addNotification({
+      type: 'info',
+      message: `"${workspace?.primaryAction}": Tính năng đang được phát triển. Backend API chưa sẵn sàng trong phiên bản MVP.`,
+    });
+  };
+
+  const supportsApproval = ['timesheet-approval', 'approvals'].includes(slug);
+
+  const filteredItems = useMemo(() => {
+    if (activeFilter === 'all') return items;
+    return items.filter((item) => item.status === activeFilter);
+  }, [activeFilter, items]);
+
+  const selectedItem = useMemo(
+    () => items.find((item) => item.title === selectedTitle) ?? filteredItems[0],
+    [filteredItems, selectedTitle, items],
+  );
 
   const handleSelectItem = (item: WorkspaceItem) => {
     setSelectedTitle(item.title);
@@ -629,10 +718,35 @@ export const RoleWorkspacePage = () => {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline">
-                {workspace.secondaryAction}
-              </Button>
-              <Button type="button">{workspace.primaryAction}</Button>
+              {actionRoutes.secondary ? (
+                <Link to={actionRoutes.secondary}>
+                  <Button type="button" variant="outline">
+                    {workspace.secondaryAction}
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    addNotification({
+                      type: 'info',
+                      message: `"${workspace.secondaryAction}": Tính năng đang được phát triển. Backend API chưa sẵn sàng trong phiên bản MVP.`,
+                    })
+                  }
+                >
+                  {workspace.secondaryAction}
+                </Button>
+              )}
+              {actionRoutes.primary ? (
+                <Link to={actionRoutes.primary}>
+                  <Button type="button">{workspace.primaryAction}</Button>
+                </Link>
+              ) : (
+                <Button type="button" onClick={handlePrimaryAction}>
+                  {workspace.primaryAction}
+                </Button>
+              )}
             </div>
           </div>
         </section>
@@ -653,7 +767,12 @@ export const RoleWorkspacePage = () => {
             <WorkspaceStatusList items={filteredItems} selectedItem={selectedItem} onSelectItem={handleSelectItem} />
           </Card>
 
-          <WorkspaceActionPanel selectedItem={selectedItem} processNotes={workspace.processNotes} />
+          <WorkspaceActionPanel
+            selectedItem={selectedItem}
+            processNotes={workspace.processNotes}
+            onApprove={supportsApproval ? handleApproveItem : undefined}
+            onReject={supportsApproval ? handleRejectItem : undefined}
+          />
         </section>
       </div>
     </MainLayout>

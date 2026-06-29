@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, ClipboardCheck, KeyRound, LucideIcon, User } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ClipboardCheck, KeyRound, LucideIcon, User, XCircle } from 'lucide-react';
 import { Badge } from '@/components/UI/Badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/UI/Card';
 import { cn } from '@/utils/cn';
@@ -8,11 +8,13 @@ import { workspaceStatusStyles } from './workspaceStyles';
 interface WorkspaceActionPanelProps {
   selectedItem?: WorkspaceItem;
   processNotes: string[];
+  onApprove?: (item: WorkspaceItem) => void;
+  onReject?: (item: WorkspaceItem) => void;
 }
 
 const noteIcons: LucideIcon[] = [CheckCircle2, AlertCircle, ClipboardCheck, KeyRound, User];
 
-export const WorkspaceActionPanel = ({ selectedItem, processNotes }: WorkspaceActionPanelProps) => (
+export const WorkspaceActionPanel = ({ selectedItem, processNotes, onApprove, onReject }: WorkspaceActionPanelProps) => (
   <aside className="space-y-6">
     <Card>
       <CardHeader>
@@ -83,6 +85,40 @@ export const WorkspaceActionPanel = ({ selectedItem, processNotes }: WorkspaceAc
               <p className="text-sm font-semibold text-cyan-900">Bước tiếp theo</p>
               <p className="mt-1 text-sm leading-6 text-cyan-800">{selectedItem.nextStep}</p>
             </div>
+
+            {/* Approve / Reject actions */}
+            {(onApprove || onReject) && selectedItem.status !== 'approved' && (
+              <div className="flex gap-2 border-t border-slate-100 pt-4">
+                {onReject && (
+                  <button
+                    type="button"
+                    onClick={() => onReject(selectedItem)}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2"
+                  >
+                    <XCircle size={15} />
+                    Từ chối
+                  </button>
+                )}
+                {onApprove && (
+                  <button
+                    type="button"
+                    onClick={() => onApprove(selectedItem)}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-emerald-600 bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                  >
+                    <CheckCircle2 size={15} />
+                    Phê duyệt
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Already approved indicator */}
+            {(onApprove || onReject) && selectedItem.status === 'approved' && (
+              <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+                <CheckCircle2 size={15} />
+                Mục này đã được phê duyệt
+              </div>
+            )}
           </div>
         ) : (
           <p className="text-sm text-slate-500">Chọn một dòng để xem chi tiết.</p>
