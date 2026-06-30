@@ -1,8 +1,0 @@
-# Cursor IDE Rules for HR Microservices
-
-```
-Use CodeGraph instead of file scanning.
-Apply Spring Boot best practices from /springboot-patterns skill.
-Always trace auth flows through auth-service.
-Check payroll calculations against /payroll-patterns skill.
-```
