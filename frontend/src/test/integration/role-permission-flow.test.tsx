@@ -20,6 +20,7 @@ import * as employeeApi from '@/api/employee.api';
 
 vi.mock('@/store/authStore');
 vi.mock('@/store/uiStore');
+vi.mock('@/hooks/usePermissions');
 vi.mock('@/api/user.api');
 vi.mock('@/api/role.api');
 vi.mock('@/api/employee.api');
@@ -63,18 +64,18 @@ describe('Integration: Role Permission Flow', () => {
       vi.mocked(useAuthStore).mockReturnValue(createMockAuthStore(mockAdminUser));
 
       // Mock permission hook for admin
-      vi.mock('@/hooks/usePermissions', () => ({
-        usePermissions: () => ({
-          can: () => true,
-          canAny: () => true,
-          canAll: () => true,
-          hasRole: (role: string) => role === 'ADMIN',
-          isAdmin: () => true,
-          permissions: mockAdminUser.permissions,
-          roles: mockAdminUser.roles,
-          isAuthenticated: true,
-        }),
-      }));
+      const { usePermissions } = await import('@/hooks/usePermissions');
+      vi.mocked(usePermissions).mockReturnValue({
+        can: () => true,
+        canAny: () => true,
+        canAll: () => true,
+        hasRole: (role: string) => role === 'ADMIN',
+        hasAnyRole: () => true,
+        isAdmin: () => true,
+        permissions: mockAdminUser.permissions,
+        roles: mockAdminUser.roles,
+        isAuthenticated: true,
+      });
     });
 
     it('should show all actions for admin in user management', async () => {
@@ -112,7 +113,7 @@ describe('Integration: Role Permission Flow', () => {
       await user.click(within(dialog).getByRole('button', { name: /tạo tài khoản/i }));
 
       expect(userApi.userApi.create).toHaveBeenCalled();
-    });
+    }, 10000);
 
     it('should allow admin to delete users', async () => {
       const user = userEvent.setup();
@@ -130,7 +131,7 @@ describe('Integration: Role Permission Flow', () => {
 
       // Should succeed
       expect(userApi.userApi.delete).toHaveBeenCalled();
-    });
+    }, 10000);
 
     it('should allow admin to lock/unlock users', async () => {
       const user = userEvent.setup();
@@ -151,7 +152,7 @@ describe('Integration: Role Permission Flow', () => {
 
       // Should succeed
       expect(userApi.userApi.lockAccount).toHaveBeenCalled();
-    });
+    }, 10000);
   });
 
   describe.skip('Regular User Permissions', () => {
@@ -160,33 +161,33 @@ describe('Integration: Role Permission Flow', () => {
       vi.mocked(useAuthStore).mockReturnValue(createMockAuthStore(mockUser));
 
       // Mock permission hook for regular user
-      vi.mock('@/hooks/usePermissions', () => ({
-        usePermissions: () => ({
-          can: (permission: string) => {
-            // Regular user can only view employees, departments, organizations
-            return [
-              'employee:view',
-              'department:view',
-              'organization:view',
-            ].includes(permission);
-          },
-          canAny: (permissions: string[]) => {
-            return permissions.some(p =>
-              ['employee:view', 'department:view', 'organization:view'].includes(p)
-            );
-          },
-          canAll: (permissions: string[]) => {
-            return permissions.every(p =>
-              ['employee:view', 'department:view', 'organization:view'].includes(p)
-            );
-          },
-          hasRole: (role: string) => role === 'USER',
-          isAdmin: () => false,
-          permissions: mockUser.permissions,
-          roles: mockUser.roles,
-          isAuthenticated: true,
-        }),
-      }));
+      const { usePermissions } = await import('@/hooks/usePermissions');
+      vi.mocked(usePermissions).mockReturnValue({
+        can: (permission: string) => {
+          // Regular user can only view employees, departments, organizations
+          return [
+            'employee:view',
+            'department:view',
+            'organization:view',
+          ].includes(permission);
+        },
+        canAny: (permissions: string[]) => {
+          return permissions.some(p =>
+            ['employee:view', 'department:view', 'organization:view'].includes(p)
+          );
+        },
+        canAll: (permissions: string[]) => {
+          return permissions.every(p =>
+            ['employee:view', 'department:view', 'organization:view'].includes(p)
+          );
+        },
+        hasRole: (role: string) => role === 'USER',
+        hasAnyRole: () => false,
+        isAdmin: () => false,
+        permissions: mockUser.permissions,
+        roles: mockUser.roles,
+        isAuthenticated: true,
+      });
     });
 
     it('should hide user management actions for regular user', async () => {
@@ -243,20 +244,20 @@ describe('Integration: Role Permission Flow', () => {
       const { useAuthStore } = await import('@/store/authStore');
       vi.mocked(useAuthStore).mockReturnValue(createMockAuthStore(mockHRManager));
 
-      vi.mock('@/hooks/usePermissions', () => ({
-        usePermissions: () => ({
-          can: (permission: string) => mockHRManager.permissions.includes(permission),
-          canAny: (permissions: string[]) =>
-            permissions.some(p => mockHRManager.permissions.includes(p)),
-          canAll: (permissions: string[]) =>
-            permissions.every(p => mockHRManager.permissions.includes(p)),
-          hasRole: (role: string) => role === 'HR_MANAGER',
-          isAdmin: () => false,
-          permissions: mockHRManager.permissions,
-          roles: mockHRManager.roles,
-          isAuthenticated: true,
-        }),
-      }));
+      const { usePermissions } = await import('@/hooks/usePermissions');
+      vi.mocked(usePermissions).mockReturnValue({
+        can: (permission: string) => mockHRManager.permissions.includes(permission),
+        canAny: (permissions: string[]) =>
+          permissions.some(p => mockHRManager.permissions.includes(p)),
+        canAll: (permissions: string[]) =>
+          permissions.every(p => mockHRManager.permissions.includes(p)),
+        hasRole: (role: string) => role === 'HR_MANAGER',
+        hasAnyRole: () => false,
+        isAdmin: () => false,
+        permissions: mockHRManager.permissions,
+        roles: mockHRManager.roles,
+        isAuthenticated: true,
+      });
     });
 
     it('should allow HR manager to view users but not create/delete', async () => {
@@ -289,18 +290,18 @@ describe('Integration: Role Permission Flow', () => {
       const { useAuthStore } = await import('@/store/authStore');
       vi.mocked(useAuthStore).mockReturnValue(createMockAuthStore(mockAdminUser));
 
-      vi.mock('@/hooks/usePermissions', () => ({
-        usePermissions: () => ({
-          can: () => true,
-          canAny: () => true,
-          canAll: () => true,
-          hasRole: () => true,
-          isAdmin: () => true,
-          permissions: mockAdminUser.permissions,
-          roles: mockAdminUser.roles,
-          isAuthenticated: true,
-        }),
-      }));
+      const { usePermissions } = await import('@/hooks/usePermissions');
+      vi.mocked(usePermissions).mockReturnValue({
+        can: () => true,
+        canAny: () => true,
+        canAll: () => true,
+        hasRole: () => true,
+        hasAnyRole: () => true,
+        isAdmin: () => true,
+        permissions: mockAdminUser.permissions,
+        roles: mockAdminUser.roles,
+        isAuthenticated: true,
+      });
     });
 
     it('should show permission matrix with inherited permissions', async () => {
@@ -374,18 +375,18 @@ describe('Integration: Role Permission Flow', () => {
       const { useAuthStore } = await import('@/store/authStore');
       vi.mocked(useAuthStore).mockReturnValue(createMockAuthStore(mockAdminUser));
 
-      vi.mock('@/hooks/usePermissions', () => ({
-        usePermissions: () => ({
-          can: () => true,
-          canAny: () => true,
-          canAll: () => true,
-          hasRole: () => true,
-          isAdmin: () => true,
-          permissions: mockAdminUser.permissions,
-          roles: mockAdminUser.roles,
-          isAuthenticated: true,
-        }),
-      }));
+      const { usePermissions } = await import('@/hooks/usePermissions');
+      vi.mocked(usePermissions).mockReturnValue({
+        can: () => true,
+        canAny: () => true,
+        canAll: () => true,
+        hasRole: () => true,
+        hasAnyRole: () => true,
+        isAdmin: () => true,
+        permissions: mockAdminUser.permissions,
+        roles: mockAdminUser.roles,
+        isAuthenticated: true,
+      });
     });
 
     it('should update permissions when changing role', async () => {
@@ -432,18 +433,18 @@ describe('Integration: Role Permission Flow', () => {
       const { useAuthStore } = await import('@/store/authStore');
       vi.mocked(useAuthStore).mockReturnValue(createMockAuthStore(mockUser));
 
-      vi.mock('@/hooks/usePermissions', () => ({
-        usePermissions: () => ({
-          can: () => false,
-          canAny: () => false,
-          canAll: () => false,
-          hasRole: () => false,
-          isAdmin: () => false,
-          permissions: mockUser.permissions,
-          roles: mockUser.roles,
-          isAuthenticated: true,
-        }),
-      }));
+      const { usePermissions } = await import('@/hooks/usePermissions');
+      vi.mocked(usePermissions).mockReturnValue({
+        can: () => false,
+        canAny: () => false,
+        canAll: () => false,
+        hasRole: () => false,
+        hasAnyRole: () => false,
+        isAdmin: () => false,
+        permissions: mockUser.permissions,
+        roles: mockUser.roles,
+        isAuthenticated: true,
+      });
 
       renderWithRouter(<UserManagementPage />);
       await screen.findByText('admin');

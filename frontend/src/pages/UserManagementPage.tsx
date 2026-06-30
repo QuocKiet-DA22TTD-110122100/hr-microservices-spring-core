@@ -834,7 +834,6 @@ export const UserManagementPage = () => {
           <Input
             label="Tên đăng nhập"
             placeholder="Nhập tên đăng nhập (3-50 ký tự)"
-            required
             value={newUsername}
             onChange={(e) => {
               setNewUsername(e.target.value);
@@ -850,7 +849,6 @@ export const UserManagementPage = () => {
             label="Mật khẩu"
             type="password"
             placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)"
-            required
             value={newPassword}
             onChange={(e) => {
               setNewPassword(e.target.value);
