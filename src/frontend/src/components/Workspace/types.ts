@@ -29,6 +29,10 @@ export interface WorkspaceItem {
   progress?: number;
   /** Specific member responsible for this item */
   assignee?: WorkspaceAssignee;
+  /** ISO date (yyyy-MM-dd) used by calendar-style views, e.g. leave requests */
+  date?: string;
+  /** Marks an item that needs attention before approval (missing check-out, unconfirmed OT, ...) */
+  isException?: boolean;
 }
 
 export interface WorkspaceDefinition {

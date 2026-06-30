@@ -21,9 +21,11 @@ import { WorkspaceMetricCards } from '@/components/Workspace/WorkspaceMetricCard
 import { WorkspaceStatusFilters, WorkspaceFilter } from '@/components/Workspace/WorkspaceStatusFilters';
 import { WorkspaceStatusList } from '@/components/Workspace/WorkspaceStatusList';
 import { WorkspaceDefinition, WorkspaceItem } from '@/components/Workspace/types';
+import { LeaveCalendarModal } from '@/components/Workspace/LeaveCalendarModal';
 import { resolveWorkspaceRole } from '@/config/roleExperience';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
+import { downloadCsv } from '@/utils/exportCsv';
 const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
   'account-security': {
     title: 'Tài khoản và bảo mật',
@@ -139,6 +141,7 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
         priority: 'medium',
         due: 'Trước 12/06',
         nextStep: 'Chờ quản lý trực tiếp duyệt.',
+        date: '2026-06-12',
       },
       {
         title: 'Nghỉ ốm',
@@ -149,6 +152,7 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
         priority: 'normal',
         due: 'Hoàn tất',
         nextStep: 'Lưu hồ sơ nghỉ phép.',
+        date: '2026-06-05',
       },
       {
         title: 'Nghỉ bù',
@@ -159,6 +163,7 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
         priority: 'normal',
         due: 'Hoàn tất',
         nextStep: 'Không cần xử lý thêm.',
+        date: '2026-06-20',
       },
     ],
     processNotes: ['Nhân viên tạo đơn nghỉ.', 'Quản lý duyệt bước đầu.', 'Trưởng phòng và HR theo dõi các trường hợp ảnh hưởng vận hành.'],
@@ -231,6 +236,7 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
         priority: 'high',
         due: 'Hôm nay',
         nextStep: 'Xác nhận ghi chú và duyệt hoặc trả lại.',
+        isException: true,
       },
       {
         title: 'Trần Bảo Ngọc',
@@ -241,6 +247,7 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
         priority: 'medium',
         due: 'Tuần này',
         nextStep: 'Đối chiếu task phát sinh và duyệt OT.',
+        isException: true,
       },
       {
         title: 'Lê Ngọc Hân',
@@ -560,11 +567,15 @@ export const RoleWorkspacePage = () => {
   const [activeFilter, setActiveFilter] = useState<WorkspaceFilter>('all');
   const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
   const [items, setItems] = useState<WorkspaceItem[]>(() => workspaceDefinitions[slug]?.items ?? []);
+  const [isLeaveCalendarOpen, setIsLeaveCalendarOpen] = useState(false);
+  const [exceptionOnly, setExceptionOnly] = useState(false);
 
   useEffect(() => {
     setItems(workspaceDefinitions[slug]?.items ?? []);
     setSelectedTitle(null);
     setActiveFilter('all');
+    setIsLeaveCalendarOpen(false);
+    setExceptionOnly(false);
   }, [slug]);
 
   const workspace = workspaceDefinitions[slug];
@@ -605,6 +616,7 @@ export const RoleWorkspacePage = () => {
             priority: 'medium',
             due: 'Chờ duyệt',
             nextStep: 'Chờ quản lý trực tiếp xác nhận đơn nghỉ.',
+            date: new Date().toISOString().slice(0, 10),
           };
     setItems((prev) => [newItem, ...prev]);
     setSelectedTitle(newItem.title);
@@ -644,12 +656,71 @@ export const RoleWorkspacePage = () => {
     });
   };
 
+  const statusLabels: Record<WorkspaceItem['status'], string> = {
+    pending: 'Chờ xử lý',
+    approved: 'Đã duyệt',
+    inProgress: 'Đang xử lý',
+    blocked: 'Cần chú ý',
+  };
+
+  const handleExportTimesheet = () => {
+    const headers = ['Ngày', 'Mô tả', 'Trạng thái', 'Ưu tiên', 'Hạn', 'Bước tiếp theo'];
+    const rows = items.map((item) => [
+      item.title,
+      item.description,
+      statusLabels[item.status],
+      item.priority,
+      item.due,
+      item.nextStep,
+    ]);
+    downloadCsv(`bang-cong-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+    addNotification({ type: 'success', message: 'Đã xuất bảng công ra file CSV.' });
+  };
+
+  const handleSecondaryAction = () => {
+    if (slug === 'timekeeping') {
+      handleExportTimesheet();
+      return;
+    }
+
+    if (slug === 'leave') {
+      setIsLeaveCalendarOpen(true);
+      return;
+    }
+
+    if (slug === 'timesheet-approval') {
+      const nextValue = !exceptionOnly;
+      setExceptionOnly(nextValue);
+      addNotification({
+        type: 'info',
+        message: nextValue
+          ? 'Đã lọc danh sách, chỉ hiển thị các mục có ngoại lệ.'
+          : 'Đã bỏ lọc, hiển thị toàn bộ bảng công.',
+      });
+      return;
+    }
+
+    addNotification({
+      type: 'info',
+      message: `"${workspace?.secondaryAction}": Tính năng đang được phát triển. Backend API chưa sẵn sàng trong phiên bản MVP.`,
+    });
+  };
+
+  const secondaryActionLabel =
+    slug === 'timesheet-approval' && exceptionOnly ? 'Bỏ lọc ngoại lệ' : workspace?.secondaryAction;
+
   const supportsApproval = ['timesheet-approval', 'approvals'].includes(slug);
 
   const filteredItems = useMemo(() => {
-    if (activeFilter === 'all') return items;
-    return items.filter((item) => item.status === activeFilter);
-  }, [activeFilter, items]);
+    let result = items;
+    if (activeFilter !== 'all') {
+      result = result.filter((item) => item.status === activeFilter);
+    }
+    if (slug === 'timesheet-approval' && exceptionOnly) {
+      result = result.filter((item) => item.isException);
+    }
+    return result;
+  }, [activeFilter, items, slug, exceptionOnly]);
 
   const selectedItem = useMemo(
     () => items.find((item) => item.title === selectedTitle) ?? filteredItems[0],
@@ -740,15 +811,10 @@ export const RoleWorkspacePage = () => {
               ) : (
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={() =>
-                    addNotification({
-                      type: 'info',
-                      message: `"${workspace.secondaryAction}": Tính năng đang được phát triển. Backend API chưa sẵn sàng trong phiên bản MVP.`,
-                    })
-                  }
+                  variant={slug === 'timesheet-approval' && exceptionOnly ? 'secondary' : 'outline'}
+                  onClick={handleSecondaryAction}
                 >
-                  {workspace.secondaryAction}
+                  {secondaryActionLabel}
                 </Button>
               )}
               {actionRoutes.primary ? (
@@ -796,6 +862,14 @@ export const RoleWorkspacePage = () => {
           />
         </section>
       </div>
+
+      {slug === 'leave' && (
+        <LeaveCalendarModal
+          isOpen={isLeaveCalendarOpen}
+          onClose={() => setIsLeaveCalendarOpen(false)}
+          items={items}
+        />
+      )}
     </MainLayout>
   );
 };
