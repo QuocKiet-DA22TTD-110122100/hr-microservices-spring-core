@@ -1,4 +1,71 @@
-# hr-microservices-spring-core
+# Phat trien ung dung Web quan ly cong viec nhom theo kien truc Microservices
+
+Repository nop do an tot nghiep:
+
+`tn-da22ttd-110122100-huynhquockiet-ptWebqlcvntkt-microservices`
+
+## Muc tieu do an
+
+Xay dung he thong web ho tro quan ly cong viec nhom, nhan su, du an, task, phan quyen nguoi dung va theo doi tien do theo kien truc Microservices. He thong huong den kha nang trien khai bang Docker, tach module ro rang va de mo rong.
+
+## Kien truc tong quan
+
+- Frontend: React, Vite, TypeScript.
+- Backend: Java, Spring Boot, Spring Cloud.
+- API Gateway: Spring Cloud Gateway.
+- Service Discovery: Eureka Server.
+- Dich vu nghiep vu: Auth Service, HR Service, Project Service, Task Service.
+- Du lieu: PostgreSQL, MySQL, Redis.
+- Hang doi/thong diep: RabbitMQ.
+- Trien khai: Docker, Docker Compose, HAProxy.
+- Theo doi: Prometheus, Grafana.
+
+## Cau truc nop do an
+
+- `docs/`: tai lieu do an, bao cao, PDF, slide, poster, huong dan su dung va video demo.
+- `src/`: chi muc ma nguon va vi tri database. Do du an la microservices, ma nguon that duoc giu o cac module goc de Docker Compose va Maven build dung duong dan.
+- `SUBMISSION_STRUCTURE.md`: mo ta chi tiet cau truc repository dung de nop.
+
+## Chay nhanh bang Docker
+
+```bash
+docker compose -f microservices-compose.yml up -d --build
+```
+
+Truy cap:
+
+- Frontend: http://localhost:3000
+- API Gateway: http://localhost:8080
+- Eureka: http://localhost:8761
+
+Dung he thong:
+
+```bash
+docker compose -f microservices-compose.yml down
+```
+
+## Chay ban toi gian de demo
+
+```bash
+docker compose -f compose.minimal.yml up -d --build
+```
+
+## Ghi chu nop tai lieu
+
+File bao cao `.docx` da duoc dat tai:
+
+- `docs/01-report/tn-da22ttd-110122100-huynhquockiet-bao-cao.docx`
+
+Can bo sung truoc khi nop:
+
+- `docs/01-report/tn-da22ttd-110122100-huynhquockiet-bao-cao.pdf`
+- `docs/02-slides/tn-da22ttd-110122100-huynhquockiet-slide-bao-ve.pptx`
+- `docs/03-poster/tn-da22ttd-110122100-huynhquockiet-poster-a1.pdf`
+- `docs/05-demo-video/demo-chuong-trinh.mp4` neu co yeu cau.
+
+---
+
+# Ghi chu ky thuat cu
 
 ## Chay rieng cum Eureka de chia se cho nguoi khac
 
