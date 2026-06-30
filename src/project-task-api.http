@@ -1,0 +1,234 @@
+### ============================================================
+### project-service & task-service API Tests (qua Gateway :8080)
+### Thay TOKEN_ADMIN / TOKEN_USER bằng JWT thực từ /api/xac-thuc/dang-nhap
+### ============================================================
+
+@GATEWAY = http://localhost:8080
+@TOKEN_ADMIN = Bearer <jwt_admin_here>
+@TOKEN_USER  = Bearer <jwt_user_here>
+
+### ---- HEALTH (không cần token) ----
+
+GET {{GATEWAY}}/api/du-an/projects/health
+
+###
+
+GET {{GATEWAY}}/api/cong-viec/tasks/health
+
+### ============================================================
+### PROJECT SERVICE
+### ============================================================
+
+### [ADMIN] Tạo project
+POST {{GATEWAY}}/api/du-an/projects
+Authorization: {{TOKEN_ADMIN}}
+Content-Type: application/json
+
+{
+  "name": "Dự án Alpha",
+  "description": "Mô tả dự án Alpha",
+  "status": "ACTIVE",
+  "leadId": 1
+}
+
+###
+
+### [ADMIN] Tạo project - thiếu name → 400
+POST {{GATEWAY}}/api/du-an/projects
+Authorization: {{TOKEN_ADMIN}}
+Content-Type: application/json
+
+{
+  "description": "Thiếu name",
+  "leadId": 1
+}
+
+###
+
+### [USER] Tạo project → 403 Forbidden
+POST {{GATEWAY}}/api/du-an/projects
+Authorization: {{TOKEN_USER}}
+Content-Type: application/json
+
+{
+  "name": "Dự án Beta",
+  "leadId": 2
+}
+
+###
+
+### [USER] Lấy tất cả projects → 200
+GET {{GATEWAY}}/api/du-an/projects
+Authorization: {{TOKEN_USER}}
+
+###
+
+### [ADMIN] Lấy tất cả projects → 200
+GET {{GATEWAY}}/api/du-an/projects
+Authorization: {{TOKEN_ADMIN}}
+
+###
+
+### [USER] Lấy project theo ID
+GET {{GATEWAY}}/api/du-an/projects/1
+Authorization: {{TOKEN_USER}}
+
+###
+
+### [USER] Lấy projects theo status
+GET {{GATEWAY}}/api/du-an/projects/status/ACTIVE
+Authorization: {{TOKEN_USER}}
+
+###
+
+### [USER] Lấy projects theo lead
+GET {{GATEWAY}}/api/du-an/projects/lead/1
+Authorization: {{TOKEN_USER}}
+
+###
+
+### [ADMIN] Cập nhật project
+PUT {{GATEWAY}}/api/du-an/projects/1
+Authorization: {{TOKEN_ADMIN}}
+Content-Type: application/json
+
+{
+  "name": "Dự án Alpha (updated)",
+  "description": "Mô tả mới",
+  "status": "PAUSED",
+  "leadId": 1
+}
+
+###
+
+### [USER] Cập nhật project → 403 Forbidden
+PUT {{GATEWAY}}/api/du-an/projects/1
+Authorization: {{TOKEN_USER}}
+Content-Type: application/json
+
+{
+  "name": "Hack",
+  "leadId": 1
+}
+
+###
+
+### [ADMIN] Xóa project
+DELETE {{GATEWAY}}/api/du-an/projects/1
+Authorization: {{TOKEN_ADMIN}}
+
+###
+
+### Không có token → 401
+GET {{GATEWAY}}/api/du-an/projects
+
+### ============================================================
+### TASK SERVICE
+### ============================================================
+
+### [ADMIN] Tạo task
+POST {{GATEWAY}}/api/cong-viec/tasks
+Authorization: {{TOKEN_ADMIN}}
+Content-Type: application/json
+
+{
+  "title": "Thiết kế DB",
+  "description": "Thiết kế schema cho module dự án",
+  "status": "OPEN",
+  "assigneeId": 1,
+  "projectId": 1
+}
+
+###
+
+### [ADMIN] Tạo task - thiếu title → 400
+POST {{GATEWAY}}/api/cong-viec/tasks
+Authorization: {{TOKEN_ADMIN}}
+Content-Type: application/json
+
+{
+  "assigneeId": 1,
+  "projectId": 1
+}
+
+###
+
+### [USER] Tạo task → 403 Forbidden
+POST {{GATEWAY}}/api/cong-viec/tasks
+Authorization: {{TOKEN_USER}}
+Content-Type: application/json
+
+{
+  "title": "Hack task",
+  "assigneeId": 1,
+  "projectId": 1
+}
+
+###
+
+### [USER] Lấy tất cả tasks → 200
+GET {{GATEWAY}}/api/cong-viec/tasks
+Authorization: {{TOKEN_USER}}
+
+###
+
+### [USER] Lấy task theo ID
+GET {{GATEWAY}}/api/cong-viec/tasks/1
+Authorization: {{TOKEN_USER}}
+
+###
+
+### [USER] Lấy tasks theo project
+GET {{GATEWAY}}/api/cong-viec/tasks/project/1
+Authorization: {{TOKEN_USER}}
+
+###
+
+### [USER] Lấy tasks theo assignee
+GET {{GATEWAY}}/api/cong-viec/tasks/assignee/1
+Authorization: {{TOKEN_USER}}
+
+###
+
+### [USER] Lấy tasks theo status
+GET {{GATEWAY}}/api/cong-viec/tasks/status/OPEN
+Authorization: {{TOKEN_USER}}
+
+###
+
+### [ADMIN] Cập nhật task
+PUT {{GATEWAY}}/api/cong-viec/tasks/1
+Authorization: {{TOKEN_ADMIN}}
+Content-Type: application/json
+
+{
+  "title": "Thiết kế DB (updated)",
+  "description": "Cập nhật mô tả",
+  "status": "IN_PROGRESS",
+  "assigneeId": 1,
+  "projectId": 1
+}
+
+###
+
+### [USER] Cập nhật task → 403 Forbidden
+PUT {{GATEWAY}}/api/cong-viec/tasks/1
+Authorization: {{TOKEN_USER}}
+Content-Type: application/json
+
+{
+  "title": "Hack",
+  "assigneeId": 1,
+  "projectId": 1
+}
+
+###
+
+### [ADMIN] Xóa task
+DELETE {{GATEWAY}}/api/cong-viec/tasks/1
+Authorization: {{TOKEN_ADMIN}}
+
+###
+
+### Không có token → 401
+GET {{GATEWAY}}/api/cong-viec/tasks

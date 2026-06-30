@@ -1,0 +1,51 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/hr-alerts.yml
+
+scrape_configs:
+  - job_name: "api-gateway"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["api-gateway:8080"]
+
+  - job_name: "auth-service"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["auth-service:8086"]
+
+  - job_name: "hr-service"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["hr-service:8082"]
+
+  - job_name: "kms-service"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["kms-service:8083"]
+
+  - job_name: "eureka-peer1"
+    metrics_path: /actuator/prometheus
+    basic_auth:
+      username: eureka
+      password: change_me
+    static_configs:
+      - targets: ["eureka-peer1:8761"]
+
+  - job_name: "eureka-peer2"
+    metrics_path: /actuator/prometheus
+    basic_auth:
+      username: eureka
+      password: change_me
+    static_configs:
+      - targets: ["eureka-peer2:8762"]
+
+  - job_name: "eureka-peer3"
+    metrics_path: /actuator/prometheus
+    basic_auth:
+      username: eureka
+      password: change_me
+    static_configs:
+      - targets: ["eureka-peer3:8763"]

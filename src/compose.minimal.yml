@@ -1,0 +1,294 @@
+version: "3.8"
+
+# Minimal stack for frontend development
+# Essential services: DB + Redis + API Gateway + Auth + HR + Project + Task
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: minimal-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  auth-postgres:
+    image: postgres:16-alpine
+    container_name: minimal-auth-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - minimal-auth-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  hr-mysql:
+    image: mysql:8.0
+    container_name: minimal-hr-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - "3306:3306"
+    volumes:
+      - minimal-hr-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  business-mysql:
+    image: mysql:8.0
+    container_name: minimal-business-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: project_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - minimal-business-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  kms-service:
+    build:
+      context: ./kms
+      dockerfile: Dockerfile
+    container_name: minimal-kms
+    ports:
+      - "8083:8083"
+    environment:
+      SERVER_PORT: "8083"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SPRING_PROFILES_ACTIVE: standalone
+      EUREKA_CLIENT_ENABLED: "false"
+      LOGGING_LEVEL_ROOT: INFO
+      JAVA_OPTS: "-Xmx256m -Xms128m"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: minimal-auth
+    ports:
+      - "8086:8086"
+    environment:
+      SERVER_PORT: "8086"
+      DB_URL: jdbc:postgresql://auth-postgres:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KMS_BASE_URL: http://kms-service:8083
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SPRING_PROFILES_ACTIVE: standalone
+      EUREKA_CLIENT_ENABLED: "false"
+      LOGIN_MAX_FAILURES: ${LOGIN_MAX_FAILURES}
+      LOGIN_LOCK_MINUTES: ${LOGIN_LOCK_MINUTES}
+      PASSWORD_EXPIRY_DAYS: ${PASSWORD_EXPIRY_DAYS}
+      HR_SYNC_ENABLED: "true"
+      HR_SYNC_BASE_URL: http://hr-service:8082
+      HR_SYNC_INTERNAL_SECRET: ${INTERNAL_SECRET}
+      LOGGING_LEVEL_ROOT: INFO
+      JAVA_OPTS: "-Xmx256m -Xms128m"
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+      kms-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8086/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  hr-service:
+    build:
+      context: ./hr-service
+      dockerfile: Dockerfile
+    container_name: minimal-hr
+    ports:
+      - "8082:8082"
+    environment:
+      SERVER_PORT: "8082"
+      SPRING_APPLICATION_NAME: hr-service
+      SPRING_DATASOURCE_URL: jdbc:mysql://hr-mysql:3306/${MYSQL_DATABASE}?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${HR_DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${HR_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SPRING_PROFILES_ACTIVE: standalone
+      EUREKA_CLIENT_ENABLED: "false"
+      SPRING_AUTOCONFIGURE_EXCLUDE: org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
+      SPRING_RABBITMQ_ENABLED: "false"
+      MESSAGING_ENABLED: "false"
+      LOGGING_LEVEL_ROOT: INFO
+      JAVA_OPTS: "-Xmx256m -Xms128m"
+    depends_on:
+      hr-mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  project-service:
+    build:
+      context: ./project-service
+      dockerfile: Dockerfile
+    container_name: minimal-project
+    ports:
+      - "8084:8084"
+    environment:
+      SERVER_PORT: "8084"
+      SPRING_DATASOURCE_URL: jdbc:mysql://business-mysql:3306/project_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SPRING_PROFILES_ACTIVE: standalone
+      EUREKA_CLIENT_ENABLED: "false"
+      SPRING_AUTOCONFIGURE_EXCLUDE: org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
+      LOGGING_LEVEL_ROOT: INFO
+      JAVA_OPTS: "-Xmx256m -Xms128m"
+    depends_on:
+      business-mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8084/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  task-service:
+    build:
+      context: ./task-service
+      dockerfile: Dockerfile
+    container_name: minimal-task
+    ports:
+      - "8087:8087"
+    environment:
+      SERVER_PORT: "8087"
+      SPRING_DATASOURCE_URL: jdbc:mysql://business-mysql:3306/task_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SPRING_PROFILES_ACTIVE: standalone
+      EUREKA_CLIENT_ENABLED: "false"
+      SPRING_AUTOCONFIGURE_EXCLUDE: org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
+      TASK_NOTIFICATION_PROVIDER: log
+      LOGGING_LEVEL_ROOT: INFO
+      JAVA_OPTS: "-Xmx256m -Xms128m"
+    depends_on:
+      business-mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8087/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: minimal-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SERVER_PORT: "8080"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_JWKS_URI: http://kms-service:8083/quan-ly-khoa/.well-known/jwks.json
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      AUTH_SERVICE_URL: http://auth-service:8086
+      HR_SERVICE_URL: http://hr-service:8082
+      PROJECT_SERVICE_URL: http://project-service:8084
+      TASK_SERVICE_URL: http://task-service:8087
+      APP_RATE_LIMIT_LOGIN_LIMIT: ${APP_RATE_LIMIT_LOGIN_LIMIT:-120}
+      APP_RATE_LIMIT_LOGIN_WINDOW_SECONDS: ${APP_RATE_LIMIT_LOGIN_WINDOW_SECONDS:-60}
+      SPRING_PROFILES_ACTIVE: standalone
+      EUREKA_CLIENT_ENABLED: "false"
+      LOGGING_LEVEL_ROOT: INFO
+      JAVA_OPTS: "-Xmx256m -Xms128m"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      hr-service:
+        condition: service_healthy
+      project-service:
+        condition: service_healthy
+      task-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: minimal-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  minimal-auth-data:
+  minimal-hr-data:
+  minimal-business-data:

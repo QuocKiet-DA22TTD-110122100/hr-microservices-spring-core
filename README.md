@@ -23,7 +23,7 @@ Xay dung he thong web ho tro quan ly cong viec nhom, nhan su, du an, task, phan 
 ## Cau truc nop do an
 
 - `docs/`: tai lieu do an, bao cao, PDF, slide, poster, huong dan su dung va video demo.
-- `src/`: chi muc ma nguon va vi tri database. Do du an la microservices, ma nguon that duoc giu o cac module goc de Docker Compose va Maven build dung duong dan.
+- `src/`: chua toan bo ma nguon do an, gom frontend, cac microservice backend, Docker, script, database seed va tai lieu ky thuat noi bo.
 - `SUBMISSION_STRUCTURE.md`: mo ta chi tiet cau truc repository dung de nop.
 
 ## Chay nhanh bang Docker

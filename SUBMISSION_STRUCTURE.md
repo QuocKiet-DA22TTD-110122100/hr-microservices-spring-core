@@ -4,7 +4,7 @@ Repository: `tn-da22ttd-110122100-huynhquockiet-ptWebqlcvntkt-microservices`
 
 ## `docs/`
 
-Chua tai lieu do an:
+Chua cac file tai lieu nop do an:
 
 - `docs/01-report/`: quyen do an `.docx` va `.pdf`.
 - `docs/02-slides/`: slide bao ve `.pptx`.
@@ -14,20 +14,23 @@ Chua tai lieu do an:
 
 ## `src/`
 
-Chua file chi muc ma nguon. Do du an la microservices, ma nguon that duoc chia tai cac module goc:
+Chua ma nguon do an:
 
-- `frontend/`
-- `api-gateway/`
-- `auth-service/`
-- `hr-service/`
-- `project-service/`
-- `task-service/`
-- `eureka-server/`
-- `kms/`
-- `docker/`
-- `haproxy/`
-- `observability/`
-- `postman/`
+- `src/frontend/`
+- `src/api-gateway/`
+- `src/auth-service/`
+- `src/hr-service/`
+- `src/project-service/`
+- `src/task-service/`
+- `src/eureka-server/`
+- `src/kms/`
+- `src/docker/`
+- `src/haproxy/`
+- `src/observability/`
+- `src/postman/`
+- `src/scripts/`
+- `src/tools/`
+- `src/project-docs/`
 
 ## File can bo sung truoc khi nop
 

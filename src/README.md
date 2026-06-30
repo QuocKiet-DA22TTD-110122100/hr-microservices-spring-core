@@ -1,26 +1,38 @@
 # Thu muc ma nguon do an
 
-Repository nay la du an microservices nen ma nguon duoc chia theo tung module tai root repository de giu nguyen kha nang build va chay bang Docker Compose.
+Thu muc `src/` chua ban ma nguon dung de nop do an theo yeu cau cua nha truong.
 
-## Cac module ma nguon
+## Cau truc ma nguon
 
-- `frontend/`: ung dung React/Vite chay giao dien web.
-- `api-gateway/`: Spring Cloud Gateway.
-- `auth-service/`: dich vu xac thuc, JWT, RBAC.
-- `hr-service/`: dich vu quan ly nhan su.
-- `project-service/`: dich vu quan ly du an.
-- `task-service/`: dich vu quan ly cong viec.
+- `frontend/`: ung dung web React/Vite/TypeScript.
+- `api-gateway/`: Spring Cloud Gateway, diem vao API.
+- `auth-service/`: xac thuc, JWT, RBAC va tai khoan.
+- `hr-service/`: quan ly nhan su.
+- `project-service/`: quan ly du an.
+- `task-service/`: quan ly cong viec.
 - `eureka-server/`: service discovery.
-- `kms/`: dich vu ho tro khoa/bao mat neu duoc kich hoat.
-- `docker/`: seed database va cau hinh phu tro.
+- `kms/`: module ho tro bao mat/khoa neu kich hoat.
+- `docker/`: seed database va file ho tro container.
 - `haproxy/`: cau hinh load balancer.
 - `observability/`: Prometheus, Grafana va theo doi he thong.
 - `postman/`: collection/API test.
+- `scripts/`: script ho tro seed, smoke test va van hanh.
+- `tools/`: cong cu tao/tong hop tai lieu.
+- `project-docs/`: tai lieu ky thuat noi bo cua du an.
+- `database/`: chi muc vi tri schema va seed SQL.
 
-## Co so du lieu
+## File cau hinh chay he thong
 
-Xem `src/database/README.md` de biet vi tri cac file schema va seed SQL.
+Trong thu muc nay co ban sao cac file quan trong:
 
-## Ly do khong di chuyen module vao thu muc nay
+- `pom.xml`, `mvnw`, `mvnw.cmd`
+- `microservices-compose.yml`
+- `compose.minimal.yml`
+- `compose.backend.yml`
+- `compose.frontend.yml`
+- `Dockerfile.base`
+- `run-full-stack.ps1`
 
-Neu di chuyen tat ca module vao `src/`, cac file `pom.xml`, Dockerfile, Docker Compose va script chay hien tai se phai doi duong dan hang loat. Vi vay thu muc nay dong vai tro chi muc nop do an, con ma nguon van giu o vi tri module goc de clone ve la chay duoc ngay.
+## Ghi chu
+
+Ban goc cac module van duoc giu o root repository de dam bao cac lenh Docker/Maven hien tai khong bi gay. Thu muc `src/` la ban dong goi dung cho yeu cau nop do an: "src chua ma nguon".
