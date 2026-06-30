@@ -1,0 +1,20 @@
+# Secrets
+.env
+*.p12
+*.jks
+*.pem
+*.key
+
+# Build artifacts
+target/
+dist/
+node_modules/
+*.log
+hs_err_pid*.log
+
+# Tool / editor config (local-only)
+.agents/
+.claude/
+.vscode/
+.logs/
+.qodo/
