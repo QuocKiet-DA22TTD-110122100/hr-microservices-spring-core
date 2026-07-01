@@ -8,12 +8,12 @@ on:
   push:
     branches: [main]
     paths:
-      - 'frontend/**'
+      - 'src/frontend/**'
       - '.github/workflows/ci-frontend.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'frontend/**'
+      - 'src/frontend/**'
   workflow_dispatch:
     inputs:
       skip_tests:
@@ -28,14 +28,14 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: src/frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: src/frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit --no-fund
       - run: npx tsc --noEmit
 
@@ -45,14 +45,14 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: src/frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: src/frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit --no-fund
       - run: npm run lint
 
@@ -63,14 +63,14 @@ jobs:
     if: ${{ !inputs.skip_tests }}
     defaults:
       run:
-        working-directory: frontend
+        working-directory: src/frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: src/frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit --no-fund
       - name: Run tests
         run: npm run test -- --run --reporter=verbose
@@ -79,7 +79,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ github.sha }}
-          path: frontend/test-results/
+          path: src/frontend/test-results/
           if-no-files-found: ignore
           retention-days: 7
 
@@ -90,14 +90,14 @@ jobs:
     needs: [typecheck, lint]
     defaults:
       run:
-        working-directory: frontend
+        working-directory: src/frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: src/frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit --no-fund
       - name: Build production bundle
         run: npm run build
@@ -112,7 +112,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: frontend-dist-${{ github.sha }}
-          path: frontend/dist
+          path: src/frontend/dist
           retention-days: 3
 
   # ─── 5. Docker image ──────────────────────────────────────────────────────
@@ -148,8 +148,8 @@ jobs:
       - name: Build & push
         uses: docker/build-push-action@v6
         with:
-          context: ./frontend
-          file: ./frontend/Dockerfile
+          context: ./src/frontend
+          file: ./src/frontend/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

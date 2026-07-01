@@ -66,14 +66,17 @@ jobs:
           docker compose version
 
       - name: Pull pre-built images from GHCR
+        working-directory: src
         run: |
           docker compose -f compose.backend.yml pull --ignore-pull-failures
           docker compose -f compose.frontend.yml pull --ignore-pull-failures
 
       - name: Start backend
+        working-directory: src
         run: docker compose -f compose.backend.yml up -d --wait --wait-timeout 900
 
       - name: Start frontend
+        working-directory: src
         run: docker compose -f compose.frontend.yml up -d --wait --wait-timeout 900
 
       - name: Show running containers
@@ -154,11 +157,13 @@ jobs:
 
       - name: Dump logs on failure
         if: failure()
+        working-directory: src
         run: |
           docker ps -a
           docker compose -f compose.backend.yml -f compose.frontend.yml logs --tail=250
 
       - name: Stop stack
         if: always()
+        working-directory: src
         run: |
           docker compose -f compose.backend.yml -f compose.frontend.yml down --remove-orphans --volumes

@@ -8,30 +8,28 @@ on:
   push:
     branches: [main]
     paths:
-      - 'api-gateway/**'
-      - 'auth-service/**'
-      - 'eureka-server/**'
-      - 'frontend/**'
-      - 'hr-service/**'
-      - 'kms/**'
-      - 'project-service/**'
-      - 'task-service/**'
-      - 'compose*.yml'
-      - 'docker-compose.yml'
+      - 'src/api-gateway/**'
+      - 'src/auth-service/**'
+      - 'src/eureka-server/**'
+      - 'src/frontend/**'
+      - 'src/hr-service/**'
+      - 'src/kms/**'
+      - 'src/project-service/**'
+      - 'src/task-service/**'
+      - 'src/compose*.yml'
       - '.github/workflows/docker-build.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'api-gateway/**'
-      - 'auth-service/**'
-      - 'eureka-server/**'
-      - 'frontend/**'
-      - 'hr-service/**'
-      - 'kms/**'
-      - 'project-service/**'
-      - 'task-service/**'
-      - 'compose*.yml'
-      - 'docker-compose.yml'
+      - 'src/api-gateway/**'
+      - 'src/auth-service/**'
+      - 'src/eureka-server/**'
+      - 'src/frontend/**'
+      - 'src/hr-service/**'
+      - 'src/kms/**'
+      - 'src/project-service/**'
+      - 'src/task-service/**'
+      - 'src/compose*.yml'
       - '.github/workflows/docker-build.yml'
   workflow_dispatch:
 
@@ -55,29 +53,29 @@ jobs:
       matrix:
         include:
           - image: api-gateway
-            context: ./api-gateway
-            dockerfile: ./api-gateway/Dockerfile
+            context: ./src/api-gateway
+            dockerfile: ./src/api-gateway/Dockerfile
           - image: auth-service
-            context: ./auth-service
-            dockerfile: ./auth-service/Dockerfile
+            context: ./src/auth-service
+            dockerfile: ./src/auth-service/Dockerfile
           - image: eureka-server
-            context: ./eureka-server
-            dockerfile: ./eureka-server/dockerfile
+            context: ./src/eureka-server
+            dockerfile: ./src/eureka-server/dockerfile
           - image: frontend
-            context: ./frontend
-            dockerfile: ./frontend/Dockerfile
+            context: ./src/frontend
+            dockerfile: ./src/frontend/Dockerfile
           - image: hr-service
-            context: ./hr-service
-            dockerfile: ./hr-service/Dockerfile
+            context: ./src/hr-service
+            dockerfile: ./src/hr-service/Dockerfile
           - image: kms-service
-            context: ./kms
-            dockerfile: ./kms/Dockerfile
+            context: ./src/kms
+            dockerfile: ./src/kms/Dockerfile
           - image: project-service
-            context: ./project-service
-            dockerfile: ./project-service/Dockerfile
+            context: ./src/project-service
+            dockerfile: ./src/project-service/Dockerfile
           - image: task-service
-            context: ./task-service
-            dockerfile: ./task-service/Dockerfile
+            context: ./src/task-service
+            dockerfile: ./src/task-service/Dockerfile
 
     steps:
       - name: Checkout
@@ -130,6 +128,7 @@ jobs:
     env:
       API_GATEWAY_IMAGE: hr-api-gateway:ci
       AUTH_DB_PASSWORD: auth_ci_password
+      AUTH_DB_URL: jdbc:postgresql://auth-postgres:5432/auth_db
       AUTH_DB_USERNAME: auth_ci
       BUSINESS_DB_PASSWORD: business_ci_password
       BUSINESS_DB_USERNAME: business_ci
@@ -141,10 +140,14 @@ jobs:
       FRONTEND_IMAGE: hr-frontend:ci
       HR_DB_PASSWORD: hr_ci_password
       HR_DB_USERNAME: hr_ci
+      IMAGE_TAG: ci
       INTERNAL_SECRET: ci-internal-secret
       JWT_SECRET: ci-jwt-secret
+      LOGIN_LOCK_MINUTES: '15'
+      LOGIN_MAX_FAILURES: '5'
       MYSQL_DATABASE: hr_db
       MYSQL_ROOT_PASSWORD: root_ci_password
+      PASSWORD_EXPIRY_DAYS: '90'
       POSTGRES_DB: auth_db
       POSTGRES_PASSWORD: postgres_ci_password
       POSTGRES_USER: auth_ci
@@ -155,7 +158,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Validate backend compose
+        working-directory: src
         run: docker compose -f compose.backend.yml config
 
       - name: Validate frontend compose
+        working-directory: src
         run: docker compose -f compose.frontend.yml config

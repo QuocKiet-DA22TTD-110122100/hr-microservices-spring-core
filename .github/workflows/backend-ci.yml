@@ -8,36 +8,34 @@ on:
   push:
     branches: [main]
     paths:
-      - 'pom.xml'
-      - 'mvnw'
-      - 'mvnw.cmd'
-      - '.mvn/**'
-      - 'api-gateway/**'
-      - 'auth-service/**'
-      - 'eureka-server/**'
-      - 'hr-service/**'
-      - 'kms/**'
-      - 'project-service/**'
-      - 'task-service/**'
-      - 'compose*.yml'
-      - 'docker-compose.yml'
+      - 'src/pom.xml'
+      - 'src/mvnw'
+      - 'src/mvnw.cmd'
+      - 'src/.mvn/**'
+      - 'src/api-gateway/**'
+      - 'src/auth-service/**'
+      - 'src/eureka-server/**'
+      - 'src/hr-service/**'
+      - 'src/kms/**'
+      - 'src/project-service/**'
+      - 'src/task-service/**'
+      - 'src/compose*.yml'
       - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'pom.xml'
-      - 'mvnw'
-      - 'mvnw.cmd'
-      - '.mvn/**'
-      - 'api-gateway/**'
-      - 'auth-service/**'
-      - 'eureka-server/**'
-      - 'hr-service/**'
-      - 'kms/**'
-      - 'project-service/**'
-      - 'task-service/**'
-      - 'compose*.yml'
-      - 'docker-compose.yml'
+      - 'src/pom.xml'
+      - 'src/mvnw'
+      - 'src/mvnw.cmd'
+      - 'src/.mvn/**'
+      - 'src/api-gateway/**'
+      - 'src/auth-service/**'
+      - 'src/eureka-server/**'
+      - 'src/hr-service/**'
+      - 'src/kms/**'
+      - 'src/project-service/**'
+      - 'src/task-service/**'
+      - 'src/compose*.yml'
       - '.github/workflows/backend-ci.yml'
   workflow_dispatch:
 
@@ -78,12 +76,11 @@ jobs:
               'task-service',
           ]
           shared_patterns = [
-              'pom.xml',
-              'mvnw',
-              'mvnw.cmd',
-              '.mvn/**',
-              'compose*.yml',
-              'docker-compose.yml',
+              'src/pom.xml',
+              'src/mvnw',
+              'src/mvnw.cmd',
+              'src/.mvn/**',
+              'src/compose*.yml',
               '.github/workflows/backend-ci.yml',
           ]
 
@@ -114,7 +111,7 @@ jobs:
                   selected = [
                       service
                       for service in services
-                      if any(changed.startswith(f'{service}/') for changed in changed_files)
+                      if any(changed.startswith(f'src/{service}/') for changed in changed_files)
                   ]
 
           print(f"service-matrix={json.dumps({'service': selected})}")
@@ -140,7 +137,9 @@ jobs:
           cache: maven
 
       - name: Make Maven wrapper executable
+        working-directory: src
         run: chmod +x mvnw
 
       - name: Build service
+        working-directory: src
         run: ./mvnw -B -ntp -T 1 -pl ${{ matrix.service }} -am clean install -DskipTests

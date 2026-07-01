@@ -11,10 +11,10 @@ on:
   push:
     branches: [main]
     paths:
-      - '**/pom.xml'
-      - '.mvn/**'
-      - 'mvnw'
-      - 'mvnw.cmd'
+      - 'src/**/pom.xml'
+      - 'src/.mvn/**'
+      - 'src/mvnw'
+      - 'src/mvnw.cmd'
       - '.github/workflows/maven-cache.yml'
   schedule:
     # Every Monday 02:00 UTC — refreshes cache before the work week
@@ -38,12 +38,15 @@ jobs:
           cache: maven
 
       - name: Make Maven wrapper executable
+        working-directory: src
         run: chmod +x mvnw
 
       - name: Download all dependencies (offline resolution)
         # --fail-at-end: keep going even if one module has issues, still populates cache
+        working-directory: src
         run: ./mvnw -B -ntp -T 2 dependency:go-offline --fail-at-end
 
       - name: Pre-compile all modules (populate class cache)
         # test-compile ensures test dependencies are also cached
+        working-directory: src
         run: ./mvnw -B -ntp -T 2 test-compile -DskipTests --fail-at-end
