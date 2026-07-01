@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, ClipboardCheck, KeyRound, LucideIcon, User, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ClipboardCheck, FolderOpen, KeyRound, LucideIcon, User, XCircle } from 'lucide-react';
 import { Badge } from '@/components/UI/Badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/UI/Card';
 import { cn } from '@/utils/cn';
@@ -10,11 +10,12 @@ interface WorkspaceActionPanelProps {
   processNotes: string[];
   onApprove?: (item: WorkspaceItem) => void;
   onReject?: (item: WorkspaceItem) => void;
+  onOpenRecord?: (item: WorkspaceItem) => void;
 }
 
 const noteIcons: LucideIcon[] = [CheckCircle2, AlertCircle, ClipboardCheck, KeyRound, User];
 
-export const WorkspaceActionPanel = ({ selectedItem, processNotes, onApprove, onReject }: WorkspaceActionPanelProps) => (
+export const WorkspaceActionPanel = ({ selectedItem, processNotes, onApprove, onReject, onOpenRecord }: WorkspaceActionPanelProps) => (
   <aside className="space-y-6">
     <Card>
       <CardHeader>
@@ -117,6 +118,31 @@ export const WorkspaceActionPanel = ({ selectedItem, processNotes, onApprove, on
               <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
                 <CheckCircle2 size={15} />
                 Mục này đã được phê duyệt
+              </div>
+            )}
+
+            {/* Open record button - context-aware deep link */}
+            {onOpenRecord && (
+              <div className={cn((onApprove || onReject) ? '' : 'border-t border-slate-100 pt-4')}>
+                <button
+                  type="button"
+                  disabled={!selectedItem.reviewId}
+                  onClick={() => selectedItem.reviewId && onOpenRecord(selectedItem)}
+                  className={cn(
+                    'flex w-full items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2',
+                    selectedItem.reviewId
+                      ? 'border-cyan-600 bg-cyan-600 text-white hover:bg-cyan-700'
+                      : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400',
+                  )}
+                >
+                  <FolderOpen size={15} />
+                  Mở hồ sơ
+                  {selectedItem.missingDataCount !== undefined && selectedItem.missingDataCount > 0 && (
+                    <span className="ml-1 rounded-full bg-white/25 px-1.5 py-0.5 text-[11px] font-bold tabular-nums">
+                      {selectedItem.missingDataCount}
+                    </span>
+                  )}
+                </button>
               </div>
             )}
           </div>

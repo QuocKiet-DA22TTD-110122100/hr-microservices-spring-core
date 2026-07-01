@@ -14,6 +14,7 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { MainLayout } from '@/components/Layout/MainLayout';
+import { Badge } from '@/components/UI/Badge';
 import { Button } from '@/components/UI/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/UI/Card';
 import { WorkspaceActionPanel } from '@/components/Workspace/WorkspaceActionPanel';
@@ -26,6 +27,93 @@ import { resolveWorkspaceRole } from '@/config/roleExperience';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { downloadCsv } from '@/utils/exportCsv';
+
+type HrMissingRecord = {
+  id: string;
+  name: string;
+  department: string;
+  missingInfo: string;
+  workflow: string;
+  status: 'Chờ xử lý' | 'Cần chú ý';
+  priority: 'Cao' | 'Trung bình';
+};
+
+const HR_TAX_WORKFLOW_TITLE = 'Bổ sung mã số thuế';
+
+const hrMissingRecords: HrMissingRecord[] = [
+  { id: 'NV-018', name: 'Nguyễn Minh Anh', department: 'Kế toán', missingInfo: 'Mã số thuế', workflow: HR_TAX_WORKFLOW_TITLE, status: 'Chờ xử lý', priority: 'Cao' },
+  { id: 'NV-027', name: 'Trần Quốc Bảo', department: 'Kinh doanh', missingInfo: 'Mã số thuế, người phụ thuộc', workflow: HR_TAX_WORKFLOW_TITLE, status: 'Chờ xử lý', priority: 'Cao' },
+  { id: 'NV-039', name: 'Lê Hoàng Chi', department: 'Vận hành', missingInfo: 'Người phụ thuộc', workflow: HR_TAX_WORKFLOW_TITLE, status: 'Chờ xử lý', priority: 'Cao' },
+  { id: 'NV-044', name: 'Phạm Gia Hân', department: 'Nhân sự', missingInfo: 'Mã số thuế', workflow: HR_TAX_WORKFLOW_TITLE, status: 'Chờ xử lý', priority: 'Cao' },
+  { id: 'NV-052', name: 'Đỗ Thành Long', department: 'Kỹ thuật', missingInfo: 'Mã số thuế', workflow: HR_TAX_WORKFLOW_TITLE, status: 'Chờ xử lý', priority: 'Cao' },
+  { id: 'NV-061', name: 'Võ Thảo My', department: 'Kỹ thuật', missingInfo: 'Hợp đồng lao động', workflow: 'Hoàn thiện hợp đồng', status: 'Cần chú ý', priority: 'Trung bình' },
+  { id: 'NV-073', name: 'Bùi Đức Nam', department: 'Kinh doanh', missingInfo: 'Số tài khoản ngân hàng', workflow: 'Cập nhật hồ sơ payroll', status: 'Cần chú ý', priority: 'Trung bình' },
+  { id: 'NV-085', name: 'Huỳnh Kim Ngân', department: 'Chăm sóc khách hàng', missingInfo: 'Địa chỉ thường trú', workflow: 'Rà soát thông tin cá nhân', status: 'Cần chú ý', priority: 'Trung bình' },
+  { id: 'NV-092', name: 'Mai Anh Quân', department: 'Vận hành', missingInfo: 'Số CCCD', workflow: 'Rà soát giấy tờ', status: 'Cần chú ý', priority: 'Trung bình' },
+  { id: 'NV-104', name: 'Ngô Phương Linh', department: 'Kế toán', missingInfo: 'Thông tin bảo hiểm', workflow: 'Bổ sung bảo hiểm', status: 'Cần chú ý', priority: 'Trung bình' },
+  { id: 'NV-117', name: 'Dương Minh Tú', department: 'Kỹ thuật', missingInfo: 'Ngày ký hợp đồng', workflow: 'Hoàn thiện hợp đồng', status: 'Cần chú ý', priority: 'Trung bình' },
+];
+
+const taxWorkflowEmployeeIds = hrMissingRecords
+  .filter((record) => record.workflow === HR_TAX_WORKFLOW_TITLE)
+  .map((record) => record.id);
+
+const HrMissingRecordsTable = ({
+  records,
+  title,
+  description,
+  focused,
+}: {
+  records: HrMissingRecord[];
+  title: string;
+  description: string;
+  focused?: boolean;
+}) => (
+  <Card className={focused ? 'border-cyan-300 bg-cyan-50/20' : undefined}>
+    <CardHeader>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </div>
+        <Badge variant={focused ? 'info' : 'warning'}>{records.length} hồ sơ</Badge>
+      </div>
+    </CardHeader>
+    <CardContent className="p-0">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] text-left text-sm">
+          <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-600">
+            <tr>
+              <th className="px-5 py-3">Mã NV</th>
+              <th className="px-5 py-3">Nhân viên</th>
+              <th className="px-5 py-3">Phòng ban</th>
+              <th className="px-5 py-3">Thông tin còn thiếu</th>
+              <th className="px-5 py-3">Luồng xử lý</th>
+              <th className="px-5 py-3">Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 bg-white">
+            {records.map((record) => (
+              <tr key={record.id} className="hover:bg-slate-50">
+                <td className="px-5 py-3 font-semibold text-slate-700">{record.id}</td>
+                <td className="px-5 py-3 font-semibold text-slate-950">{record.name}</td>
+                <td className="px-5 py-3 text-slate-600">{record.department}</td>
+                <td className="px-5 py-3 text-slate-700">{record.missingInfo}</td>
+                <td className="px-5 py-3 text-slate-600">{record.workflow}</td>
+                <td className="px-5 py-3">
+                  <Badge variant={record.status === 'Chờ xử lý' ? 'warning' : 'danger'}>
+                    {record.status}
+                  </Badge>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </CardContent>
+  </Card>
+);
+
 const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
   'account-security': {
     title: 'Tài khoản và bảo mật',
@@ -430,13 +518,16 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
         priority: 'high',
         due: 'Trước payroll',
         nextStep: 'Liên hệ nhân viên thiếu thông tin và cập nhật hồ sơ.',
+        relatedEmployeeIds: taxWorkflowEmployeeIds,
+        missingDataCount: taxWorkflowEmployeeIds.length,
+        reviewId: 'hr-tax-code-missing',
       },
       {
         title: 'Cập nhật chức danh',
         description: '3 nhân viên thay đổi chức danh sau kỳ review.',
         owner: 'HR',
         meta: 'Vòng đời nhân viên',
-        status: 'inProgress',
+        status: 'blocked',
         priority: 'medium',
         due: 'Tuần này',
         nextStep: 'Đồng bộ chức danh sang HRIS.',
@@ -446,7 +537,7 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
         description: 'Đối chiếu danh sách active với hợp đồng còn hiệu lực.',
         owner: 'HR',
         meta: 'Compliance',
-        status: 'approved',
+        status: 'blocked',
         priority: 'normal',
         due: 'Hàng tháng',
         nextStep: 'Lưu báo cáo kiểm tra.',
@@ -476,6 +567,8 @@ const workspaceDefinitions: Record<string, WorkspaceDefinition> = {
         priority: 'high',
         due: 'Trước payroll',
         nextStep: 'Liên hệ nhân viên thiếu thông tin và cập nhật hồ sơ.',
+        missingDataCount: 11,
+        reviewId: 'task_bhxh_11',
       },
       {
         title: 'Phụ cấp dự án',
@@ -569,13 +662,18 @@ export const RoleWorkspacePage = () => {
   const [items, setItems] = useState<WorkspaceItem[]>(() => workspaceDefinitions[slug]?.items ?? []);
   const [isLeaveCalendarOpen, setIsLeaveCalendarOpen] = useState(false);
   const [exceptionOnly, setExceptionOnly] = useState(false);
+  const [hrMissingDataOnly, setHrMissingDataOnly] = useState(false);
+  const [hrDetailOpen, setHrDetailOpen] = useState(false);
 
   useEffect(() => {
-    setItems(workspaceDefinitions[slug]?.items ?? []);
-    setSelectedTitle(null);
+    const nextItems = workspaceDefinitions[slug]?.items ?? [];
+    setItems(nextItems);
+    setSelectedTitle(slug === 'hr-records' ? nextItems[0]?.title ?? null : null);
     setActiveFilter('all');
     setIsLeaveCalendarOpen(false);
     setExceptionOnly(false);
+    setHrMissingDataOnly(false);
+    setHrDetailOpen(false);
   }, [slug]);
 
   const workspace = workspaceDefinitions[slug];
@@ -632,6 +730,16 @@ export const RoleWorkspacePage = () => {
       return;
     }
 
+    if (slug === 'hr-records') {
+      if (!selectedItem) {
+        addNotification({ type: 'info', message: 'Hãy chọn một mục trong danh sách xử lý trước khi mở hồ sơ.' });
+        return;
+      }
+      setHrDetailOpen(true);
+      addNotification({ type: 'info', message: `Đã mở hồ sơ xử lý: ${selectedItem.title}` });
+      return;
+    }
+
     if (['timesheet-approval', 'approvals'].includes(slug)) {
       if (!selectedItem) {
         addNotification({ type: 'info', message: 'Hãy chọn một mục từ danh sách để phê duyệt.' });
@@ -677,7 +785,29 @@ export const RoleWorkspacePage = () => {
     addNotification({ type: 'success', message: 'Đã xuất bảng công ra file CSV.' });
   };
 
+  const handleHrMissingDataFilter = () => {
+    const missingItems = workspaceDefinitions['hr-records'].items;
+    const taxWorkflow = missingItems.find((item) => item.title === HR_TAX_WORKFLOW_TITLE);
+    setItems([
+      ...missingItems.filter((item) => item.title === HR_TAX_WORKFLOW_TITLE),
+      ...missingItems.filter((item) => item.title !== HR_TAX_WORKFLOW_TITLE),
+    ]);
+    setActiveFilter('pending');
+    setSelectedTitle(taxWorkflow?.title ?? null);
+    setHrMissingDataOnly(true);
+    setHrDetailOpen(false);
+    addNotification({
+      type: 'info',
+      message: 'Đã lọc hồ sơ thiếu dữ liệu, ưu tiên nhóm bổ sung mã số thuế trước payroll.',
+    });
+  };
+
   const handleSecondaryAction = () => {
+    if (slug === 'hr-records') {
+      handleHrMissingDataFilter();
+      return;
+    }
+
     if (slug === 'timekeeping') {
       handleExportTimesheet();
       return;
@@ -707,7 +837,11 @@ export const RoleWorkspacePage = () => {
   };
 
   const secondaryActionLabel =
-    slug === 'timesheet-approval' && exceptionOnly ? 'Bỏ lọc ngoại lệ' : workspace?.secondaryAction;
+    slug === 'hr-records' && hrMissingDataOnly
+      ? 'Đang lọc thiếu dữ liệu'
+      : slug === 'timesheet-approval' && exceptionOnly
+        ? 'Bỏ lọc ngoại lệ'
+        : workspace?.secondaryAction;
 
   const supportsApproval = ['timesheet-approval', 'approvals'].includes(slug);
 
@@ -723,12 +857,48 @@ export const RoleWorkspacePage = () => {
   }, [activeFilter, items, slug, exceptionOnly]);
 
   const selectedItem = useMemo(
-    () => items.find((item) => item.title === selectedTitle) ?? filteredItems[0],
+    () => items.find((item) => item.title === selectedTitle),
     [filteredItems, selectedTitle, items],
   );
 
   const handleSelectItem = (item: WorkspaceItem) => {
     setSelectedTitle(item.title);
+    if (slug === 'hr-records') {
+      setHrDetailOpen(false);
+    }
+  };
+
+  const handleMetricClick = (index: number) => {
+    if (slug === 'hr-records' && index === 1) {
+      handleHrMissingDataFilter();
+      return;
+    }
+
+    if (slug === 'benefits' && index === 0) {
+      const next = activeFilter === 'pending' ? 'all' : 'pending';
+      setActiveFilter(next);
+      if (next === 'pending') {
+        addNotification({ type: 'info', message: 'Đang lọc: hiển thị hồ sơ chờ rà soát (thiếu thông tin bảo hiểm).' });
+      }
+    }
+  };
+
+  const activeMetricIndex = useMemo(() => {
+    if (slug === 'hr-records' && hrMissingDataOnly) return 1;
+    if (slug === 'benefits' && activeFilter === 'pending') return 0;
+    return undefined;
+  }, [slug, activeFilter, hrMissingDataOnly]);
+
+  const handleOpenRecord = (item: WorkspaceItem) => {
+    if (slug === 'hr-records') {
+      setSelectedTitle(item.title);
+      setHrDetailOpen(true);
+      addNotification({ type: 'info', message: `Đã mở hồ sơ xử lý: ${item.title}` });
+      return;
+    }
+
+    if (!item.reviewId) return;
+    navigate(`/workspace/${slug}/review/${item.reviewId}`);
   };
 
   if (!workspace) {
@@ -777,6 +947,10 @@ export const RoleWorkspacePage = () => {
   }
 
   const Icon = workspace.icon;
+  const hrSelectedRecords = slug === 'hr-records' && selectedItem?.relatedEmployeeIds
+    ? hrMissingRecords.filter((record) => selectedItem.relatedEmployeeIds?.includes(record.id))
+    : [];
+  const isHrPrimaryDisabled = slug === 'hr-records' && !selectedItem;
 
   return (
     <MainLayout>
@@ -830,7 +1004,7 @@ export const RoleWorkspacePage = () => {
                   </Button>
                 </Link>
               ) : (
-                <Button type="button" onClick={handlePrimaryAction}>
+                <Button type="button" onClick={handlePrimaryAction} disabled={isHrPrimaryDisabled}>
                   {workspace.primaryAction}
                 </Button>
               )}
@@ -838,7 +1012,46 @@ export const RoleWorkspacePage = () => {
           </div>
         </section>
 
-        <WorkspaceMetricCards metrics={workspace.metrics} />
+        <WorkspaceMetricCards
+          metrics={workspace.metrics}
+          onMetricClick={['hr-records', 'benefits'].includes(slug) ? handleMetricClick : undefined}
+          activeMetricIndex={activeMetricIndex}
+        />
+
+        {slug === 'hr-records' && hrMissingDataOnly && (
+          <HrMissingRecordsTable
+            records={hrMissingRecords}
+            title="Hồ sơ thiếu dữ liệu cần bổ sung"
+            description="Quick filter đang hiển thị 11 nhân viên chưa đủ dữ liệu, ưu tiên xử lý trước kỳ payroll."
+          />
+        )}
+
+        {slug === 'hr-records' && hrDetailOpen && selectedItem && (
+          <section className="space-y-4">
+            <HrMissingRecordsTable
+              records={hrSelectedRecords}
+              title={`Chi tiết luồng: ${selectedItem.title}`}
+              description={`${hrSelectedRecords.length} nhân viên cần HR liên hệ và cập nhật thông tin còn thiếu.`}
+              focused
+            />
+            <div className="flex flex-wrap gap-2 rounded-lg border border-cyan-200 bg-white p-4">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => addNotification({ type: 'success', message: `Đã tạo nhắc nhở hàng loạt cho ${hrSelectedRecords.length} nhân viên.` })}
+              >
+                Gửi thông báo nhắc nhở hàng loạt
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => addNotification({ type: 'info', message: 'Đã mở form cập nhật nhanh mã số thuế cho nhóm đang chọn.' })}
+              >
+                Mở form cập nhật nhanh
+              </Button>
+            </div>
+          </section>
+        )}
 
         <section className="grid gap-6 xl:grid-cols-[1fr_360px]">
           <Card className="overflow-hidden">
@@ -859,6 +1072,7 @@ export const RoleWorkspacePage = () => {
             processNotes={workspace.processNotes}
             onApprove={supportsApproval ? handleApproveItem : undefined}
             onReject={supportsApproval ? handleRejectItem : undefined}
+            onOpenRecord={['hr-records', 'benefits'].includes(slug) ? handleOpenRecord : undefined}
           />
         </section>
       </div>

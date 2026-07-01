@@ -33,6 +33,12 @@ export interface WorkspaceItem {
   date?: string;
   /** Marks an item that needs attention before approval (missing check-out, unconfirmed OT, ...) */
   isException?: boolean;
+  /** Employee ids attached to a focused HR workflow item. */
+  relatedEmployeeIds?: string[];
+  /** Count of incomplete employee records represented by this item. */
+  missingDataCount?: number;
+  /** Route ID for deep-link review pages, e.g. 'task_bhxh_11' */
+  reviewId?: string;
 }
 
 export interface WorkspaceDefinition {

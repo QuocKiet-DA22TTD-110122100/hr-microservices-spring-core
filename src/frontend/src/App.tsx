@@ -43,6 +43,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ defaul
 const RoleWorkspacePage = lazy(() => import('./pages/RoleWorkspacePage').then(m => ({ default: m.RoleWorkspacePage })));
 const WorkManagementPage = lazy(() => import('./pages/WorkManagementPage').then(m => ({ default: m.WorkManagementPage })));
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage').then(m => ({ default: m.DocumentsPage })));
+const BenefitsReviewPage = lazy(() => import('./pages/BenefitsReviewPage').then(m => ({ default: m.BenefitsReviewPage })));
 
 function App() {
   return (
@@ -288,6 +289,14 @@ function App() {
           }
         />
 
+        <Route
+          path="/workspace/benefits/review/:taskId"
+          element={
+            <ProtectedRoute>
+              <BenefitsReviewPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/workspace/:slug"
           element={
