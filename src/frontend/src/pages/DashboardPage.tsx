@@ -228,29 +228,29 @@ const dashboardExperience: Record<WorkspaceRole, RoleDashboardExperience> = {
     accessNotes: ['Có báo cáo và phê duyệt cấp phòng', 'Có thể xem nhân sự trong phạm vi phòng ban', 'Không trực tiếp cấu hình role hệ thống'],
   },
   payroll: {
-    summaryTitle: 'Tong quan payroll',
+    summaryTitle: 'Tổng quan bảng lương',
     operatingModel: 'Payroll Officer theo dõi kỳ lương, tính lương, phê duyệt và trạng thái chi trả.',
     health: [
-      { label: 'Kỳ lương hiện tại', value: '06/2026', hint: 'Đang ở trạng thái đối soát demo' },
+      { label: 'Kỳ lương hiện tại', value: '06/2026', hint: 'Đang ở trạng thái đối soát' },
       { label: 'Bảng lương draft', value: '4', hint: 'Cần tính và phê duyệt' },
-      { label: 'Da xu ly', value: '12', hint: 'Dung cho lich su chi tra va audit' },
+      { label: 'Đã xử lý', value: '12', hint: 'Lịch sử chi trả và audit' },
     ],
     workQueue: [
       {
-        title: 'Tinh luong nhan vien',
-        description: 'Chon nhan vien va thang luong de tao ban ghi payroll draft.',
+        title: 'Tính lương nhân viên',
+        description: 'Chọn nhân viên và tháng lương để tạo bản ghi payroll draft.',
         meta: 'Bảng lương',
         priority: 'high',
       },
       {
-        title: 'Phê duyệt bang luong',
-        description: 'Kiem tra gross pay, khau tru va net pay truoc khi chuyen sang APPROVED.',
+        title: 'Phê duyệt bảng lương',
+        description: 'Kiểm tra gross pay, khấu trừ và net pay trước khi chuyển sang APPROVED.',
         meta: 'Workflow payroll',
         priority: 'medium',
       },
       {
-        title: 'Xu ly chi tra',
-        description: 'Khoa bang luong PROCESSED de phuc vu bao cao ban giao.',
+        title: 'Xử lý chi trả',
+        description: 'Khóa bảng lương PROCESSED để phục vụ báo cáo bàn giao.',
         meta: 'Audit payroll',
         priority: 'normal',
       },

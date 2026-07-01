@@ -325,6 +325,23 @@ export const WorkManagementPage = () => {
     [workspaceRole]
   );
 
+  const currentNavItem = useMemo(
+    () => workNavItems.find((item) => item.key === currentView),
+    [currentView]
+  );
+
+  const dashboardTitle =
+    workspaceRole === 'admin'
+      ? 'Admin / Owner Dashboard'
+      : workspaceRole === 'manager' || workspaceRole === 'departmentHead'
+        ? 'Manager Dashboard'
+        : 'Member Dashboard';
+  const dashboardSubtitle =
+    'Phase 3: Mở rộng phân tích dữ liệu, dòng thời gian, gợi ý AI, tự động hóa, tích hợp, i18n và trải nghiệm mobile. Các backend contract chưa có được ghi rõ.';
+
+  const shellTitle = currentView === 'dashboard' ? dashboardTitle : currentNavItem?.label ?? dashboardTitle;
+  const shellSubtitle = currentView === 'dashboard' ? dashboardSubtitle : currentNavItem?.description ?? dashboardSubtitle;
+
   const canCreateTask = can(PERMISSIONS.TASK_CREATE);
   const canUpdateTask = can(PERMISSIONS.TASK_UPDATE);
 
@@ -491,8 +508,8 @@ export const WorkManagementPage = () => {
 
   return (
     <WorkShell
-      title={workspaceRole === 'admin' ? 'Admin / Owner Dashboard' : workspaceRole === 'manager' || workspaceRole === 'departmentHead' ? 'Manager Dashboard' : 'Member Dashboard'}
-      subtitle="Phase 3: Mở rộng phân tích dữ liệu, dòng thời gian, gợi ý AI, tự động hóa, tích hợp, i18n và trải nghiệm mobile. Các backend contract chưa có được ghi rõ."
+      title={shellTitle}
+      subtitle={shellSubtitle}
       navItems={allowedNav}
       currentView={currentView}
       onNavigate={(view) => navigate(viewToRoute[view])}
@@ -606,8 +623,6 @@ const WorkShell = ({ title, subtitle, children, navItems = [], currentView, onNa
             Về menu chính
           </Link>
           <Badge variant="info" className="bg-blue-100 text-blue-950">Phase 3</Badge>
-          <Badge variant="muted" className="bg-slate-200 text-slate-900">Kanban</Badge>
-          <Badge variant="muted" className="bg-slate-200 text-slate-900">Advanced</Badge>
         </div>
       </div>
 
@@ -665,20 +680,28 @@ const DashboardView = ({ role, stats, projects, tasks }: DashboardViewProps) => 
   const riskyProjects = projects.filter((project) => project.highPriorityTaskCount > 0 || project.status === 'PAUSED');
   const urgentTasks = tasks.filter((task) => task.priority === 'HIGH' || task.priority === 'URGENT').slice(0, 5);
 
+  const statSparkData = useMemo(() => stats.map((s) => {
+    const cur = s.value;
+    const b = Math.max(cur - 4, 0);
+    return [b, Math.max(b - 1, 0), b + 2, Math.max(cur - 2, 0), Math.max(cur - 1, 0), cur, cur + 1];
+  }), [stats]);
+  const sparkStrokes = ['#64748b', '#3b82f6', '#10b981', '#f59e0b'];
+
   return (
     <div className="space-y-6">
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.label} className="interactive-lift p-5 hover:border-blue-200 hover:shadow-[0_10px_22px_rgba(37,99,235,0.08)]">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-slate-500">{stat.label}</p>
-                <p className="mt-1 font-display text-3xl font-bold tabular-nums text-slate-950">{stat.value}</p>
-                <p className="mt-2 text-sm leading-5 text-slate-600">{stat.hint}</p>
+        {stats.map((stat, idx) => (
+          <Card key={stat.label} className="interactive-lift relative overflow-hidden p-5 hover:border-blue-200 hover:shadow-[0_10px_22px_rgba(37,99,235,0.08)]">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{stat.label}</p>
+                <p className="mt-1.5 font-display text-3xl font-bold tabular-nums text-slate-950">{stat.value}</p>
+                <p className="mt-1.5 text-xs text-slate-500">{stat.hint}</p>
               </div>
-              <div className={cn('flex h-11 w-11 items-center justify-center rounded-xl', stat.tone)}>
-                <stat.icon size={22} />
-              </div>
+              <Sparkline values={statSparkData[idx]} stroke={sparkStrokes[idx % sparkStrokes.length]} />
+            </div>
+            <div className={cn('mt-4 flex h-8 w-8 items-center justify-center rounded-lg', stat.tone)}>
+              <stat.icon size={18} />
             </div>
           </Card>
         ))}
@@ -776,16 +799,200 @@ const MyTasksView = ({ tasks, projects, taskFilter, onFilterChange }: MyTasksVie
   </Card>
 );
 
-const ProjectsView = ({ projects }: { projects: ProjectSummary[] }) => (
-  <section className="grid gap-4 lg:grid-cols-2">
-    {projects.map((project) => <ProjectRow key={project.id} project={project} expanded />)}
-    {projects.length === 0 && (
-      <Card className="p-6">
-        <EmptyState title="Chưa có dự án" description="Project sẽ xuất hiện khi backend trả về danh sách dự án được phép xem." />
-      </Card>
-    )}
-  </section>
-);
+const ProjectsView = ({ projects }: { projects: ProjectSummary[] }) => {
+  const [projectFilter, setProjectFilter] = useState<'all' | 'active' | 'paused' | 'completed'>('all');
+
+  const filtered = useMemo(() => {
+    const map: Record<string, string> = { active: 'ACTIVE', paused: 'PAUSED', completed: 'COMPLETED' };
+    return projectFilter === 'all' ? projects : projects.filter((p) => p.status === map[projectFilter]);
+  }, [projects, projectFilter]);
+
+  const totalTasks = projects.reduce((s, p) => s + p.taskCount, 0);
+  const totalDone = projects.reduce((s, p) => s + p.completedTaskCount, 0);
+  const avgProgress = projects.length > 0
+    ? Math.round(projects.reduce((s, p) => s + getProgress(p), 0) / projects.length)
+    : 0;
+  const activeCount = projects.filter((p) => p.status === 'ACTIVE').length;
+
+  const filterTabs: Array<{ key: 'all' | 'active' | 'paused' | 'completed'; label: string; count: number }> = [
+    { key: 'all', label: 'Tất cả', count: projects.length },
+    { key: 'active', label: 'Đang chạy', count: activeCount },
+    { key: 'paused', label: 'Tạm dừng', count: projects.filter((p) => p.status === 'PAUSED').length },
+    { key: 'completed', label: 'Hoàn thành', count: projects.filter((p) => p.status === 'COMPLETED').length },
+  ];
+
+  const memberColors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#f43f5e'];
+  const statusConfig: Record<string, { cls: string; dot: string; label: string }> = {
+    ACTIVE:    { cls: 'bg-emerald-50 text-emerald-700 ring-emerald-200', dot: 'bg-emerald-500', label: 'Đang chạy' },
+    PAUSED:    { cls: 'bg-amber-50 text-amber-700 ring-amber-200',       dot: 'bg-amber-500',   label: 'Tạm dừng'  },
+    COMPLETED: { cls: 'bg-blue-50 text-blue-700 ring-blue-200',          dot: 'bg-blue-500',    label: 'Hoàn thành' },
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Top metric cards with sparklines */}
+      <section className="grid gap-4 md:grid-cols-3">
+        <MetricCard
+          label="Tổng dự án"
+          value={projects.length.toString()}
+          hint={`${activeCount} đang hoạt động`}
+          sparkValues={[1, 2, Math.max(activeCount - 1, 1), activeCount, projects.length - 1, projects.length, projects.length]}
+          stroke="#3b82f6"
+          accent="from-blue-500 to-cyan-400"
+        />
+        <MetricCard
+          label="Tổng task"
+          value={totalTasks.toString()}
+          hint={`${totalDone} đã hoàn thành`}
+          sparkValues={[0, Math.floor(totalTasks * 0.25), Math.floor(totalTasks * 0.45), Math.floor(totalTasks * 0.65), Math.floor(totalTasks * 0.82), totalTasks, totalTasks]}
+          stroke="#8b5cf6"
+          accent="from-violet-500 to-purple-400"
+        />
+        <MetricCard
+          label="Tiến độ trung bình"
+          value={`${avgProgress}%`}
+          hint="Tỷ lệ hoàn thành tổng thể"
+          sparkValues={[0, Math.floor(avgProgress * 0.3), Math.floor(avgProgress * 0.5), Math.floor(avgProgress * 0.7), Math.floor(avgProgress * 0.88), avgProgress, avgProgress]}
+          stroke="#10b981"
+          accent="from-emerald-500 to-teal-400"
+        />
+      </section>
+
+      {/* Table panel */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        {/* Panel header + filter tabs */}
+        <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-display text-lg font-bold text-slate-950">Danh sách dự án</h2>
+            <p className="mt-0.5 text-sm text-slate-500">{filtered.length} / {projects.length} dự án</p>
+          </div>
+          <div className="flex gap-1 rounded-xl bg-slate-100 p-1">
+            {filterTabs.map(({ key, label, count }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setProjectFilter(key)}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
+                  projectFilter === key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                )}
+              >
+                {label}
+                <span className={cn(
+                  'rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums',
+                  projectFilter === key ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-500'
+                )}>{count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="p-6">
+            <EmptyState title="Không có dự án phù hợp" description="Thay đổi filter hoặc kiểm tra dữ liệu backend." />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/60">
+                  {['No.', 'Dự án', 'Ngày tạo', 'Trạng thái', 'Task', 'Thành viên', 'Tiến độ', 'Rủi ro', ''].map((col) => (
+                    <th key={col} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-slate-400 first:pl-5">
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filtered.map((project, idx) => {
+                  const progress = getProgress(project);
+                  const progressColor = progress >= 80 ? 'bg-emerald-500' : progress >= 50 ? 'bg-blue-500' : 'bg-amber-500';
+                  const sc = statusConfig[project.status] ?? {
+                    cls: 'bg-slate-50 text-slate-600 ring-slate-200', dot: 'bg-slate-400', label: project.status,
+                  };
+                  return (
+                    <tr key={project.id} className="group transition-colors hover:bg-blue-50/30">
+                      <td className="py-4 pl-5 text-[11px] font-bold tabular-nums text-slate-300">
+                        {String(idx + 1).padStart(2, '0')}
+                      </td>
+                      <td className="max-w-[220px] px-4 py-4">
+                        <p className="font-display truncate font-bold text-slate-950">{project.name}</p>
+                        <p className="mt-0.5 truncate text-xs text-slate-400">{project.description || '—'}</p>
+                      </td>
+                      <td className="px-4 py-4 text-xs text-slate-500 whitespace-nowrap">{formatDate(project.createdAt)}</td>
+                      <td className="px-4 py-4">
+                        <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ring-1', sc.cls)}>
+                          <span className={cn('h-1.5 w-1.5 rounded-full', sc.dot)} />
+                          {sc.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="font-display tabular-nums text-sm font-bold text-slate-800">{project.taskCount}</span>
+                        <span className="ml-1 text-xs text-slate-400">/{project.completedTaskCount}</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="flex -space-x-1.5">
+                            {Array.from({ length: Math.min(project.memberCount, 4) }).map((_, i) => (
+                              <div
+                                key={i}
+                                className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white text-[9px] font-bold text-white"
+                                style={{ background: memberColors[i % memberColors.length] }}
+                              >
+                                {i + 1}
+                              </div>
+                            ))}
+                            {project.memberCount > 4 && (
+                              <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-slate-100 text-[9px] font-bold text-slate-500">
+                                +{project.memberCount - 4}
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-xs text-slate-500">{project.memberCount}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-100">
+                            <div className={cn('h-full rounded-full transition-all duration-500', progressColor)} style={{ width: `${progress}%` }} />
+                          </div>
+                          <span className="w-8 text-right text-[11px] font-bold tabular-nums text-slate-700">{progress}%</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        {project.highPriorityTaskCount > 0 ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700 ring-1 ring-rose-200">
+                            <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                            {project.highPriorityTaskCount}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            OK
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 pr-5 text-right">
+                        <Link to="/work/board">
+                          <button
+                            type="button"
+                            className="interactive-lift inline-flex h-7 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-600 opacity-0 shadow-sm transition-all group-hover:opacity-100 hover:border-blue-200 hover:text-blue-700"
+                          >
+                            Mở board →
+                          </button>
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 interface BoardViewProps {
   projects: ProjectSummary[];
@@ -1496,31 +1703,292 @@ const ProfileSettingsHub = ({ userName }: { userName: string }) => {
   );
 };
 
-const AnalyticsView = ({ projects, tasks }: { projects: ProjectSummary[]; tasks: Task[] }) => {
-  const completed = tasks.filter((task) => task.status === 'COMPLETED').length;
-  const inProgress = tasks.filter((task) => task.status === 'IN_PROGRESS').length;
-  const urgent = tasks.filter((task) => task.priority === 'HIGH' || task.priority === 'URGENT').length;
-  const completionRate = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
-  const projectHealth = projects.map((project) => ({
-    ...project,
-    progress: getProgress(project),
-  }));
+// ─── Sparkline + MetricCard ────────────────────────────────────────────────
+
+const Sparkline = ({ values, stroke = '#3b82f6' }: { values: number[]; stroke?: string }) => {
+  if (values.length < 2) return null;
+  const W = 80; const H = 36;
+  const max = Math.max(...values); const min = Math.min(...values);
+  const range = max - min || 1;
+  const pts: [number, number][] = values.map((v, i) => [
+    parseFloat(((i / (values.length - 1)) * W).toFixed(1)),
+    parseFloat(((1 - (v - min) / range) * (H - 6) + 3).toFixed(1)),
+  ]);
+  const line = pts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x} ${y}`).join(' ');
+  const area = `${line} L${W} ${H} L0 ${H}Z`;
+  const gid = `spk${stroke.replace(/[^a-z0-9]/gi, '')}`;
+  const last = pts[pts.length - 1];
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-9 w-20 shrink-0" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={stroke} stopOpacity="0.01" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill={`url(#${gid})`} />
+      <path d={line} fill="none" stroke={stroke} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={last[0]} cy={last[1]} r="2.5" fill={stroke} />
+    </svg>
+  );
+};
+
+const MetricCard = ({
+  label, value, hint, sparkValues, stroke, accent,
+}: {
+  label: string; value: string; hint: string; sparkValues: number[]; stroke: string; accent: string;
+}) => (
+  <Card className="interactive-lift relative overflow-hidden p-5 hover:border-blue-200 hover:shadow-[0_10px_22px_rgba(37,99,235,0.08)]">
+    <div className={cn('absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r', accent)} />
+    <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label}</p>
+        <p className="mt-2 font-display text-3xl font-bold tabular-nums text-slate-950">{value}</p>
+        <p className="mt-1.5 text-xs text-slate-500">{hint}</p>
+      </div>
+      <Sparkline values={sparkValues} stroke={stroke} />
+    </div>
+  </Card>
+);
+
+// ─── Chart sub-components ─────────────────────────────────────────────────
+
+const DonutChart = ({
+  title,
+  subtitle,
+  centerValue,
+  centerLabel,
+  segments,
+}: {
+  title: string;
+  subtitle: string;
+  centerValue: string;
+  centerLabel: string;
+  segments: Array<{ label: string; count: number; color: string }>;
+}) => {
+  const total = segments.reduce((s, seg) => s + seg.count, 0);
+  const r = 38;
+  const cx = 56;
+  const cy = 56;
+  const C = 2 * Math.PI * r;
+  let acc = 0;
+
+  const arcs =
+    total === 0
+      ? [<circle key="empty" r={r} cx={cx} cy={cy} fill="none" stroke="#e2e8f0" strokeWidth="14" />]
+      : segments
+          .filter((s) => s.count > 0)
+          .map((s) => {
+            const len = (s.count / total) * C;
+            const el = (
+              <circle
+                key={s.label}
+                r={r}
+                cx={cx}
+                cy={cy}
+                fill="none"
+                stroke={s.color}
+                strokeWidth="14"
+                strokeDasharray={`${len} ${C}`}
+                strokeDashoffset={-acc}
+                transform={`rotate(-90 ${cx} ${cy})`}
+              />
+            );
+            acc += len;
+            return el;
+          });
 
   return (
-    <div className="space-y-4">
+    <Card className="p-5">
+      <p className="font-display text-sm font-bold text-slate-800">{title}</p>
+      <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
+      <div className="mt-4 flex items-center gap-6">
+        <div className="relative shrink-0">
+          <svg width="112" height="112" viewBox="0 0 112 112">
+            {arcs}
+            <circle r={r - 9} cx={cx} cy={cy} fill="white" />
+          </svg>
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+            <span className="font-display text-xl font-bold leading-none text-slate-950">{centerValue}</span>
+            <span className="mt-0.5 text-[10px] font-semibold text-slate-500">{centerLabel}</span>
+          </div>
+        </div>
+        <div className="min-w-0 flex-1 space-y-2">
+          {segments.map((s) => (
+            <div key={s.label} className="flex items-center gap-2">
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.color }} />
+              <span className="min-w-0 flex-1 truncate text-xs text-slate-700">{s.label}</span>
+              <span className="font-display tabular-nums text-xs font-bold text-slate-950">{s.count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+const TeamWorkloadCard = ({ tasks }: { tasks: Task[] }) => {
+  const avatarColors = [
+    'from-blue-500 to-cyan-500', 'from-violet-500 to-purple-500',
+    'from-emerald-500 to-teal-500', 'from-amber-500 to-orange-500',
+    'from-rose-500 to-pink-500', 'from-sky-500 to-indigo-500', 'from-lime-500 to-green-500',
+  ];
+  const workload = useMemo(() => {
+    const byAssignee: Record<number, { total: number; done: number }> = {};
+    tasks.forEach((t) => {
+      if (!byAssignee[t.assigneeId]) byAssignee[t.assigneeId] = { total: 0, done: 0 };
+      byAssignee[t.assigneeId].total++;
+      if (t.status === 'COMPLETED') byAssignee[t.assigneeId].done++;
+    });
+    return Object.entries(byAssignee)
+      .map(([id, d]) => ({ id: Number(id), ...d, rate: Math.round((d.done / d.total) * 100) }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 7);
+  }, [tasks]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Team Workload</CardTitle>
+        <CardDescription>Phân bổ task theo assignee — lấy từ dữ liệu task-service hiện có.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {workload.length === 0 ? (
+          <EmptyState title="Chưa có dữ liệu workload" description="Cần có task được phân công để hiển thị phân bổ." />
+        ) : (
+          workload.map((member, idx) => (
+            <div key={member.id} className="grid grid-cols-[2rem_1fr_auto] items-center gap-3">
+              <div
+                className={cn(
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white',
+                  avatarColors[idx % avatarColors.length]
+                )}
+              >
+                {member.id}
+              </div>
+              <div className="min-w-0">
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-800">Assignee #{member.id}</span>
+                  <span className="text-xs text-slate-500">{member.done}/{member.total}</span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-500"
+                    style={{ width: `${member.rate}%` }}
+                  />
+                </div>
+              </div>
+              <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold',
+                member.rate >= 80 ? 'bg-emerald-100 text-emerald-800' :
+                member.rate >= 50 ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'
+              )}>
+                {member.rate}%
+              </span>
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const ProjectBarChart = ({ projects, tasks }: { projects: ProjectSummary[]; tasks: Task[] }) => {
+  const data = useMemo(
+    () =>
+      projects.slice(0, 8).map((p) => {
+        const pt = tasks.filter((t) => t.projectId === p.id);
+        return {
+          name: p.name.length > 11 ? `${p.name.slice(0, 11)}…` : p.name,
+          open: pt.filter((t) => t.status === 'OPEN').length,
+          inProgress: pt.filter((t) => t.status === 'IN_PROGRESS').length,
+          done: pt.filter((t) => t.status === 'COMPLETED').length,
+          total: pt.length,
+        };
+      }),
+    [projects, tasks]
+  );
+  const maxVal = Math.max(1, ...data.map((d) => d.total));
+
+  return (
+    <div className="space-y-3">
+      <div className="flex h-44 items-end gap-1.5 border-b border-slate-100 pb-2">
+        {data.map((d) => {
+          const barH = Math.round((d.total / maxVal) * 160);
+          return (
+            <div key={d.name} className="group relative flex flex-1 flex-col items-center justify-end gap-0.5">
+              <div className="flex w-full flex-col justify-end gap-0.5" style={{ height: `${barH}px` }}>
+                {d.done > 0 && (
+                  <div className="w-full rounded-t-sm bg-emerald-500 transition-all"
+                    style={{ height: `${Math.round((d.done / d.total) * barH)}px`, minHeight: 3 }} />
+                )}
+                {d.inProgress > 0 && (
+                  <div className="w-full bg-blue-500"
+                    style={{ height: `${Math.round((d.inProgress / d.total) * barH)}px`, minHeight: 3 }} />
+                )}
+                {d.open > 0 && (
+                  <div className="w-full rounded-b-sm bg-slate-300"
+                    style={{ height: `${Math.round((d.open / d.total) * barH)}px`, minHeight: 3 }} />
+                )}
+              </div>
+              <div className="absolute bottom-full mb-1 hidden rounded bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white group-hover:block">
+                {d.total} tasks
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex gap-1.5">
+        {data.map((d) => (
+          <div key={d.name} className="flex-1 truncate text-center text-[9px] font-semibold text-slate-500">{d.name}</div>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-3">
+        {[
+          { label: 'Cần nhận', cls: 'bg-slate-300' },
+          { label: 'Đang làm', cls: 'bg-blue-500' },
+          { label: 'Hoàn thành', cls: 'bg-emerald-500' },
+        ].map((l) => (
+          <div key={l.label} className="flex items-center gap-1.5">
+            <span className={cn('h-2.5 w-2.5 rounded-sm', l.cls)} />
+            <span className="text-xs text-slate-600">{l.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const AnalyticsView = ({ projects, tasks }: { projects: ProjectSummary[]; tasks: Task[] }) => {
+  const completed = tasks.filter((t) => t.status === 'COMPLETED').length;
+  const inProgress = tasks.filter((t) => t.status === 'IN_PROGRESS').length;
+  const open = tasks.filter((t) => t.status === 'OPEN').length;
+  const cancelled = tasks.filter((t) => t.status === 'CANCELLED').length;
+  const urgent = tasks.filter((t) => t.priority === 'HIGH' || t.priority === 'URGENT').length;
+  const urgentOnly = tasks.filter((t) => t.priority === 'URGENT').length;
+  const high = tasks.filter((t) => t.priority === 'HIGH').length;
+  const medium = tasks.filter((t) => t.priority === 'MEDIUM').length;
+  const low = tasks.filter((t) => t.priority === 'LOW').length;
+  const completionRate = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
+  const activeProjects = projects.filter((p) => p.status === 'ACTIVE').length;
+  const projectHealth = useMemo(() => projects.map((p) => ({ ...p, progress: getProgress(p) })), [projects]);
+
+  return (
+    <div className="space-y-5">
+      {/* KPI cards */}
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
-          { label: 'Completion rate', value: `${completionRate}%`, hint: 'Task da hoàn thành tren tong task', icon: CheckCircle2, tone: 'bg-emerald-50 text-emerald-700' },
-          { label: 'Đang xử lý', value: inProgress, hint: 'Task đang trong cột In Progress', icon: Briefcase, tone: 'bg-blue-50 text-blue-700' },
-          { label: 'Rủi ro ưu tiên', value: urgent, hint: 'HIGH hoặc URGENT', icon: Bell, tone: 'bg-amber-50 text-amber-700' },
-          { label: 'Dự án active', value: projects.filter((project) => project.status === 'ACTIVE').length, hint: 'Dự án dang van hanh', icon: FolderKanban, tone: 'bg-cyan-50 text-cyan-700' },
+          { label: 'Completion rate', value: `${completionRate}%`, hint: `${completed}/${tasks.length} task xong`, icon: CheckCircle2, tone: 'bg-emerald-50 text-emerald-700', gradient: 'from-emerald-500 to-teal-400' },
+          { label: 'Đang xử lý', value: inProgress, hint: 'Task đang trong In Progress', icon: Briefcase, tone: 'bg-blue-50 text-blue-700', gradient: 'from-blue-500 to-cyan-400' },
+          { label: 'Rủi ro ưu tiên', value: urgent, hint: 'HIGH + URGENT cần xử lý ngay', icon: Bell, tone: 'bg-amber-50 text-amber-700', gradient: 'from-amber-500 to-orange-400' },
+          { label: 'Dự án active', value: activeProjects, hint: `${projects.length} dự án tổng cộng`, icon: FolderKanban, tone: 'bg-cyan-50 text-cyan-700', gradient: 'from-cyan-500 to-sky-400' },
         ].map((item) => (
-          <Card key={item.label} className="p-5">
+          <Card key={item.label} className="relative overflow-hidden p-5">
+            <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${item.gradient}`} />
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-slate-600">{item.label}</p>
                 <p className="mt-1 font-display text-3xl font-bold tabular-nums text-slate-950">{item.value}</p>
-                <p className="mt-2 text-sm text-slate-600">{item.hint}</p>
+                <p className="mt-2 text-sm text-slate-500">{item.hint}</p>
               </div>
               <div className={cn('flex h-11 w-11 items-center justify-center rounded-xl', item.tone)}>
                 <item.icon size={22} />
@@ -1530,10 +1998,57 @@ const AnalyticsView = ({ projects, tasks }: { projects: ProjectSummary[]; tasks:
         ))}
       </section>
 
+      {/* Donut charts */}
+      <section className="grid gap-4 lg:grid-cols-2">
+        <DonutChart
+          title="Trạng thái task"
+          subtitle="Phân bố task theo trạng thái hiện tại"
+          centerValue={`${completionRate}%`}
+          centerLabel="hoàn thành"
+          segments={[
+            { label: 'Hoàn thành', count: completed, color: '#10b981' },
+            { label: 'Đang làm', count: inProgress, color: '#3b82f6' },
+            { label: 'Cần nhận', count: open, color: '#94a3b8' },
+            { label: 'Đã hủy', count: cancelled, color: '#f43f5e' },
+          ]}
+        />
+        <DonutChart
+          title="Phân bổ ưu tiên"
+          subtitle="Mức ưu tiên của toàn bộ task trong hệ thống"
+          centerValue={tasks.length.toString()}
+          centerLabel="tổng task"
+          segments={[
+            { label: 'Khẩn cấp', count: urgentOnly, color: '#ef4444' },
+            { label: 'Cao', count: high, color: '#f97316' },
+            { label: 'Trung bình', count: medium, color: '#3b82f6' },
+            { label: 'Thấp', count: low, color: '#94a3b8' },
+          ]}
+        />
+      </section>
+
+      {/* Team workload + bar chart */}
+      <section className="grid gap-4 xl:grid-cols-[1fr_1.1fr]">
+        <TeamWorkloadCard tasks={tasks} />
+        <Card>
+          <CardHeader>
+            <CardTitle>Task theo dự án</CardTitle>
+            <CardDescription>Phân bổ task (cần nhận / đang làm / hoàn thành) cho từng dự án.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {projects.length === 0 ? (
+              <EmptyState title="Chưa có dữ liệu" description="Cần project/task để hiển thị biểu đồ." />
+            ) : (
+              <ProjectBarChart projects={projects} tasks={tasks} />
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Project health */}
       <Card>
         <CardHeader>
-          <CardTitle>Project analytics</CardTitle>
-          <CardDescription>Phase 3 shell cho bao cao nang suat va du doan tien do. Hien tai tinh truc tiep tu project/task.</CardDescription>
+          <CardTitle>Sức khỏe dự án</CardTitle>
+          <CardDescription>Tiến độ hoàn thành và mức rủi ro theo từng dự án đang hoạt động.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {projectHealth.length === 0 ? (
@@ -1545,19 +2060,24 @@ const AnalyticsView = ({ projects, tasks }: { projects: ProjectSummary[]; tasks:
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="font-bold text-slate-950">{project.name}</p>
-                      <p className="mt-1 text-sm text-slate-600">{project.taskCount} task, {project.memberCount} thành viên</p>
+                      <p className="mt-1 text-sm text-slate-600">{project.taskCount} task · {project.memberCount} thành viên</p>
                     </div>
                     <Badge variant={project.highPriorityTaskCount > 0 ? 'warning' : 'success'}>
-                      {project.highPriorityTaskCount > 0 ? 'Co rui ro' : 'On dinh'}
+                      {project.highPriorityTaskCount > 0 ? `${project.highPriorityTaskCount} rủi ro` : 'Ổn định'}
                     </Badge>
                   </div>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-full w-full origin-left rounded-full bg-cyan-600 transition-transform duration-300 ease-out"
-                      style={{ transform: `scaleX(${project.progress / 100})` }}
-                    />
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className={cn(
+                          'h-full w-full origin-left rounded-full transition-transform duration-300 ease-out',
+                          project.progress >= 80 ? 'bg-emerald-500' : project.progress >= 50 ? 'bg-blue-500' : 'bg-amber-500'
+                        )}
+                        style={{ transform: `scaleX(${project.progress / 100})` }}
+                      />
+                    </div>
+                    <span className="w-10 shrink-0 text-right text-xs font-bold text-slate-700">{project.progress}%</span>
                   </div>
-                  <p className="mt-2 text-xs text-slate-600">{project.progress}% hoàn thành, {project.highPriorityTaskCount} task uu tien cao</p>
                 </div>
               ))}
             </div>

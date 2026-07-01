@@ -11,6 +11,8 @@ dist/
 node_modules/
 *.log
 hs_err_pid*.log
+*.tsbuildinfo
+src/frontend/shots/
 
 # Tool / editor config (local-only)
 .agents/

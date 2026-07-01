@@ -1,17 +1,18 @@
 import { FormEvent, useEffect, useMemo, useState, useCallback } from 'react';
-import { type Column } from '@/components/UI/Table';
 import { Button } from '@/components/UI/Button';
 import { Card } from '@/components/UI/Card';
 import { Input } from '@/components/UI/Input';
 import { Modal } from '@/components/UI/Modal';
-import { DataListPage } from '@/components/UI/DataListPage';
-import { Plus, Search, Lock, Unlock, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Shield, CheckSquare, Square, MinusSquare, Edit, Trash2 } from 'lucide-react';
+import { TablePagination } from '@/components/UI/DataListPage';
+import { MainLayout } from '@/components/Layout/MainLayout';
+import { Plus, Search, Lock, Unlock, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Shield, CheckSquare, Square, MinusSquare, Edit, Trash2, Users, RefreshCw, UserCog } from 'lucide-react';
 import { userApi, UserAccount } from '@/api/user.api';
 import { roleApi } from '@/api/role.api';
 import { getApiErrorMessage } from '@/utils/error';
 import { useUIStore } from '@/store/uiStore';
 import { PermissionGate } from '@/components/Auth/PermissionGate';
 import { PERMISSIONS } from '@/utils/permissions';
+import { cn } from '@/utils/cn';
 
 type User = UserAccount;
 
@@ -657,177 +658,240 @@ export const UserManagementPage = () => {
     setIsDeleteModalOpen(false);
   };
 
-  // Column definition for the shared data-list table.
-  const columns: Column<UserAccount>[] = [
-    { 
-      key: 'username', 
-      title: 'Tên đăng nhập',
-      sortable: true,
-      onSort: () => handleSort('username'),
-      renderHeader: () => (
-        <div className="flex items-center gap-2">
-          <span>Tên đăng nhập</span>
-          <SortIcon field="username" />
-        </div>
-      ),
-    },
-    { key: 'role', title: 'Vai trò' },
-    {
-      key: 'locked',
-      title: 'Trạng thái',
-      render: (_value, record) => <UserStatusBadge locked={record.locked} />,
-    },
-    { 
-      key: 'createdAt', 
-      title: 'Ngày tạo',
-      sortable: true,
-      onSort: () => handleSort('createdAt'),
-      renderHeader: () => (
-        <div className="flex items-center gap-2">
-          <span>Ngày tạo</span>
-          <SortIcon field="createdAt" />
-        </div>
-      ),
-    },
-    {
-      key: 'id',
-      title: 'Thao tác',
-      render: (_value, record) => (
-        <div className="flex flex-wrap gap-2" aria-label={`Thao tác cho tài khoản ${record.username}`}>
-          <PermissionGate permission={PERMISSIONS.USER_UPDATE}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                openEditModal(record);
-              }}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:ring-offset-2 active:translate-y-px"
-              title="Chỉnh sửa"
-              aria-label={`Chỉnh sửa tài khoản ${record.username}`}
-            >
-              <Edit size={14} aria-hidden="true" />
-              Sửa
-            </button>
-          </PermissionGate>
-          
-          <PermissionGate permission={PERMISSIONS.USER_DELETE}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                openDeleteModal(record.id);
-              }}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-rose-200 bg-white px-2.5 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 active:translate-y-px"
-              title="Xóa"
-              aria-label={`Xóa tài khoản ${record.username}`}
-            >
-              <Trash2 size={14} aria-hidden="true" />
-              Xóa
-            </button>
-          </PermissionGate>
-          
-          <PermissionGate permission={PERMISSIONS.USER_LOCK}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleLock(record.id);
-              }}
-              className={`inline-flex h-8 items-center gap-1.5 rounded-md border bg-white px-2.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 active:translate-y-px ${
-                record.locked
-                  ? 'border-emerald-200 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 focus:ring-emerald-500'
-                  : 'border-amber-200 text-amber-700 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-800 focus:ring-amber-500'
-              }`}
-              title={record.locked ? 'Mở khóa' : 'Khóa tài khoản'}
-              aria-label={`${record.locked ? 'Mở khóa' : 'Khóa'} tài khoản ${record.username}`}
-            >
-              {record.locked ? (
-                <>
-                  <Unlock size={14} aria-hidden="true" />
-                  Mở khóa
-                </>
-              ) : (
-                <>
-                  <Lock size={14} aria-hidden="true" />
-                  Khóa
-                </>
-              )}
-            </button>
-          </PermissionGate>
-        </div>
-      ),
-    },
-  ];
+  // Role color mapping
+  const ROLE_COLORS: Record<string, string> = {
+    ADMIN:           'bg-purple-100  text-purple-700  ring-purple-200',
+    HR_MANAGER:      'bg-blue-100    text-blue-700    ring-blue-200',
+    PAYROLL_OFFICER: 'bg-rose-100    text-rose-700    ring-rose-200',
+    DEPARTMENT_HEAD: 'bg-indigo-100  text-indigo-700  ring-indigo-200',
+    MANAGER:         'bg-emerald-100 text-emerald-700 ring-emerald-200',
+    EMPLOYEE:        'bg-amber-100   text-amber-700   ring-amber-200',
+    USER:            'bg-slate-100   text-slate-600   ring-slate-200',
+  };
+
+  const getRoleColor = (role: string) => ROLE_COLORS[role.toUpperCase()] ?? ROLE_COLORS.USER;
+
+  const formatDate = (iso?: string) => {
+    if (!iso) return '—';
+    try { return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(iso)); }
+    catch { return iso; }
+  };
 
   return (
     <>
-      <DataListPage
-        title="Quản lý tài khoản"
-        description="Quản lý người dùng, trạng thái khóa và phân quyền theo vai trò."
-        actions={
-          <PermissionGate permission={PERMISSIONS.USER_CREATE}>
-            <Button onClick={() => setIsAddModalOpen(true)}>
-              <Plus size={18} aria-hidden="true" />
-              Thêm tài khoản
-            </Button>
-          </PermissionGate>
-        }
-        summary={
-          <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {userStats.map((stat) => (
-              <Card key={stat.label} className="relative overflow-hidden p-5">
-                <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${stat.gradient}`} />
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-600">{stat.label}</p>
-                    <p className="mt-1 font-display truncate text-2xl font-bold tabular-nums text-slate-950">{stat.value}</p>
-                    <p className="mt-2 text-sm text-slate-600">{stat.hint}</p>
-                  </div>
-                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${stat.tone}`}>
-                    <stat.icon size={22} />
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </section>
-        }
-        filters={
-          <div className="space-y-3">
-            <div className="relative">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-              <Input
-                placeholder="Tìm kiếm theo tên đăng nhập..."
-                value={searchKeyword}
-                onChange={(event) => setSearchKeyword(event.target.value)}
-                className="pl-10"
-                aria-label="Tìm kiếm tài khoản theo tên đăng nhập"
-              />
+    <MainLayout>
+    <div className="space-y-5">
+
+      {/* ── Hero header ────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 px-6 py-7 shadow-xl">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 left-1/3 h-36 w-36 rounded-full bg-blue-400/10 blur-2xl" />
+
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-400/20 ring-1 ring-cyan-300/30">
+              <UserCog size={22} className="text-cyan-200" />
             </div>
-            {debouncedSearchKeyword && filteredUsers.length === 0 && !loading && (
-              <output className="flex items-center gap-2 text-sm text-slate-600">
-                <AlertCircle size={16} aria-hidden="true" />
-                Không tìm thấy tài khoản nào phù hợp với "{debouncedSearchKeyword}"
-              </output>
-            )}
+            <div>
+              <h1 className="text-xl font-bold text-white">Quản lý tài khoản</h1>
+              <p className="mt-0.5 text-sm text-slate-400">Người dùng, trạng thái và phân quyền vai trò</p>
+            </div>
           </div>
-        }
-        columns={columns}
-        data={paginatedUsers}
-        loading={loading}
-        error={error}
-        onRetry={fetchUsers}
-        pagination={
-          sortedUsers.length > 0
-            ? {
-                currentPage,
-                totalPages,
-                onPageChange: handlePageChange,
-                totalItems: sortedUsers.length,
-                pageSize,
-                pageSizeOptions: [5, 10, 20, 50],
-                onPageSizeChange: handlePageSizeChange,
-                itemLabel: 'tài khoản',
-              }
-            : undefined
-        }
-      />
+          <div className="flex flex-wrap items-center gap-3">
+            {userStats.map((stat) => (
+              <div key={stat.label} className="flex items-center gap-2.5 rounded-xl bg-white/5 px-4 py-2.5 ring-1 ring-white/10">
+                <stat.icon size={16} className={stat.tone.replace('bg-', 'text-').split(' ')[1] ?? 'text-white'} />
+                <div>
+                  <div className="text-xs text-slate-400">{stat.label}</div>
+                  <div className="text-base font-bold leading-none text-white mt-0.5">{stat.value}</div>
+                </div>
+              </div>
+            ))}
+            <PermissionGate permission={PERMISSIONS.USER_CREATE}>
+              <Button onClick={() => setIsAddModalOpen(true)} size="sm" className="gap-1.5">
+                <Plus size={16} aria-hidden="true" />
+                Thêm tài khoản
+              </Button>
+            </PermissionGate>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Search bar ─────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo tên đăng nhập..."
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            aria-label="Tìm kiếm tài khoản theo tên đăng nhập"
+            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-800 shadow-sm outline-none placeholder:text-slate-400 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={fetchUsers}
+          disabled={loading}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-slate-300 hover:text-slate-700 disabled:opacity-50"
+          title="Làm mới"
+        >
+          <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
+      {debouncedSearchKeyword && filteredUsers.length === 0 && !loading && (
+        <output className="flex items-center gap-2 text-sm text-slate-600">
+          <AlertCircle size={16} aria-hidden="true" />
+          Không tìm thấy tài khoản nào phù hợp với "{debouncedSearchKeyword}"
+        </output>
+      )}
+
+      {/* ── Error state ────────────────────────────────────────────── */}
+      {error && (
+        <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+          <AlertCircle size={18} className="mt-0.5 shrink-0 text-rose-500" />
+          <p className="flex-1 text-sm font-medium text-rose-800">{error}</p>
+          <button type="button" onClick={fetchUsers} className="text-xs font-semibold text-rose-600 underline-offset-2 hover:underline">Thử lại</button>
+        </div>
+      )}
+
+      {/* ── User table ─────────────────────────────────────────────── */}
+      <Card className="overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <RefreshCw size={22} className="animate-spin text-slate-400" />
+          </div>
+        ) : (
+          <>
+            <table className="min-w-full" aria-label="Danh sách tài khoản người dùng">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="border-b border-slate-200 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <button type="button" className="flex items-center gap-1.5 hover:text-slate-800 transition-colors" onClick={() => handleSort('username')}>
+                      Tài khoản <SortIcon field="username" />
+                    </button>
+                  </th>
+                  <th className="border-b border-slate-200 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Vai trò</th>
+                  <th className="border-b border-slate-200 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Trạng thái</th>
+                  <th className="border-b border-slate-200 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <button type="button" className="flex items-center gap-1.5 hover:text-slate-800 transition-colors" onClick={() => handleSort('createdAt')}>
+                      Ngày tạo <SortIcon field="createdAt" />
+                    </button>
+                  </th>
+                  <th className="border-b border-slate-200 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500" aria-label="Thao tác" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {paginatedUsers.map((record, idx) => (
+                  <tr
+                    key={record.id}
+                    className={cn(
+                      'group animate-fade-up transition-colors duration-100 hover:bg-cyan-50/40',
+                      idx % 2 === 1 && 'bg-slate-50/30'
+                    )}
+                    style={{ animationDelay: `${Math.min(idx * 35, 350)}ms` }}
+                  >
+                    {/* Avatar + username */}
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ring-1', getRoleColor(record.role))}>
+                          {record.username.charAt(0).toUpperCase()}
+                        </span>
+                        <span className="font-semibold text-slate-900">{record.username}</span>
+                      </div>
+                    </td>
+
+                    {/* Role badge */}
+                    <td className="px-5 py-3.5">
+                      <span className={cn('inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-semibold ring-1', getRoleColor(record.role))}>
+                        {record.role}
+                      </span>
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-5 py-3.5">
+                      <UserStatusBadge locked={record.locked} />
+                    </td>
+
+                    {/* Created at */}
+                    <td className="px-5 py-3.5 text-sm text-slate-500">{formatDate(record.createdAt)}</td>
+
+                    {/* Actions */}
+                    <td className="px-5 py-3.5">
+                      <div className="flex flex-wrap gap-1.5 opacity-0 transition-opacity group-hover:opacity-100" aria-label={`Thao tác cho tài khoản ${record.username}`}>
+                        <PermissionGate permission={PERMISSIONS.USER_UPDATE}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openEditModal(record); }}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
+                            title="Chỉnh sửa"
+                            aria-label={`Chỉnh sửa tài khoản ${record.username}`}
+                          >
+                            <Edit size={13} aria-hidden="true" />
+                          </button>
+                        </PermissionGate>
+                        <PermissionGate permission={PERMISSIONS.USER_DELETE}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openDeleteModal(record.id); }}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-rose-100 text-rose-400 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600"
+                            title="Xóa"
+                            aria-label={`Xóa tài khoản ${record.username}`}
+                          >
+                            <Trash2 size={13} aria-hidden="true" />
+                          </button>
+                        </PermissionGate>
+                        <PermissionGate permission={PERMISSIONS.USER_LOCK}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleToggleLock(record.id); }}
+                            className={cn(
+                              'flex h-7 w-7 items-center justify-center rounded-lg border transition',
+                              record.locked
+                                ? 'border-emerald-200 text-emerald-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700'
+                                : 'border-amber-200 text-amber-500 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700'
+                            )}
+                            title={record.locked ? 'Mở khóa' : 'Khóa tài khoản'}
+                            aria-label={`${record.locked ? 'Mở khóa' : 'Khóa'} tài khoản ${record.username}`}
+                          >
+                            {record.locked ? <Unlock size={13} aria-hidden="true" /> : <Lock size={13} aria-hidden="true" />}
+                          </button>
+                        </PermissionGate>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+
+                {paginatedUsers.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-16 text-center">
+                      <div className="flex flex-col items-center gap-2 text-slate-400">
+                        <Users size={32} strokeWidth={1.5} />
+                        <p className="text-sm">Không có tài khoản nào</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+
+            {sortedUsers.length > 0 && (
+              <TablePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                totalItems={sortedUsers.length}
+                pageSize={pageSize}
+                pageSizeOptions={[5, 10, 20, 50]}
+                onPageSizeChange={handlePageSizeChange}
+                itemLabel="tài khoản"
+              />
+            )}
+          </>
+        )}
+      </Card>
+
+    </div>
+    </MainLayout>
 
       <Modal isOpen={isAddModalOpen} onClose={() => { setIsAddModalOpen(false); resetAddUserForm(); }} title="Tạo tài khoản mới">
         <form className="space-y-4" onSubmit={handleCreateUser} aria-label="Form thêm tài khoản mới">
@@ -1171,3 +1235,4 @@ export const UserManagementPage = () => {
     </>
   );
 };
+

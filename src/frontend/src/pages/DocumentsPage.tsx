@@ -1,7 +1,5 @@
-﻿import { DragEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+﻿import { DragEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowLeft,
   Download,
   Eye,
   FileSpreadsheet,
@@ -15,7 +13,7 @@ import {
 import { documentApi, DocumentMeta } from '@/api/document.api';
 import { Button } from '@/components/UI/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/UI/Card';
-import { PageHeader } from '@/components/UI/PageHeader';
+import { MainLayout } from '@/components/Layout/MainLayout';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/utils/cn';
@@ -125,6 +123,11 @@ export const DocumentsPage = () => {
 
   const isAdmin = user?.roles?.some((role) => role === 'ADMIN' || role === 'ROLE_ADMIN');
   const currentUsername = user?.username;
+
+  const totalSize   = useMemo(() => docs.reduce((s, d) => s + d.fileSize, 0), [docs]);
+  const pdfCount    = useMemo(() => docs.filter((d) => getDocumentKind(d) === 'PDF').length, [docs]);
+  const excelCount  = useMemo(() => docs.filter((d) => getDocumentKind(d) === 'Excel').length, [docs]);
+  const wordCount   = useMemo(() => docs.filter((d) => getDocumentKind(d) === 'Word').length, [docs]);
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
@@ -240,20 +243,42 @@ export const DocumentsPage = () => {
   );
 
   return (
-    <div className="space-y-6 page-enter">
-      <PageHeader
-        icon={FolderOpen}
-        title="Tài liệu phòng ban"
-        description="Quản lý và chia sẻ tài liệu Word, Excel, PDF với các thành viên trong cùng phòng ban."
-        actions={
-          <Link to="/">
-            <Button variant="outline" pill>
-              <ArrowLeft size={16} />
-              Quay lại
+    <MainLayout>
+    <div className="space-y-5 page-enter">
+
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 px-6 py-7 shadow-xl">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-violet-400/10 blur-3xl" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-400/20 ring-1 ring-violet-300/30">
+              <FolderOpen size={22} className="text-violet-200" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white">Tài liệu phòng ban</h1>
+              <p className="mt-0.5 text-sm text-slate-400">Quản lý và chia sẻ tài liệu Word, Excel, PDF</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {[
+              { label: 'Tổng tài liệu', value: docs.length,           color: 'text-violet-300' },
+              { label: 'PDF',           value: pdfCount,              color: 'text-rose-300'   },
+              { label: 'Excel',         value: excelCount,            color: 'text-emerald-300' },
+              { label: 'Word',          value: wordCount,             color: 'text-blue-300'   },
+              { label: 'Tổng dung lượng', value: formatBytes(totalSize), color: 'text-amber-300' },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="rounded-xl bg-white/5 px-3 py-2 ring-1 ring-white/10">
+                <div className="text-xs text-slate-400">{label}</div>
+                <div className={cn('text-sm font-bold leading-none mt-0.5', color)}>{value}</div>
+              </div>
+            ))}
+            <Button size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-1.5">
+              <Upload size={14} />
+              Tải lên
             </Button>
-          </Link>
-        }
-      />
+          </div>
+        </div>
+      </div>
 
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <input
@@ -388,5 +413,6 @@ export const DocumentsPage = () => {
         </CardContent>
       </Card>
     </div>
+    </MainLayout>
   );
 };
