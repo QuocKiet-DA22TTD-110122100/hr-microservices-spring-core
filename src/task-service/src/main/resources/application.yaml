@@ -4,9 +4,6 @@ server:
 spring:
   application:
     name: task-service
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/task_db?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true}
     username: ${SPRING_DATASOURCE_USERNAME:root}
