@@ -12,7 +12,6 @@ RUN apk add --no-cache curl
 
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
-COPY --from=build /app/src/main/resources/keystore.p12 /app/keystore.p12
 
 # Create data directory for backups
 RUN mkdir -p /app/data
