@@ -80,7 +80,75 @@ jobs:
         run: docker compose -f compose.frontend.yml up -d --wait --wait-timeout 900
 
       - name: Show running containers
-        run: docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+        run: |
+          echo "::group::Container status"
+          docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+          echo "::endgroup::"
+
+      - name: Show container resource usage
+        run: |
+          echo "::group::Resource usage (CPU / RAM)"
+          docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}'
+          echo "::endgroup::"
+
+      - name: Show database init logs
+        run: |
+          echo "::group::PostgreSQL (auth-postgres) logs"
+          docker logs auth-postgres --tail 60 2>&1 || true
+          echo "::endgroup::"
+          echo "::group::MySQL (hr-mysql) logs"
+          docker logs hr-mysql --tail 60 2>&1 || true
+          echo "::endgroup::"
+          echo "::group::MySQL (business-mysql) logs"
+          docker logs business-mysql --tail 60 2>&1 || true
+          echo "::endgroup::"
+
+      - name: Show infrastructure logs
+        run: |
+          echo "::group::RabbitMQ logs"
+          docker logs rabbitmq --tail 30 2>&1 || true
+          echo "::endgroup::"
+          echo "::group::Redis logs"
+          docker logs redis --tail 20 2>&1 || true
+          echo "::endgroup::"
+
+      - name: Show Eureka registered services
+        shell: bash
+        run: |
+          echo "::group::Eureka registered services"
+          curl -fsS --max-time 10 \
+            -H 'Accept: application/json' \
+            "http://admin:change_me@localhost:8761/eureka/apps" 2>/dev/null \
+            | python3 -c "
+          import json, sys
+          try:
+              data = json.load(sys.stdin)
+              apps = data.get('applications', {}).get('application', [])
+              if not apps:
+                  print('No services registered yet')
+              else:
+                  for app in apps:
+                      name = app.get('name', '?')
+                      instances = app.get('instance', [])
+                      if not isinstance(instances, list):
+                          instances = [instances]
+                      for inst in instances:
+                          status = inst.get('status', '?')
+                          host = inst.get('hostName', '?')
+                          port = inst.get('port', {}).get('\$', '?')
+                          print(f'  {name}: {status} @ {host}:{port}')
+          except Exception as e:
+              print(f'Parse error: {e}')
+          " || echo "Eureka not reachable yet"
+          echo "::endgroup::"
+
+      - name: Show application service logs
+        run: |
+          for svc in kms-service auth-service hr-service project-service task-service api-gateway; do
+            echo "::group::$svc startup logs"
+            docker logs "$svc" --tail 40 2>&1 || true
+            echo "::endgroup::"
+          done
 
       - name: Smoke health endpoints
         shell: bash
