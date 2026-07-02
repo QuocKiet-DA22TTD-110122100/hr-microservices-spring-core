@@ -32,6 +32,18 @@ public class RabbitMQConfig {
     public static final String TASK_CREATED_ROUTING_KEY = "task.created";
     public static final String TASK_STATUS_ROUTING_KEY = "task.status.*";
 
+    // Project Exchanges (consumed by ProjectEventListener; must match project-service's declarations)
+    public static final String PROJECT_CREATED_EXCHANGE = "project.created";
+    public static final String PROJECT_STATUS_EXCHANGE = "project.status";
+
+    // Project Queues
+    public static final String PROJECT_CREATED_QUEUE = "project.created.queue";
+    public static final String PROJECT_STATUS_QUEUE = "project.status.queue";
+
+    // Project Routing Keys
+    public static final String PROJECT_CREATED_ROUTING_KEY = "project.created";
+    public static final String PROJECT_STATUS_ROUTING_KEY = "project.status.*";
+
     // Task Exchange
     @Bean
     public DirectExchange taskCreatedExchange() {
@@ -67,6 +79,43 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(taskStatusQueue)
                 .to(taskStatusExchange)
                 .with(TASK_STATUS_ROUTING_KEY);
+    }
+
+    // Project Exchanges
+    @Bean
+    public DirectExchange projectCreatedExchange() {
+        return new DirectExchange(PROJECT_CREATED_EXCHANGE, true, false);
+    }
+
+    @Bean
+    public TopicExchange projectStatusExchange() {
+        return new TopicExchange(PROJECT_STATUS_EXCHANGE, true, false);
+    }
+
+    // Project Queues
+    @Bean
+    public Queue projectCreatedQueue() {
+        return new Queue(PROJECT_CREATED_QUEUE, true);
+    }
+
+    @Bean
+    public Queue projectStatusQueue() {
+        return new Queue(PROJECT_STATUS_QUEUE, true);
+    }
+
+    // Project Bindings
+    @Bean
+    public Binding projectCreatedBinding(Queue projectCreatedQueue, DirectExchange projectCreatedExchange) {
+        return BindingBuilder.bind(projectCreatedQueue)
+                .to(projectCreatedExchange)
+                .with(PROJECT_CREATED_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding projectStatusBinding(Queue projectStatusQueue, TopicExchange projectStatusExchange) {
+        return BindingBuilder.bind(projectStatusQueue)
+                .to(projectStatusExchange)
+                .with(PROJECT_STATUS_ROUTING_KEY);
     }
 
     // Use Jackson JSON converter for Rabbit messages so payloads are serialized/deserialized as JSON
