@@ -86,9 +86,9 @@ describe('Integration: Role Permission Flow', () => {
       // Admin should see "Add User" button
       expect(screen.getByRole('button', { name: /thêm tài khoản/i })).toBeInTheDocument();
 
-      // Admin should see all action buttons for each user
-      const editButtons = screen.getAllByText('Sửa');
-      const deleteButtons = screen.getAllByText('Xóa');
+      // Admin should see all action buttons for each user (icon buttons, aria-label based)
+      const editButtons = screen.getAllByRole('button', { name: /chỉnh sửa tài khoản/i });
+      const deleteButtons = screen.getAllByRole('button', { name: /^xóa tài khoản/i });
 
       expect(editButtons.length).toBe(mockUsers.length);
       expect(deleteButtons.length).toBe(mockUsers.length);
@@ -122,8 +122,8 @@ describe('Integration: Role Permission Flow', () => {
       renderWithRouter(<UserManagementPage />);
       await screen.findByText('admin');
 
-      // Click delete button
-      const deleteButtons = screen.getAllByText('Xóa');
+      // Click delete button (icon button with aria-label)
+      const deleteButtons = screen.getAllByRole('button', { name: /^xóa tài khoản/i });
       await user.click(deleteButtons[0]);
 
       // Confirm — use specific aria-label to avoid matching row delete buttons
