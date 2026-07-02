@@ -858,7 +858,7 @@ export const RoleWorkspacePage = () => {
 
   const selectedItem = useMemo(
     () => items.find((item) => item.title === selectedTitle),
-    [filteredItems, selectedTitle, items],
+    [selectedTitle, items],
   );
 
   const handleSelectItem = (item: WorkspaceItem) => {

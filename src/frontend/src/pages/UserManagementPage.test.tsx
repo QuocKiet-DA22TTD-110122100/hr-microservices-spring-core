@@ -90,8 +90,9 @@ describe('UserManagementPage', () => {
       // Wait for data to load
       await screen.findByText('admin');
 
-      // Check table headers (sidebar also contains "Vai trò" nav item, use getAllByText)
-      expect(screen.getByText('Tên đăng nhập')).toBeInTheDocument();
+      // Check table headers — scope to table to avoid sidebar nav conflicts
+      const table = screen.getByRole('table');
+      expect(within(table).getByText('Tài khoản')).toBeInTheDocument();
       expect(screen.getAllByText('Vai trò').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('Trạng thái')).toBeInTheDocument();
 
@@ -119,10 +120,10 @@ describe('UserManagementPage', () => {
 
       await screen.findByText('admin');
 
-      // Each user should have edit, delete, and lock/unlock buttons
-      const editButtons = screen.getAllByText('Sửa');
-      const deleteButtons = screen.getAllByText('Xóa');
-      
+      // Each user should have edit and delete icon-buttons (aria-label based)
+      const editButtons = screen.getAllByRole('button', { name: /chỉnh sửa tài khoản/i });
+      const deleteButtons = screen.getAllByRole('button', { name: /xóa tài khoản/i });
+
       expect(editButtons.length).toBe(mockUsers.length);
       expect(deleteButtons.length).toBe(mockUsers.length);
     });
@@ -272,8 +273,8 @@ describe('UserManagementPage', () => {
 
       await screen.findByText('admin');
 
-      // Click first edit button
-      const editButtons = screen.getAllByText('Sửa');
+      // Click first edit button (icon button with aria-label)
+      const editButtons = screen.getAllByRole('button', { name: /chỉnh sửa tài khoản/i });
       await user.click(editButtons[0]);
 
       // Modal should be open with user data
@@ -287,7 +288,7 @@ describe('UserManagementPage', () => {
 
       await screen.findByText('admin');
 
-      const editButtons = screen.getAllByText('Sửa');
+      const editButtons = screen.getAllByRole('button', { name: /chỉnh sửa tài khoản/i });
       await user.click(editButtons[0]);
 
       // Permission matrix should be visible — scope to dialog to avoid page description match
@@ -307,7 +308,7 @@ describe('UserManagementPage', () => {
       await screen.findByText('admin');
 
       // Open edit modal for user1
-      const editButtons = screen.getAllByText('Sửa');
+      const editButtons = screen.getAllByRole('button', { name: /chỉnh sửa tài khoản/i });
       await user.click(editButtons[1]);
 
       // Change role — component uses toggle buttons, not a <select>
@@ -334,7 +335,7 @@ describe('UserManagementPage', () => {
 
       await screen.findByText('admin');
 
-      const deleteButtons = screen.getAllByText('Xóa');
+      const deleteButtons = screen.getAllByRole('button', { name: /xóa tài khoản/i });
       await user.click(deleteButtons[0]);
 
       // Confirmation modal should appear
@@ -350,7 +351,7 @@ describe('UserManagementPage', () => {
       await screen.findByText('admin');
 
       // Click delete on second user (user1)
-      const deleteButtons = screen.getAllByText('Xóa');
+      const deleteButtons = screen.getAllByRole('button', { name: /xóa tài khoản/i });
       await user.click(deleteButtons[1]);
 
       // Confirm deletion — use aria-label to avoid ambiguity with row delete buttons
@@ -375,7 +376,7 @@ describe('UserManagementPage', () => {
 
       await screen.findByText('admin');
 
-      const deleteButtons = screen.getAllByText('Xóa');
+      const deleteButtons = screen.getAllByRole('button', { name: /xóa tài khoản/i });
       await user.click(deleteButtons[0]);
 
       // Cancel
@@ -442,8 +443,8 @@ describe('UserManagementPage', () => {
 
       await screen.findByText('admin');
 
-      // Click username header to sort
-      const usernameHeader = screen.getByText('Tên đăng nhập');
+      // Click username sort button inside table (scoped to avoid sidebar nav conflict)
+      const usernameHeader = within(screen.getByRole('table')).getByText('Tài khoản');
       await user.click(usernameHeader);
 
       // Order should change (visual check would be needed)
