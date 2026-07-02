@@ -46,6 +46,7 @@ public class PayrollController {
             @RequestParam String yearMonth,
             HttpServletRequest request) {
         securityValidator.enforceGatewayAccess(request);
+        securityValidator.enforcePayrollAccess(request);
 
         employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -66,6 +67,7 @@ public class PayrollController {
             @PathVariable Long employeeId,
             HttpServletRequest request) {
         securityValidator.enforceGatewayAccess(request);
+        securityValidator.enforcePayrollAccess(request);
 
         return payrollResultRepository.findLatestByEmployeeId(employeeId)
                 .map(result -> ResponseEntity.ok(toPayrollResponse(result)))
@@ -78,6 +80,7 @@ public class PayrollController {
             @PathVariable Long employeeId,
             HttpServletRequest request) {
         securityValidator.enforceGatewayAccess(request);
+        securityValidator.enforcePayrollAccess(request);
 
         List<PayrollResult> history = payrollResultRepository
                 .findByEmployeeIdAndStatusOrderByPeriodStartDateDesc(employeeId, "PROCESSED");
@@ -91,6 +94,7 @@ public class PayrollController {
             @RequestBody Map<String, String> request,
             HttpServletRequest httpRequest) {
         securityValidator.enforceGatewayAccess(httpRequest);
+        securityValidator.enforcePayrollAccess(httpRequest);
 
         try {
             String approvedBy = request.getOrDefault("approvedBy", "SYSTEM");
@@ -107,6 +111,7 @@ public class PayrollController {
             @RequestBody Map<String, String> body,
             HttpServletRequest request) {
         securityValidator.enforceGatewayAccess(request);
+        securityValidator.enforcePayrollAccess(request);
 
         try {
             String yearMonth = body.get("yearMonth");

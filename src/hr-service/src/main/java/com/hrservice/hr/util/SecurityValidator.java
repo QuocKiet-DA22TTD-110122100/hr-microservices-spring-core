@@ -32,6 +32,31 @@ public class SecurityValidator {
         }
     }
 
+    public void enforcePayrollAccess(HttpServletRequest request) {
+        String role = normalize(request.getHeader("X-Auth-Role"));
+        String roles = request.getHeader("X-Auth-Roles");
+        boolean allowed = "HR_ADMIN".equals(role)
+            || "ROLE_HR_ADMIN".equals(role)
+            || "HR_MANAGER".equals(role)
+            || "ROLE_HR_MANAGER".equals(role)
+            || "PAYROLL_OFFICER".equals(role)
+            || "ROLE_PAYROLL_OFFICER".equals(role)
+            || "ADMIN".equals(role)
+            || "ROLE_ADMIN".equals(role)
+            || containsRole(roles, "HR_ADMIN")
+            || containsRole(roles, "ROLE_HR_ADMIN")
+            || containsRole(roles, "HR_MANAGER")
+            || containsRole(roles, "ROLE_HR_MANAGER")
+            || containsRole(roles, "PAYROLL_OFFICER")
+            || containsRole(roles, "ROLE_PAYROLL_OFFICER")
+            || containsRole(roles, "ADMIN")
+            || containsRole(roles, "ROLE_ADMIN");
+
+        if (!allowed) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "HR admin, HR manager, payroll officer, or admin role is required");
+        }
+    }
+
     public void enforcePayrollOfficerOrAdmin(HttpServletRequest request) {
         String role = normalize(request.getHeader("X-Auth-Role"));
         String roles = request.getHeader("X-Auth-Roles");
